@@ -16,7 +16,7 @@
 #
 # Build script for OpenArm Python bindings
 
-set -e
+set -eu
 
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,11 +36,13 @@ fi
 # Build the C++ library first if needed
 if [ ! -d "$PROJECT_ROOT/build" ]; then
     echo "Building C++ library..."
-    mkdir -p "$PROJECT_ROOT/build"
-    cd "$PROJECT_ROOT/build"
-    cmake ..
-    make -j$(nproc)
-    cd "$SCRIPT_DIR"
+    cmake \
+        -S "$PROJECT_ROOT" \
+        -B "$PROJECT_ROOT/build" \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -GNinja
+    cmake --build "$PROJECT_ROOT/build"
+    cmake --install "$PROJECT_ROOT/build"
 fi
 
 # Install in development mode

@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -eu
+
 # Simple CAN Interface Setup Script
 # Usage: script/configure_socketcan.sh <interface> [options]
 
@@ -52,32 +54,32 @@ shift
 # Parse options
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -fd)
-            FD_MODE=true
-            shift
-            ;;
-        -b)
-            BITRATE="$2"
-            shift 2
-            ;;
-        -d)
-            DBITRATE="$2"
-            shift 2
-            ;;
-        -h)
-            usage
-            exit 0
-            ;;
-        *)
-            echo "Error: Unknown option '$1'"
-            usage
-            exit 1
-            ;;
+    -fd)
+        FD_MODE=true
+        shift
+        ;;
+    -b)
+        BITRATE="$2"
+        shift 2
+        ;;
+    -d)
+        DBITRATE="$2"
+        shift 2
+        ;;
+    -h)
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown option '$1'"
+        usage
+        exit 1
+        ;;
     esac
 done
 
 # Check if interface exists
-if ! ip link show $CAN_IF &>/dev/null; then
+if ! ip link show "$CAN_IF" &>/dev/null; then
     echo "Error: CAN interface '$CAN_IF' not found"
     echo "Available interfaces:"
     ip link show | grep -E "can[0-9]" | cut -d: -f2 | tr -d ' ' || echo "  No CAN interfaces found"
@@ -87,26 +89,26 @@ fi
 # Configure CAN interface
 echo "Configuring $CAN_IF..."
 
-if ! sudo ip link set $CAN_IF down; then
+if ! sudo ip link set "$CAN_IF" down; then
     echo "Error: Failed to bring down $CAN_IF"
     exit 1
 fi
 
 if [ "$FD_MODE" = true ]; then
-    if ! sudo ip link set $CAN_IF type can bitrate $BITRATE dbitrate $DBITRATE fd on; then
+    if ! sudo ip link set "$CAN_IF" type can bitrate "$BITRATE" dbitrate "$DBITRATE" fd on; then
         echo "Error: Failed to configure CAN FD mode"
         exit 1
     fi
     echo "$CAN_IF is now set to CAN FD mode (${BITRATE} bps / ${DBITRATE} bps)"
 else
-    if ! sudo ip link set $CAN_IF type can bitrate $BITRATE; then
+    if ! sudo ip link set "$CAN_IF" type can bitrate "$BITRATE"; then
         echo "Error: Failed to configure CAN 2.0 mode"
         exit 1
     fi
     echo "$CAN_IF is now set to CAN 2.0 mode (${BITRATE} bps)"
 fi
 
-if ! sudo ip link set $CAN_IF up; then
+if ! sudo ip link set "$CAN_IF" up; then
     echo "Error: Failed to bring up $CAN_IF"
     exit 1
 fi

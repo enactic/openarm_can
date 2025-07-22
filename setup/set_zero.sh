@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -eu
 
 # CAN Interface Script
 # Usage: scripts/set_zero.sh <CAN_IF> [CAN_ID] [-all]
@@ -42,7 +43,8 @@ check_can_interface() {
     fi
 
     # Check if interface is up
-    local state=$(ip link show "$interface" | grep -o "state [A-Z]*" | cut -d' ' -f2)
+    local state
+    state=$(ip link show "$interface" | grep -o "state [A-Z]*" | cut -d' ' -f2)
     if [ "$state" != "UP" ]; then
         echo "Error: CAN interface $interface is not UP (current state: $state)"
         return 1
@@ -52,14 +54,16 @@ check_can_interface() {
 
     # Try to get baudrate information
     if command -v ethtool &>/dev/null; then
-        local baudrate=$(ethtool "$interface" 2>/dev/null | grep -i speed | cut -d: -f2 | tr -d ' ')
+        local baudrate
+        baudrate=$(ethtool "$interface" 2>/dev/null | grep -i speed | cut -d: -f2 | tr -d ' ')
         if [ -n "$baudrate" ]; then
             echo "Baudrate: $baudrate"
         fi
     fi
 
     # Alternative method using ip command
-    local bitrate=$(ip -details link show "$interface" 2>/dev/null | grep -o "bitrate [0-9]*" | cut -d' ' -f2)
+    local bitrate
+    bitrate=$(ip -details link show "$interface" 2>/dev/null | grep -o "bitrate [0-9]*" | cut -d' ' -f2)
     if [ -n "$bitrate" ]; then
         echo "Bitrate: ${bitrate} bps"
     fi
@@ -146,7 +150,8 @@ main() {
         echo "Sending set zero messages to all motor with CAN IDs from 001 to 008"
         echo "=========================================="
         for i in {1..8}; do
-            local padded_id=$(printf "%03d" $i)
+            local padded_id
+            padded_id=$(printf "%03d" "$i")
             send_can_messages "$padded_id" "$CAN_IF"
         done
     else
