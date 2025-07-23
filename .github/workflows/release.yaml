@@ -24,6 +24,7 @@ jobs:
     environment: release
     permissions:
       contents: write
+      discussions: write
     steps:
       - uses: actions/checkout@v4
       - name: Create source archive
