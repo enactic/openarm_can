@@ -45,7 +45,7 @@ public:
     int get_socket_fd() const { return socket_fd_; }
     const std::string& get_interface() const { return interface_; }
     bool is_canfd_enabled() const { return fd_enabled_; }
-    bool is_initialized() const { return initialized_; }
+    bool is_initialized() const { return socket_fd_ >= 0; }
 
     // Direct frame operations for Python bindings
     ssize_t read_raw_frame(void* buffer, size_t buffer_size);
@@ -69,7 +69,6 @@ protected:
     int socket_fd_;
     std::string interface_;
     bool fd_enabled_;
-    bool initialized_;
 };
 
 }  // namespace openarm::canbus

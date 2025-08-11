@@ -27,11 +27,10 @@
 namespace openarm::canbus {
 
 CANSocket::CANSocket(const std::string& interface, bool enable_fd)
-    : socket_fd_(-1), interface_(interface), fd_enabled_(enable_fd), initialized_(false) {
+    : socket_fd_(-1), interface_(interface), fd_enabled_(enable_fd) {
     if (!initialize_socket(interface)) {
         throw CANSocketException("Failed to initialize socket for interface: " + interface);
     }
-    initialized_ = true;
 }
 
 CANSocket::~CANSocket() { cleanup(); }
@@ -50,7 +49,7 @@ bool CANSocket::initialize_socket(const std::string& interface) {
     ifr.ifr_name[IFNAMSIZ - 1] = '\0';
 
     if (ioctl(socket_fd_, SIOCGIFINDEX, &ifr) < 0) {
-        close(socket_fd_);
+        cleanup();
         return false;
     }
 
@@ -62,13 +61,13 @@ bool CANSocket::initialize_socket(const std::string& interface) {
         int enable_canfd = 1;
         if (setsockopt(socket_fd_, SOL_CAN_RAW, CAN_RAW_FD_FRAMES, &enable_canfd,
                        sizeof(enable_canfd)) < 0) {
-            close(socket_fd_);
+            cleanup();
             return false;
         }
     }
 
     if (bind(socket_fd_, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
-        close(socket_fd_);
+        cleanup();
         return false;
     }
 
@@ -76,7 +75,7 @@ bool CANSocket::initialize_socket(const std::string& interface) {
     timeout.tv_sec = 0;
     timeout.tv_usec = 100;
     if (setsockopt(socket_fd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-        close(socket_fd_);
+        cleanup();
         return false;
     }
 
@@ -84,19 +83,19 @@ bool CANSocket::initialize_socket(const std::string& interface) {
 }
 
 void CANSocket::cleanup() {
-    if (socket_fd_ > 0) {
+    if (socket_fd_ >= 0) {
         close(socket_fd_);
         socket_fd_ = -1;
     }
 }
 
 ssize_t CANSocket::read_raw_frame(void* buffer, size_t buffer_size) {
-    if (!initialized_) return -1;
+    if (!is_initialized()) return -1;
     return read(socket_fd_, buffer, buffer_size);
 }
 
 ssize_t CANSocket::write_raw_frame(const void* buffer, size_t frame_size) {
-    if (!initialized_) return -1;
+    if (!is_initialized()) return -1;
     return write(socket_fd_, buffer, frame_size);
 }
 
@@ -109,19 +108,19 @@ bool CANSocket::write_canfd_frame(const canfd_frame& frame) {
 }
 
 bool CANSocket::read_can_frame(can_frame& frame) {
-    if (!initialized_) return false;
+    if (!is_initialized()) return false;
     ssize_t bytes_read = read(socket_fd_, &frame, sizeof(frame));
     return bytes_read == sizeof(frame);
 }
 
 bool CANSocket::read_canfd_frame(canfd_frame& frame) {
-    if (!initialized_) return false;
+    if (!is_initialized()) return false;
     ssize_t bytes_read = read(socket_fd_, &frame, sizeof(frame));
     return bytes_read == sizeof(frame);
 }
 
 bool CANSocket::is_data_available(int timeout_us) {
-    if (!initialized_) return false;
+    if (!is_initialized()) return false;
 
     fd_set read_fds;
     struct timeval timeout;
