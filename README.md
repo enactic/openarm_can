@@ -60,6 +60,7 @@ openarm.enable_all();
 
 **Build & Install:**
 
+Please ensure that you build and install the C++ library first, as described above.
 ```bash
 cd python
 
