@@ -27,10 +27,15 @@ echo "Script directory: $SCRIPT_DIR"
 echo "Project root: $PROJECT_ROOT"
 
 # Check if we're in a virtual environment
-if [[ "$VIRTUAL_ENV" != "" ]]; then
-    echo "Using virtual environment: $VIRTUAL_ENV"
+if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+    echo "Using virtual environment (venv): $VIRTUAL_ENV"
+elif [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
+    echo "Using conda environment: $CONDA_DEFAULT_ENV"
 else
-    echo "Warning: Not in a virtual environment. Consider using 'python -m venv venv && source venv/bin/activate'"
+    echo "Warning: Not in a virtual environment. Consider using:"
+    echo "  python -m venv venv && source venv/bin/activate"
+    echo "  # or"
+    echo "  conda create -n myenv python=3.x && conda activate myenv"
 fi
 
 # Build the C++ library first if needed
