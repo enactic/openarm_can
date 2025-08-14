@@ -197,12 +197,8 @@ NB_MODULE(openarm_can, m) {
     m.def("create_query_param_command", &create_query_param_command, nb::arg("motor"),
           nb::arg("rid"));
 
-    // MotorControl class
-    nb::class_<CanPacketDecoder>(m, "CanPacketDecoder")
-        .def_static("parse_motor_state_data", &CanPacketDecoder::parse_motor_state_data,
-                    nb::arg("motor"), nb::arg("data"))
-        .def_static("parse_motor_param_data", &CanPacketDecoder::parse_motor_param_data,
-                    nb::arg("data"));
+    m.def("parse_motor_state_data", &parse_motor_state_data, nb::arg("motor"), nb::arg("data"));
+    m.def("parse_motor_param_data", &parse_motor_param_data, nb::arg("data"));
 
     // ============================================================================
     // CANBUS NAMESPACE - EXCEPTIONS AND BASE CLASSES

@@ -70,6 +70,30 @@ std::vector<uint8_t> pack_command_data(uint8_t cmd) {
     return {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, cmd};
 }
 
+double uint_to_double(uint16_t x, double min, double max, int bits) {
+    double span = max - min;
+    double data_norm = static_cast<double>(x) / ((1 << bits) - 1);
+    return data_norm * span + min;
+}
+
+float uint8s_to_float(const std::array<uint8_t, 4>& bytes) {
+    float value;
+    std::memcpy(&value, bytes.data(), sizeof(float));
+    return value;
+}
+
+uint32_t uint8s_to_uint32(uint8_t byte1, uint8_t byte2, uint8_t byte3, uint8_t byte4) {
+    uint32_t value;
+    uint8_t bytes[4] = {byte1, byte2, byte3, byte4};
+    std::memcpy(&value, bytes, sizeof(uint32_t));
+    return value;
+}
+
+bool is_in_ranges(int number) {
+    return (7 <= number && number <= 10) || (13 <= number && number <= 16) ||
+           (35 <= number && number <= 36);
+}
+
 }  // namespace
 
 // Command creation methods (return data array, can_id handled externally)
@@ -107,8 +131,7 @@ CANPacket create_refresh_command(const Motor& motor) {
 }
 
 // Data interpretation methods (use recv_can_id for received data)
-StateResult CanPacketDecoder::parse_motor_state_data(const Motor& motor,
-                                                     const std::vector<uint8_t>& data) {
+StateResult parse_motor_state_data(const Motor& motor, const std::vector<uint8_t>& data) {
     if (data.size() < 8) {
         std::cerr << "Warning: Skipping motor state data less than 8 bytes" << std::endl;
         return {0, 0, 0, 0, 0, false};
@@ -124,24 +147,24 @@ StateResult CanPacketDecoder::parse_motor_state_data(const Motor& motor,
 
     // Convert to physical values
     LimitParam limits = MOTOR_LIMIT_PARAMS[static_cast<int>(motor.get_motor_type())];
-    double recv_q = CanPacketDecoder::uint_to_double(q_uint, -limits.pMax, limits.pMax, 16);
-    double recv_dq = CanPacketDecoder::uint_to_double(dq_uint, -limits.vMax, limits.vMax, 12);
-    double recv_tau = CanPacketDecoder::uint_to_double(tau_uint, -limits.tMax, limits.tMax, 12);
+    double recv_q = uint_to_double(q_uint, -limits.pMax, limits.pMax, 16);
+    double recv_dq = uint_to_double(dq_uint, -limits.vMax, limits.vMax, 12);
+    double recv_tau = uint_to_double(tau_uint, -limits.tMax, limits.tMax, 12);
 
     return {recv_q, recv_dq, recv_tau, t_mos, t_rotor, true};
 }
 
-ParamResult CanPacketDecoder::parse_motor_param_data(const std::vector<uint8_t>& data) {
+ParamResult parse_motor_param_data(const std::vector<uint8_t>& data) {
     if (data.size() < 8) return {0, NAN, false};
 
     if ((data[2] == 0x33 || data[2] == 0x55)) {
         uint8_t RID = data[3];
         double num;
-        if (CanPacketDecoder::is_in_ranges(RID)) {
-            num = CanPacketDecoder::uint8s_to_uint32(data[4], data[5], data[6], data[7]);
+        if (is_in_ranges(RID)) {
+            num = uint8s_to_uint32(data[4], data[5], data[6], data[7]);
         } else {
             std::array<uint8_t, 4> float_bytes = {data[4], data[5], data[6], data[7]};
-            num = CanPacketDecoder::uint8s_to_float(float_bytes);
+            num = uint8s_to_float(float_bytes);
         }
         return {RID, num, true};
     } else {
@@ -150,28 +173,4 @@ ParamResult CanPacketDecoder::parse_motor_param_data(const std::vector<uint8_t>&
     }
 }
 
-double CanPacketDecoder::uint_to_double(uint16_t x, double min, double max, int bits) {
-    double span = max - min;
-    double data_norm = static_cast<double>(x) / ((1 << bits) - 1);
-    return data_norm * span + min;
-}
-
-float CanPacketDecoder::uint8s_to_float(const std::array<uint8_t, 4>& bytes) {
-    float value;
-    std::memcpy(&value, bytes.data(), sizeof(float));
-    return value;
-}
-
-uint32_t CanPacketDecoder::uint8s_to_uint32(uint8_t byte1, uint8_t byte2, uint8_t byte3,
-                                            uint8_t byte4) {
-    uint32_t value;
-    uint8_t bytes[4] = {byte1, byte2, byte3, byte4};
-    std::memcpy(&value, bytes, sizeof(uint32_t));
-    return value;
-}
-
-bool CanPacketDecoder::is_in_ranges(int number) {
-    return (7 <= number && number <= 10) || (13 <= number && number <= 16) ||
-           (35 <= number && number <= 36);
-}
 }  // namespace openarm::damiao_motor

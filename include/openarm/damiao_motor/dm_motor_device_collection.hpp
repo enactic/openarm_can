@@ -53,7 +53,6 @@ public:
 
 protected:
     canbus::CANSocket& can_socket_;
-    std::unique_ptr<CanPacketDecoder> can_packet_decoder_;
     std::unique_ptr<canbus::CANDeviceCollection> device_collection_;
 
     // Helper methods for subclasses

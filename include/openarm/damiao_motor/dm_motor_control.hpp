@@ -64,16 +64,7 @@ CANPacket create_mit_control_command(const Motor& motor, const MITParam& mit_par
 CANPacket create_query_param_command(const Motor& motor, int RID);
 CANPacket create_refresh_command(const Motor& motor);
 
-class CanPacketDecoder {
-public:
-    static StateResult parse_motor_state_data(const Motor& motor, const std::vector<uint8_t>& data);
-    static ParamResult parse_motor_param_data(const std::vector<uint8_t>& data);
-
-private:
-    static double uint_to_double(uint16_t x, double min, double max, int bits);
-    static float uint8s_to_float(const std::array<uint8_t, 4>& bytes);
-    static uint32_t uint8s_to_uint32(uint8_t byte1, uint8_t byte2, uint8_t byte3, uint8_t byte4);
-    static bool is_in_ranges(int number);
-};
+StateResult parse_motor_state_data(const Motor& motor, const std::vector<uint8_t>& data);
+ParamResult parse_motor_param_data(const std::vector<uint8_t>& data);
 
 }  // namespace openarm::damiao_motor
