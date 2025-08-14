@@ -46,7 +46,7 @@ void DMCANDevice::callback(const can_frame& frame) {
         case STATE:
             if (frame.can_dlc >= 8) {
                 // Convert frame data to vector and let Motor handle parsing
-                StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
+                StateResult result = parse_motor_state_data(motor_, data);
                 if (frame.can_id == motor_.get_recv_can_id() && result.valid) {
                     motor_.update_state(result.position, result.velocity, result.torque,
                                         result.t_mos, result.t_rotor);
@@ -54,7 +54,7 @@ void DMCANDevice::callback(const can_frame& frame) {
             }
             break;
         case PARAM: {
-            ParamResult result = CanPacketDecoder::parse_motor_param_data(data);
+            ParamResult result = parse_motor_param_data(data);
             if (result.valid) {
                 motor_.set_temp_param(result.rid, result.value);
             }
@@ -80,13 +80,13 @@ void DMCANDevice::callback(const canfd_frame& frame) {
 
     std::vector<uint8_t> data = get_data_from_frame(frame);
     if (callback_mode_ == STATE) {
-        StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
+        StateResult result = parse_motor_state_data(motor_, data);
         if (result.valid) {
             motor_.update_state(result.position, result.velocity, result.torque, result.t_mos,
                                 result.t_rotor);
         }
     } else if (callback_mode_ == PARAM) {
-        ParamResult result = CanPacketDecoder::parse_motor_param_data(data);
+        ParamResult result = parse_motor_param_data(data);
         if (result.valid) {
             motor_.set_temp_param(result.rid, result.value);
         }
