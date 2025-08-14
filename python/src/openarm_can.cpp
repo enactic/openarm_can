@@ -188,21 +188,16 @@ NB_MODULE(openarm_can, m) {
         .def("get_param", &Motor::get_param, nb::arg("rid"))
         .def_static("get_limit_param", &Motor::get_limit_param, nb::arg("motor_type"));
 
-    // MotorControl class
-    nb::class_<CanPacketEncoder>(m, "CanPacketEncoder")
-        .def_static("create_refresh_command", &CanPacketEncoder::create_refresh_command,
-                    nb::arg("motor"))
-        .def_static("create_enable_command", &CanPacketEncoder::create_enable_command,
-                    nb::arg("motor"))
-        .def_static("create_disable_command", &CanPacketEncoder::create_disable_command,
-                    nb::arg("motor"))
-        .def_static("create_set_zero_command", &CanPacketEncoder::create_set_zero_command,
-                    nb::arg("motor"))
-        .def_static("create_mit_control_command", &CanPacketEncoder::create_mit_control_command,
-                    nb::arg("motor"), nb::arg("mit_param"))
-        .def_static("create_query_param_command", &CanPacketEncoder::create_query_param_command,
-                    nb::arg("motor"), nb::arg("rid"));
+    m.def("create_refresh_command", &create_refresh_command, nb::arg("motor"));
+    m.def("create_enable_command", &create_enable_command, nb::arg("motor"));
+    m.def("create_disable_command", &create_disable_command, nb::arg("motor"));
+    m.def("create_set_zero_command", &create_set_zero_command, nb::arg("motor"));
+    m.def("create_mit_control_command", &create_mit_control_command, nb::arg("motor"),
+          nb::arg("mit_param"));
+    m.def("create_query_param_command", &create_query_param_command, nb::arg("motor"),
+          nb::arg("rid"));
 
+    // MotorControl class
     nb::class_<CanPacketDecoder>(m, "CanPacketDecoder")
         .def_static("parse_motor_state_data", &CanPacketDecoder::parse_motor_state_data,
                     nb::arg("motor"), nb::arg("data"))

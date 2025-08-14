@@ -22,28 +22,27 @@ namespace openarm::damiao_motor {
 
 DMDeviceCollection::DMDeviceCollection(canbus::CANSocket& can_socket)
     : can_socket_(can_socket),
-      can_packet_encoder_(std::make_unique<CanPacketEncoder>()),
       can_packet_decoder_(std::make_unique<CanPacketDecoder>()),
       device_collection_(std::make_unique<canbus::CANDeviceCollection>(can_socket_)) {}
 
 void DMDeviceCollection::enable_all() {
     for (auto dm_device : get_dm_devices()) {
         auto& motor = dm_device->get_motor();
-        CANPacket enable_packet = CanPacketEncoder::create_enable_command(motor);
+        CANPacket enable_packet = create_enable_command(motor);
         send_command_to_device(dm_device, enable_packet);
     }
 }
 
 void DMDeviceCollection::disable_all() {
     for (auto dm_device : get_dm_devices()) {
-        CANPacket disable_packet = CanPacketEncoder::create_disable_command(dm_device->get_motor());
+        CANPacket disable_packet = create_disable_command(dm_device->get_motor());
         send_command_to_device(dm_device, disable_packet);
     }
 }
 
 void DMDeviceCollection::set_zero_all() {
     for (auto dm_device : get_dm_devices()) {
-        CANPacket zero_packet = CanPacketEncoder::create_set_zero_command(dm_device->get_motor());
+        CANPacket zero_packet = create_set_zero_command(dm_device->get_motor());
         send_command_to_device(dm_device, zero_packet);
     }
 }
@@ -51,14 +50,14 @@ void DMDeviceCollection::set_zero_all() {
 void DMDeviceCollection::refresh_one(int i) {
     auto dm_device = get_dm_devices()[i];
     auto& motor = dm_device->get_motor();
-    CANPacket refresh_packet = CanPacketEncoder::create_refresh_command(motor);
+    CANPacket refresh_packet = create_refresh_command(motor);
     send_command_to_device(dm_device, refresh_packet);
 }
 
 void DMDeviceCollection::refresh_all() {
     for (auto dm_device : get_dm_devices()) {
         auto& motor = dm_device->get_motor();
-        CANPacket refresh_packet = CanPacketEncoder::create_refresh_command(motor);
+        CANPacket refresh_packet = create_refresh_command(motor);
         send_command_to_device(dm_device, refresh_packet);
     }
 }
@@ -70,15 +69,13 @@ void DMDeviceCollection::set_callback_mode_all(CallbackMode callback_mode) {
 }
 
 void DMDeviceCollection::query_param_one(int i, int RID) {
-    CANPacket param_query =
-        CanPacketEncoder::create_query_param_command(get_dm_devices()[i]->get_motor(), RID);
+    CANPacket param_query = create_query_param_command(get_dm_devices()[i]->get_motor(), RID);
     send_command_to_device(get_dm_devices()[i], param_query);
 }
 
 void DMDeviceCollection::query_param_all(int RID) {
     for (auto dm_device : get_dm_devices()) {
-        CANPacket param_query =
-            CanPacketEncoder::create_query_param_command(dm_device->get_motor(), RID);
+        CANPacket param_query = create_query_param_command(dm_device->get_motor(), RID);
         send_command_to_device(dm_device, param_query);
     }
 }
@@ -95,8 +92,7 @@ void DMDeviceCollection::send_command_to_device(std::shared_ptr<DMCANDevice> dm_
 }
 
 void DMDeviceCollection::mit_control_one(int i, const MITParam& mit_param) {
-    CANPacket mit_cmd =
-        CanPacketEncoder::create_mit_control_command(get_dm_devices()[i]->get_motor(), mit_param);
+    CANPacket mit_cmd = create_mit_control_command(get_dm_devices()[i]->get_motor(), mit_param);
     send_command_to_device(get_dm_devices()[i], mit_cmd);
 }
 
