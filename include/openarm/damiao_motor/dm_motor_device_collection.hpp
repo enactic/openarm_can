@@ -29,12 +29,16 @@ public:
     DMDeviceCollection(canbus::CANSocket& can_socket);
     virtual ~DMDeviceCollection() = default;
 
+    
     // Common motor operations
     void enable_all();
     void disable_all();
-    void set_zero_all();
     void set_callback_mode_all(CallbackMode callback_mode);
 
+    // Flash new zero position
+    void set_zero(int i);
+    void set_zero_all();
+    
     // Refresh operations (for individual motors)
     void refresh_one(int i);
     void refresh_all();
@@ -49,6 +53,7 @@ public:
 
     // Device collection access
     std::vector<Motor> get_motors() const;
+    Motor get_motor(int i) const;
     canbus::CANDeviceCollection& get_device_collection() { return *device_collection_; }
 
 protected:

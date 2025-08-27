@@ -66,6 +66,12 @@ void OpenArm::refresh_all() {
     }
 }
 
+void OpenArm::refresh_one(int i) {
+    for (damiao_motor::DMDeviceCollection* device_collection : sub_dm_device_collections_) {
+        device_collection->refresh_one(i);
+    }
+}
+
 void OpenArm::disable_all() {
     for (damiao_motor::DMDeviceCollection* device_collection : sub_dm_device_collections_) {
         device_collection->disable_all();
