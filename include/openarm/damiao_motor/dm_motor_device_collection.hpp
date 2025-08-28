@@ -29,7 +29,6 @@ public:
     DMDeviceCollection(canbus::CANSocket& can_socket);
     virtual ~DMDeviceCollection() = default;
 
-    
     // Common motor operations
     void enable_all();
     void disable_all();
@@ -38,7 +37,7 @@ public:
     // Flash new zero position
     void set_zero(int i);
     void set_zero_all();
-    
+
     // Refresh operations (for individual motors)
     void refresh_one(int i);
     void refresh_all();
