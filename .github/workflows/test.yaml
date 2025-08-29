@@ -87,10 +87,10 @@ jobs:
       - name: "Python: Build: pkg-config"
         run: |
           python3 -m pip install \
-            -Csetup-args=--build.pkg-config-path=$PWD/install/lib/pkgconfig \
+            -Csetup-args=--pkg-config-path=$PWD/install/lib/pkgconfig \
             ./python
       - name: "Python: Build: CMake"
         run: |
           python3 -m pip install \
-            -Csetup-args=--build.cmake-prefix-path=$PWD/install \
+            -Csetup-args=--cmake-prefix-path=$PWD/install \
             ./python
