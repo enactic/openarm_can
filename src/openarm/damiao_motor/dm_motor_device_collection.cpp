@@ -41,6 +41,13 @@ void DMDeviceCollection::disable_all() {
     }
 }
 
+void DMDeviceCollection::set_zero(int i) {
+    auto dm_device = get_dm_devices()[i];
+    if (!dm_device) return;
+    CANPacket zero_packet = CanPacketEncoder::create_set_zero_command(dm_device->get_motor());
+    send_command_to_device(dm_device, zero_packet);
+}
+
 void DMDeviceCollection::set_zero_all() {
     for (auto dm_device : get_dm_devices()) {
         CANPacket zero_packet = CanPacketEncoder::create_set_zero_command(dm_device->get_motor());
@@ -112,6 +119,14 @@ std::vector<Motor> DMDeviceCollection::get_motors() const {
         motors.push_back(dm_device->get_motor());
     }
     return motors;
+}
+
+Motor DMDeviceCollection::get_motor(int i) const {
+    auto dm_device = get_dm_devices()[i];
+    if (dm_device) {
+        return dm_device->get_motor();
+    }
+    throw std::out_of_range("Invalid motor index");
 }
 
 std::vector<std::shared_ptr<DMCANDevice>> DMDeviceCollection::get_dm_devices() const {

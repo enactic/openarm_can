@@ -23,9 +23,9 @@ namespace openarm::can::socket {
 ArmComponent::ArmComponent(canbus::CANSocket& can_socket)
     : damiao_motor::DMDeviceCollection(can_socket) {}
 
-void ArmComponent::init_motor_devices(std::vector<damiao_motor::MotorType> motor_types,
-                                      std::vector<canid_t> send_can_ids,
-                                      std::vector<canid_t> recv_can_ids, bool use_fd) {
+void ArmComponent::init_motor_devices(const std::vector<damiao_motor::MotorType>& motor_types,
+                                      const std::vector<canid_t>& send_can_ids,
+                                      const std::vector<canid_t>& recv_can_ids, bool use_fd) {
     // Reserve space to prevent vector reallocation that would invalidate motor
     // references
     motors_.reserve(motor_types.size());

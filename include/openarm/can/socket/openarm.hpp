@@ -48,6 +48,8 @@ public:
     void disable_all();
     void set_zero_all();
     void refresh_all();
+
+    void refresh_one(int i);
     // The timeout for reading from socket, set to timeout_us.
     // Tuning this value may improve the performance but should be done with caution.
     void recv_all(int timeout_us = 500);
