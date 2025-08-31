@@ -43,7 +43,6 @@ void DMDeviceCollection::disable_all() {
 
 void DMDeviceCollection::set_zero(int i) {
     auto dm_device = get_dm_devices().at(i);
-    if (!dm_device) return;
     auto zero_packet = CanPacketEncoder::create_set_zero_command(dm_device->get_motor());
     send_command_to_device(dm_device, zero_packet);
 }
