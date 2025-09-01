@@ -30,7 +30,7 @@ include(GNUInstallDirs)
 
 # Create the main library
 add_library(
-  openarm_can
+  openarm_can SHARED
   src/openarm/can/socket/arm_component.cpp
   src/openarm/can/socket/gripper_component.cpp
   src/openarm/can/socket/openarm.cpp
@@ -40,7 +40,11 @@ add_library(
   src/openarm/damiao_motor/dm_motor_control.cpp
   src/openarm/damiao_motor/dm_motor_device.cpp
   src/openarm/damiao_motor/dm_motor_device_collection.cpp)
-set_target_properties(openarm_can PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(
+  openarm_can
+  PROPERTIES POSITION_INDEPENDENT_CODE ON
+             VERSION ${PROJECT_VERSION}
+             SOVERSION ${PROJECT_VERSION_MAJOR})
 set(USE_FILE_SET_HEADERS FALSE)
 # Meson doesn't support FILE_SET TYPE HEADERS...
 # if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23)
