@@ -28,6 +28,9 @@ public:
     OpenArm(const std::string& can_interface, bool enable_fd = false);
     ~OpenArm() = default;
 
+    std::string can_interface() const noexcept {return can_interface_;}
+    bool can_fd_enabled() const noexcept {return enable_fd_;}
+
     // Component initialization
     void init_arm_motors(const std::vector<damiao_motor::MotorType>& motor_types,
                          const std::vector<uint32_t>& send_can_ids,
