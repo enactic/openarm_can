@@ -55,7 +55,7 @@ void DMDeviceCollection::set_zero_all() {
 }
 
 void DMDeviceCollection::refresh_one(int i) {
-    auto dm_device = get_dm_devices()[i];
+    auto dm_device = get_dm_devices().at(i);
     auto& motor = dm_device->get_motor();
     CANPacket refresh_packet = CanPacketEncoder::create_refresh_command(motor);
     send_command_to_device(dm_device, refresh_packet);
