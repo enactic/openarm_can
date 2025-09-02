@@ -17,18 +17,18 @@
 set -eu
 
 # CAN Interface Script
-# Usage: scripts/set_zero.sh <CAN_IF> [CAN_ID] [-all]
+# Usage: setup/set_zero.sh <CAN_IF> [CAN_ID] [--all]
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 <CAN_IF> [CAN_ID] [-all]"
+    echo "Usage: $0 <CAN_IF> [CAN_ID] [--all]"
     echo "  CAN_IF: CAN interface name (e.g., can0)"
-    echo "  CAN_ID: CAN ID in hex format (e.g., 00x) - not needed with -all"
-    echo "  -all: Send to all IDs from 001 to 008"
+    echo "  CAN_ID: CAN ID in hex format (e.g., 00x) - not needed with --all"
+    echo "  --all: Send to all IDs from 001 to 008"
     echo ""
     echo "Examples:"
     echo "  $0 can0 001"
-    echo "  $0 can0 -all"
+    echo "  $0 can0 --all"
     exit 1
 }
 
@@ -111,14 +111,11 @@ main() {
     local CAN_ID=""
     local all_flag=false
 
-    # Check for -all flag
-    if [ "$2" = "-all" ]; then
+    # Check for --all flag
+    if [ "$2" = "--all" ]; then
         all_flag=true
     else
         CAN_ID=$2
-        if [ "$3" = "-all" ]; then
-            all_flag=true
-        fi
     fi
 
     # Validate CAN_IF
@@ -126,7 +123,7 @@ main() {
         usage
     fi
 
-    # Validate CAN_ID only if -all flag is not set
+    # Validate CAN_ID only if --all flag is not set
     if [ "$all_flag" = false ] && [ -z "$CAN_ID" ]; then
         echo "Error: CAN_ID is required when -all flag is not used"
         usage
