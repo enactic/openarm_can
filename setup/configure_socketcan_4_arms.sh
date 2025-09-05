@@ -41,7 +41,6 @@ usage() {
     echo "  $0 can0 -fd -d 8000000     # CAN FD with 8Mbps data rate"
 }
 
-
 # Parse options
 while [[ $# -gt 0 ]]; do
     case $1 in
