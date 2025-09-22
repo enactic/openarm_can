@@ -1,0 +1,3 @@
+setup/configure_socketcan.sh usr/share/openarm-can
+setup/set_zero.sh usr/share/openarm-can
+setup/change_baudrate.py usr/share/openarm-can

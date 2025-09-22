@@ -1,0 +1,6 @@
+Bug-Database: https://github.com/enactic/openarm-can/issues
+Bug-Submit: https://github.com/enactic/openarm-can/issues/new
+Changelog: https://github.com/enactic/openarm-can/blob/main/packages/debian/changelog
+Documentation: https://docs.openarm.dev/software/can/
+Repository-Browse: https://github.com/enactic/openarm-can
+Repository: https://github.com/enactic/openarm-can.git

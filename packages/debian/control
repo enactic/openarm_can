@@ -1,0 +1,53 @@
+Source: openarm-can
+Section: libs
+Priority: optional
+Maintainer: Enactic, Inc. <openarm@enactic.ai>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+ cmake,
+Standards-Version: 4.6.0
+Homepage: https://github.com/enactic/openarm_can
+Vcs-Browser: https://github.com/enactic/openarm_can
+Vcs-Git: https://github.com/enactic/openarm_can.git
+
+Package: libopenarm-can-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends:
+ libopenarm-can (= ${binary:Version}),
+ ${misc:Depends},
+Description: Development files to use OpenArm CAN as a library
+ OpenArm CAN Library is a communication bridge between high-level
+ OpenArm control applications and low-level motor protocols.
+ It abstracts CAN bus communication via SocketCAN interface.
+ .
+ This package provides header files to use OpenArm CAN as a library.
+
+Package: libopenarm-can
+Architecture: any
+Multi-Arch: same
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+Description: CAN communication library for OpenArm robotic hardware
+ OpenArm CAN Library is a communication bridge between high-level
+ OpenArm control applications and low-level motor protocols.
+ It abstracts CAN bus communication via SocketCAN interface.
+
+Package: openarm-can-utils
+Architecture: any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ python3,
+ iproute2,
+ can-utils,
+Description: Utility tools for OpenArm CAN configuration
+ OpenArm CAN Library is a communication bridge between high-level
+ OpenArm control applications and low-level motor protocols.
+ It abstracts CAN bus communication via Linux SocketCAN interface.
+ .
+ This package provides utility scripts for CAN interface setup,
+ motor diagnostics, and configuration tools.
