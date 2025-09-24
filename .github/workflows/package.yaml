@@ -40,7 +40,7 @@ jobs:
       ${{ (contains(matrix.id, 'arm64') ||
            contains(matrix.id, 'aarch64')) && 'ubuntu-24.04-arm' ||
                                               'ubuntu-latest' }}
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
         with:
@@ -52,9 +52,13 @@ jobs:
       - name: Prepare environment variables
         run: |
           id=${{ matrix.id }}
+          # ubuntu-noble-amd64 -> ubuntu-noble
           os_version=${id%-*}
+          # ubuntu-noble -> ubuntu
           os=${os_version%-*}
+          # ubuntu-noble -> noble
           version=${os_version##*-}
+          # ubuntu-noble-amd64 -> amd64
           architecture=${id##*-}
 
           if [ "${os}" = "debian" ] || [ "${os}" = "ubuntu" ]; then
@@ -91,9 +95,7 @@ jobs:
             devscripts \
             ruby
       - name: Update version
-        if: |
-          github.ref_type != 'tag' &&
-          !startsWith(github.ref_name, 'maintenance/')
+        if: github.ref_type != 'tag'
         run: |
           cd packages
           rake version:update RELEASE_DATE=$(date +%Y-%m-%d)

@@ -22,13 +22,15 @@ require "#{apache_arrow_repository}/dev/tasks/linux-packages/package-task"
 
 class OpenArmCanPackageTask < PackageTask
   def initialize
-    super("openarm-can", repository_version, latest_commit_time)
+    super("openarm-can", detect_version, latest_commit_time)
   end
 
   private
-
-  def repository_version
-    "1.0.0"
+  def detect_version
+    cmakelists = File.join(__dir__,
+                           "..",
+                           "CMakeLists.txt")
+    version = File.read(cmakelists).match(/project\(.+ VERSION (.+?)\)/)[1]
   end
 
   def latest_commit_time
