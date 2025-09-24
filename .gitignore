@@ -14,3 +14,14 @@
 
 /.vscode
 /build
+/packages/apt/build.sh
+/packages/apt/build/
+/packages/apt/env.sh
+/packages/apt/repositories/
+/packages/apt/tmp/
+/packages/openarm-can-*.tar.gz
+/packages/yum/build.sh
+/packages/yum/build/
+/packages/yum/env.sh
+/packages/yum/repositories/
+/packages/yum/tmp/
