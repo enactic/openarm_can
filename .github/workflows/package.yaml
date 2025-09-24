@@ -1,0 +1,121 @@
+# Copyright 2025 Enactic, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Package
+on:
+  push:
+    branches:
+      - '**'
+      - '!dependabot/**'
+    tags:
+      - '**'
+concurrency:
+  group: ${{ github.head_ref || github.sha }}-${{ github.workflow }}
+  cancel-in-progress: true  
+jobs:
+  build:
+    name: Build
+    strategy:
+      fail-fast: false
+      matrix:
+        id:
+          - ubuntu-noble-amd64
+    env:
+      APACHE_ARROW_REPOSITORY: ${{ github.workspace }}/apache-arrow
+    # condition && true-case || false-case
+    # ==
+    # condition ? true-case : false-case
+    runs-on: >-
+      ${{ (contains(matrix.id, 'arm64') ||
+           contains(matrix.id, 'aarch64')) && 'ubuntu-24.04-arm' ||
+                                              'ubuntu-latest' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: actions/checkout@v5
+        with:
+          path: apache-arrow
+          repository: apache/arrow
+      - name: Prepare environment variables
+        run: |
+          id=${{ matrix.id }}
+          os_version=${id%-*}
+          os=${os_version%-*}
+          version=${os_version##*-}
+          architecture=${id##*-}
+
+          if [ "${os}" = "debian" ] || [ "${os}" = "ubuntu" ]; then
+            TASK_NAMESPACE=apt
+            if [ "${architecture}" = "amd64" ]; then
+              TARGET="${os_version}"
+              TEST_DOCKER_IMAGE="${os}:${version}"
+            else
+              TARGET="${id}"
+              TEST_DOCKER_IMAGE="arm64v8/${os}:${version}"
+            fi
+          else
+            TASK_NAMESPACE=yum
+            # amazon-linux -> amazonlinux
+            docker_os=${os/-/}
+            if [ "${architecture}" = "x86_64" ]; then
+              TARGET="${os_version}"
+              TEST_DOCKER_IMAGE="${docker_os}:${version}"
+            else
+              TARGET="${id}"
+              TEST_DOCKER_IMAGE="arm64v8/${docker_os}:${version}"
+            fi
+          fi
+          echo "ARCHITECTURE=${architecture}" >> ${GITHUB_ENV}
+          echo "TASK_NAMESPACE=${TASK_NAMESPACE}" >> ${GITHUB_ENV}
+          echo "TARGET=${TARGET}" >> ${GITHUB_ENV}
+          echo "APT_TARGETS=${TARGET}" >> ${GITHUB_ENV}
+          echo "YUM_TARGETS=${TARGET}" >> ${GITHUB_ENV}
+          echo "TEST_DOCKER_IMAGE=${TEST_DOCKER_IMAGE}" >> ${GITHUB_ENV}
+      - name: Install dependencies
+        run: |
+          sudo apt update -o="APT::Acquire::Retries=3"
+          sudo apt install -y -V -o="APT::Acquire::Retries=3" \
+            devscripts \
+            ruby
+      - name: Update version
+        if: |
+          github.ref_type != 'tag' &&
+          !startsWith(github.ref_name, 'maintenance/')
+        run: |
+          cd packages
+          rake version:update RELEASE_DATE=$(date +%Y-%m-%d)
+      - name: Login to GitHub Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build with docker
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages
+          rake docker:pull || :
+          rake ${TASK_NAMESPACE}:build BUILD_DIR=build
+          if [ "${TASK_NAMESPACE}" = "yum" ] && [ "${ARCHITECTURE}" != "x86_64" ]; then
+            # Remove SRPMs from non x86_64 artifacts
+            rm -rf ${TASK_NAMESPACE}/repositories/*/*/source
+          fi
+      - name: Push the built Docker image
+        continue-on-error: true
+        run: |
+          cd packages
+          rake docker:push
