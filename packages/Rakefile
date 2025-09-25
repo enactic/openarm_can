@@ -30,7 +30,7 @@ class OpenArmCanPackageTask < PackageTask
     cmakelists = File.join(__dir__,
                            "..",
                            "CMakeLists.txt")
-    version = File.read(cmakelists).match(/project\(.+ VERSION (.+?)\)/)[1]
+    File.read(cmakelists)[/^project\(.+ VERSION (.+?)\)/, 1]
   end
 
   def latest_commit_time
