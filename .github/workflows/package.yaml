@@ -24,8 +24,32 @@ concurrency:
   group: ${{ github.head_ref || github.sha }}-${{ github.workflow }}
   cancel-in-progress: true  
 jobs:
+  source:
+    name: Source
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Prepare version
+        run: |
+          VERSION=$(grep '^project(' CMakeLists.txt | \
+                    grep -E -o '[0-9]+\.[0-9]+\.[0-9]+')
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+      - name: Create source archive
+        run: |
+          git archive HEAD \
+            --prefix openarm-can-${VERSION}/ \
+            --output openarm-can-${VERSION}.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source
+          path: |
+            openarm-can-*.tar.gz
   build:
     name: Build
+    needs: source
     strategy:
       fail-fast: false
       matrix:
@@ -94,6 +118,9 @@ jobs:
           sudo apt install -y -V -o="APT::Acquire::Retries=3" \
             devscripts \
             ruby
+      - uses: actions/download-artifact@v5
+        with:
+          name: source
       - name: Update version
         if: github.ref_type != 'tag'
         run: |
