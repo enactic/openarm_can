@@ -34,7 +34,7 @@ jobs:
           submodules: recursive
       - name: Prepare version
         run: |
-          VERSION=$(grep '^project(' CMakeLists.txt | \
+          VERSION=$(grep '^project(' CMakeLists.txt |
                     grep -E -o '[0-9]+\.[0-9]+\.[0-9]+')
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
       - name: Create source archive
@@ -88,10 +88,10 @@ jobs:
           if [ "${os}" = "debian" ] || [ "${os}" = "ubuntu" ]; then
             TASK_NAMESPACE=apt
             if [ "${architecture}" = "amd64" ]; then
-              TARGET="${os_version}"
+              echo "APT_TARGETS=${os_version}" >> "${GITHUB_ENV}"
               TEST_DOCKER_IMAGE="${os}:${version}"
             else
-              TARGET="${id}"
+              echo "APT_TARGETS=${id}" >> "${GITHUB_ENV}"
               TEST_DOCKER_IMAGE="arm64v8/${os}:${version}"
             fi
           else
@@ -99,18 +99,15 @@ jobs:
             # amazon-linux -> amazonlinux
             docker_os=${os/-/}
             if [ "${architecture}" = "x86_64" ]; then
-              TARGET="${os_version}"
+              echo "YUM_TARGETS=${os_version}" >> "${GITHUB_ENV}"
               TEST_DOCKER_IMAGE="${docker_os}:${version}"
             else
-              TARGET="${id}"
+              echo "YUM_TARGETS=${id}" >> "${GITHUB_ENV}"
               TEST_DOCKER_IMAGE="arm64v8/${docker_os}:${version}"
             fi
           fi
           echo "ARCHITECTURE=${architecture}" >> ${GITHUB_ENV}
           echo "TASK_NAMESPACE=${TASK_NAMESPACE}" >> ${GITHUB_ENV}
-          echo "TARGET=${TARGET}" >> ${GITHUB_ENV}
-          echo "APT_TARGETS=${TARGET}" >> ${GITHUB_ENV}
-          echo "YUM_TARGETS=${TARGET}" >> ${GITHUB_ENV}
           echo "TEST_DOCKER_IMAGE=${TEST_DOCKER_IMAGE}" >> ${GITHUB_ENV}
       - name: Install dependencies
         run: |
