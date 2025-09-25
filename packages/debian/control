@@ -17,7 +17,7 @@ Architecture: any
 Multi-Arch: same
 Depends:
  ${misc:Depends},
- libopenarm-can (= ${binary:Version}),
+ libopenarm-can1 (= ${binary:Version}),
 Description: Development files to use OpenArm CAN as a library
  OpenArm CAN Library is a communication bridge between high-level
  OpenArm control applications and low-level motor protocols.
