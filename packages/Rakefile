@@ -22,7 +22,7 @@ require "#{apache_arrow_repository}/dev/tasks/linux-packages/package-task"
 
 class OpenArmCanPackageTask < PackageTask
   def initialize
-    super("openarm-can", detect_version, latest_commit_time)
+    super("openarm-can", detect_version, detect_release_time)
   end
 
   private
@@ -33,8 +33,13 @@ class OpenArmCanPackageTask < PackageTask
     File.read(cmakelists)[/^project\(.+ VERSION (.+?)\)/, 1]
   end
 
-  def latest_commit_time
-    Time.iso8601(`git log -n 1 --format=%aI`.chomp).utc
+  def detect_release_time
+    release_time_env = ENV["RELEASE_TIME"]
+    if release_time_env
+      Time.parse(release_time_env).utc
+    else
+      Time.now.utc
+    end
   end
 
   def enable_yum?
