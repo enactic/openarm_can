@@ -52,10 +52,19 @@ class OpenArmCANPackageTask < PackageTask
         ln_s("../#{@archive_name}",
              @archive_name)
       else
-        download("https://github.com/enactic/openarm_can/releases/download/#{@version}/#{@archive_name}",
+        download("https://github.com/#{github_repository}/"
+                 "releases/download/#{@version}/#{@archive_name}",
                  @archive_name)
       end
     end
+  end
+
+  def github_repository
+    "enactic/openarm_can"
+  end
+
+  def docker_image(os, architecture)
+    "ghcr.io/#{github_repository.gsub(/"_"/, "-")}-package:#{super}"
   end
 end
 
