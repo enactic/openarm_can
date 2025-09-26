@@ -78,7 +78,7 @@ jobs:
       - name: Install
         run: |
           ninja -C ../build install
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3
       - name: "Python: Install dependencies"
