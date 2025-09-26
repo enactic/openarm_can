@@ -12,7 +12,19 @@ Please share it to [GitHub Issues](https://github.com/enactic/openarm_can/issues
 
 Please open a pull request with it!
 
-Please make sure to review [our license](https://github.com/enactic/openarm_can/blob/main/LICENSE.txt) before you open a pull request.
+Before you open a pull request:
+
+* Please make sure to review [our license](https://github.com/enactic/openarm_can/blob/main/LICENSE.txt).
+* Please run the checks of [`pre-commit`](https://pre-commit.com/).
+  * Install and set hooks. This will make the checks run automatically when you commit.
+    ```console
+    $ pip install pre-commit
+    $ pre-commit install
+    ```
+  * Also, you can run the checks manually.
+    ```console
+    $ pre-commit run --all-files
+    ```
 
 ## Others?
 
