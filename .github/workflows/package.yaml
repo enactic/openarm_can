@@ -154,4 +154,4 @@ jobs:
             --rm \
             --volume ${PWD}:/host:ro \
             ${TEST_DOCKER_IMAGE} \
-            /host/packages/${TASK_NAMESPACE}/test.bash
+            /host/packages/${TASK_NAMESPACE}/test.sh
