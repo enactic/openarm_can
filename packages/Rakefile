@@ -51,7 +51,7 @@ class OpenArmCANPackageTask < PackageTask
         ln_s("../#{@archive_name}",
              @archive_name)
       else
-        download("https://github.com/#{github_repository}/"
+        download("https://github.com/#{github_repository}/" +
                  "releases/download/#{@version}/#{@archive_name}",
                  @archive_name)
       end
