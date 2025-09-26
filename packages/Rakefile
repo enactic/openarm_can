@@ -20,6 +20,8 @@ if apache_arrow_repository.nil?
 end
 require "#{apache_arrow_repository}/dev/tasks/linux-packages/package-task"
 
+require_relative "../helper"
+
 class OpenArmCANPackageTask < PackageTask
   def initialize
     super("openarm-can", detect_version, detect_release_time)
@@ -27,10 +29,7 @@ class OpenArmCANPackageTask < PackageTask
 
   private
   def detect_version
-    cmakelists = File.join(__dir__,
-                           "..",
-                           "CMakeLists.txt")
-    File.read(cmakelists)[/^project\(.+ VERSION (.+?)\)/, 1]
+    Helper.detect_version
   end
 
   def detect_release_time
