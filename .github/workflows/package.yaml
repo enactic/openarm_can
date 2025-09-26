@@ -146,3 +146,21 @@ jobs:
         run: |
           cd packages
           rake docker:push
+
+      # Test
+      - name: Test
+        run: |
+          case "${TEST_DOCKER_IMAGE}" in
+            arm64v8/*)
+              platform=linux/arm64
+              ;;
+            *)
+              platform=linux/amd64
+              ;;
+          esac
+          docker run \
+            --platform ${platform} \
+            --rm \
+            --volume ${PWD}:/host:ro \
+            ${TEST_DOCKER_IMAGE} \
+            /host/packages/${TASK_NAMESPACE}/test.bash
