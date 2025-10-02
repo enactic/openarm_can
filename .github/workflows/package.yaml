@@ -47,6 +47,7 @@ jobs:
       matrix:
         id:
           - ubuntu-noble-amd64
+          - ubuntu-noble-arm64
     env:
       APACHE_ARROW_REPOSITORY: ${{ github.workspace }}/apache-arrow
     # condition && true-case || false-case
