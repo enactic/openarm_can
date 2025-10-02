@@ -63,7 +63,7 @@ class OpenArmCANPackageTask < PackageTask
   end
 
   def docker_image(os, architecture)
-    "ghcr.io/#{github_repository.gsub(/"_"/, "-")}-package:#{super}"
+    "ghcr.io/#{github_repository.gsub("_", "-")}-package:#{super}"
   end
 end
 
