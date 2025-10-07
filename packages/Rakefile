@@ -59,7 +59,7 @@ class OpenArmCANPackageTask < PackageTask
   end
 
   def github_repository
-    "enactic/openarm_can"
+    ENV["GITHUB_REPOSITORY"] || "enactic/openarm_can"
   end
 
   def docker_image(os, architecture)
