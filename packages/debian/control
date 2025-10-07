@@ -20,6 +20,7 @@ Rules-Requires-Root: no
 Build-Depends:
  cmake,
  debhelper-compat (= 13),
+ ninja-build,
 Standards-Version: 4.6.0
 Homepage: https://docs.openarm.dev/
 Vcs-Browser: https://github.com/enactic/openarm_can
