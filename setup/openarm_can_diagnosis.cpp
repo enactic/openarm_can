@@ -12,23 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#include <net/if.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <openarm/can/socket/openarm.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
 #include <thread>
-#include <cmath>
-#include <string.h>
-#include <time.h>
 #include <vector>
+
+// Return true if the netdev is configured for CAN-FD (MTU == CANFD_MTU), false if Classical (MTU ==
+// CAN_MTU)
+static bool iface_is_canfd(const char* ifname) {
+    int s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    if (s < 0) {
+        perror("socket");
+        return false;  // fall back
+    }
+    struct ifreq ifr{};
+    std::strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+    if (ioctl(s, SIOCGIFMTU, &ifr) < 0) {
+        perror("ioctl(SIOCGIFMTU)");
+        close(s);
+        return false;
+    }
+    close(s);
+    if (ifr.ifr_mtu == CANFD_MTU) return true;
+    if (ifr.ifr_mtu == CAN_MTU) return false;
+    std::cerr << "Warning: unexpected MTU " << ifr.ifr_mtu << " on " << ifname << "\n";
+    return false;
+}
 
 static const char* br_label(int br_code) {
     // simple mapping example
     switch (br_code) {
-        case 9: return "5 Mbps";
-        case 4: return "1 Mbps";
-        default: return "(unknown)";
+        case 9:
+            return "5 Mbps";
+        case 4:
+            return "1 Mbps";
+        default:
+            return "(unknown)";
     }
 }
 
@@ -44,18 +75,28 @@ int main(int argc, char* argv[]) {
     bool use_fd = false;
     if (argc >= 3) {
         std::string arg2 = argv[2];
-        if (arg2 == "-fd") use_fd = true;
+        if (arg2 == "-fd")
+            use_fd = true;
         else {
             std::cerr << "Error: Unknown argument '" << arg2 << "'. Use -fd to enable CAN-FD.\n";
             return 1;
         }
     }
 
+    // Detect actual iface mode via MTU
+    bool iface_fd = iface_is_canfd(can_if.c_str());
+
     std::cout << "CAN interface: " << can_if << std::endl;
-    std::cout << "CAN-FD mode: " << (use_fd ? "enabled" : "disabled") << std::endl;
+    std::cout << "Requested mode: " << (use_fd ? "CAN FD" : "Classical CAN") << std::endl;
+    std::cout << "Interface mode: " << (iface_fd ? "CAN FD" : "Classical CAN") << std::endl;
+
+    if (use_fd != iface_fd) {
+        std::cout << "WARNING: requested mode and interface mode differ. "
+                     "Check `ip link` configuration or run with/without -fd accordingly.\n";
+    }
 
     std::cout << "Initializing OpenArm CAN..." << std::endl;
-    // use the actual args
+    // Use the actual args
     openarm::can::socket::OpenArm openarm(can_if, use_fd);
 
     // Initialize arm motors
@@ -94,11 +135,11 @@ int main(int argc, char* argv[]) {
     for (size_t i = 0; i < arm_motors.size(); ++i) {
         const auto& motor = arm_motors[i];
         double mst = motor.get_param((int)openarm::damiao_motor::RID::MST_ID);
-        double br  = motor.get_param((int)openarm::damiao_motor::RID::can_br);
+        double br = motor.get_param((int)openarm::damiao_motor::RID::can_br);
 
         if (mst < 0 || br < 0 || !std::isfinite(mst) || !std::isfinite(br)) {
-            std::cout << "[arm#" << i << "] id=0x" << std::hex << recv_can_ids[i]
-                      << std::dec << " -> NG (no response)\n";
+            std::cout << "[arm#" << i << "] id=0x" << std::hex << recv_can_ids[i] << std::dec
+                      << " -> NG (no response)\n";
             missing_ids.push_back(recv_can_ids[i]);
         } else {
             std::cout << "[arm#" << i << "] queried_mst_id: " << (uint32_t)mst
@@ -109,7 +150,7 @@ int main(int argc, char* argv[]) {
     for (size_t i = 0; i < gripper_motors.size(); ++i) {
         const auto& gr = gripper_motors[i];
         double mst = gr.get_param((int)openarm::damiao_motor::RID::MST_ID);
-        double br  = gr.get_param((int)openarm::damiao_motor::RID::can_br);
+        double br = gr.get_param((int)openarm::damiao_motor::RID::can_br);
 
         if (mst < 0 || br < 0 || !std::isfinite(mst) || !std::isfinite(br)) {
             std::cout << "[gripper] id=0x18 -> NG (no response)\n";
@@ -125,12 +166,11 @@ int main(int argc, char* argv[]) {
         for (auto id : missing_ids) std::cout << " 0x" << std::hex << id;
         std::cout << std::dec << "\n";
 
-        // show troubleshooting hints
         std::cout << "Hints:\n";
         std::cout << "  • Motor internal CAN bitrate may be different from host setting\n";
-        std::cout << "  • USB2CAN adapter mode/config may be wrong (FD vs Classical, bitrate profile)\n";
+        std::cout
+            << "  • USB2CAN adapter mode/config may be wrong (FD vs Classical, bitrate profile)\n";
         std::cout << "  • Wiring/power/termination/ID conflict may exist\n";
-        // return non-zero if you want to signal failure
         return 2;
     } else {
         std::cout << "OK: all motors responded\n";
