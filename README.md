@@ -10,33 +10,36 @@ This library is a part of [OpenArm](https://github.com/enactic/openarm/). See de
 
 - Linux with SocketCAN support
 - CAN interface hardware
-- CMake 3.22+
-- C++17 compiler
 
-### 1. Setup CAN Interface
+### 1. Install
+
+#### Ubuntu
+
+* 22.04 Jammy Jellyfish
+* 24.04 Noble Numbat
+
+```bash
+sudo apt install -y software-properties-common
+sudo add-apt-repository -y ppa:openarm/main
+sudo apt update
+sudo apt install -y \
+  libopenarm-can-dev \
+  openarm-can-utils
+```
+
+### 2. Setup CAN Interface
 
 Configure your CAN interface using the provided script:
 
 ```bash
 # CAN 2.0 (default)
-setup/configure_socketcan.sh can0
+/usr/libexec/openarm-can/configure_socketcan.sh can0
 
 # CAN-FD with 5Mbps data rate
-setup/configure_socketcan.sh can0 -fd
+/usr/libexec/openarm-can/configure_socketcan.sh can0 -fd
 ```
 
-### 2. C++ Library
-
-**Build & Install:**
-
-```bash
-cd openarm_can
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-sudo cmake --install build
-```
-
-**Usage:**
+### 3. C++ Library
 
 ```cpp
 #include <openarm/can/socket/openarm.hpp>
@@ -52,7 +55,9 @@ openarm.init_arm_motors(motor_types, send_can_ids, recv_can_ids);
 openarm.enable_all();
 ```
 
-### 3. Python (🚧 EXPERIMENTAL - TEMPORARY 🚧)
+See [dev/README.md](dev/README.md) for how to build.
+
+### 4. Python (🚧 EXPERIMENTAL - TEMPORARY 🚧)
 
 > ⚠️ **WARNING: UNSTABLE API** ⚠️
 > Python bindings are currently a direct low level **temporary port**, and will change **DRASTICALLY**.
@@ -60,7 +65,7 @@ openarm.enable_all();
 
 **Build & Install:**
 
-Please ensure that you build and install the C++ library first, as described above.
+Please ensure that you install the C++ library first, as `1. Install` or [dev/README.md](dev/README.md).
 ```bash
 cd python
 

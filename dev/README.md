@@ -1,5 +1,21 @@
 # Development
 
+## How to build C++ Library
+
+### Prerequisites
+
+- CMake 3.22+
+- C++17 compiler
+
+### Build
+
+```bash
+cd openarm_can
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+sudo cmake --install build
+```
+
 ## How to release
 
 ```bash
