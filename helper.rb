@@ -66,7 +66,7 @@ module Helper
       run = response["workflow_runs"].find do |workflow_run|
         workflow_run["path"] == ".github/workflows/#{workflow_file}"
       end
-      if run.nil?
+      if run
         run_id = run["id"]
         break
       end
