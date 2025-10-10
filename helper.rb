@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require "cgi/escape"
+require "json"
+require "open-uri"
+
 module Helper
   module_function
   def cmake_lists_txt
@@ -33,6 +37,41 @@ module Helper
       content.sub(/^(project\(.* VERSION )(?:.*?)(\))/) do
         "#{$1}#{new_version}#{$2}"
       end
+    end
+  end
+
+  def github_repository
+    ENV["GITHUB_REPOSITORY"] || "enactic/openarm_can"
+  end
+
+  def call_github_api(path, **parameters)
+    url = "https://api.github.com/#{path}"
+    unless parameters.empty?
+      encoded_parameters = parameters.collect do |key, value|
+        "#{CGI.escape(key.to_s)}=#{CGI.escape(value.to_s)}"
+      end
+      url += "?#{encoded_parameters.join("&")}"
+    end
+    URI.open(url) do |response|
+      JSON.parse(response.read)
+    end
+  end
+
+  def wait_github_actions_workflow(branch, workflow_file)
+    response = call_github_api("repos/#{github_repository}/actions/runs",
+                               branch: branch)
+    run = response["workflow_runs"].find do |workflow_run|
+      workflow_run["path"] == ".github/workflows/#{workflow_file}"
+    end
+
+    run_id = run["id"]
+    run_request_path = "repos/#{github_repository}/actions/runs/#{run_id}"
+    loop do
+      response = call_github_api(run_request_path)
+      status = response["status"]
+      return if response["status"] == "completed"
+      puts("Waiting...: #{status}")
+      sleep(60)
     end
   end
 end

@@ -75,4 +75,47 @@ namespace :release do
       sh("git", "push")
     end
   end
+
+  desc "Tag"
+  task :tag do
+    current_version = Helper.detect_version
+
+    changelog = "packages/debian/changelog"
+    case File.readlines(changelog)[0]
+    when /\((.+)-1\)/
+      package_version = $1
+      unless package_version == current_version
+        raise "package version isn't updated: #{package_version}"
+      end
+    else
+      raise "failed to detect deb package version: #{changelog}"
+    end
+
+    sh("git",
+       "tag",
+       current_version,
+       "-a",
+       "-m",
+       "OpenArm CAN #{current_version}!!!")
+    sh("git", "push", "origin", current_version)
+  end
+
+  desc "Release packages for Ubuntu"
+  task :ubuntu do
+    current_version = Helper.detect_version
+    Helper.wait_github_actions_workflow(current_version, "release.yaml")
+    exit
+    ruby("-C",
+         "packages",
+         "-S",
+         "rake",
+         "ubuntu")
+  end
 end
+
+desc "Release"
+task release: [
+  "release:version:update",
+  "release:tag",
+  "release:ubuntu",
+]

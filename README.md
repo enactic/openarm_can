@@ -87,6 +87,10 @@ arm.enable_all()
 - **C++**: `examples/demo.cpp` - Complete arm control demo
 - **Python**: `python/examples/example.py` - Basic Python usage
 
+## For developers
+
+See [dev/README.md](dev/README.md).
+
 ## Related links
 
 - 📚 Read the [documentation](https://docs.openarm.dev/software/can/)
