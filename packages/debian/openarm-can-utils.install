@@ -12,7 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-setup/configure_socketcan.sh usr/libexec/openarm-can
-setup/configure_socketcan_4_arms.sh usr/libexec/openarm-can
-setup/set_zero.sh usr/libexec/openarm-can
-setup/change_baudrate.py usr/libexec/openarm-can
+setup/*.sh usr/libexec/openarm-can
+setup/*.py usr/libexec/openarm-can
