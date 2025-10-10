@@ -125,6 +125,9 @@ target_link_libraries(motor-check openarm_can)
 add_executable(openarm-demo examples/demo.cpp)
 target_link_libraries(openarm-demo openarm_can)
 
+add_executable(openarm-diagnosis setup/openarm_can_diagnosis.cpp)
+target_link_libraries(openarm-diagnosis openarm_can)
+
 # Add tests
 if(BUILD_TESTING)
   # add_subdirectory(test)
