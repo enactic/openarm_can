@@ -45,6 +45,14 @@ class OpenArmCANPackageTask < PackageTask
     false
   end
 
+  def update_spec
+    update_content("fedora/openarm-can.spec") do |content|
+      content.gsub!(/^(Version:\s+)[\d.]+$/) do
+        "#{$1}#{@version}"
+      end
+    end
+  end
+
   def define_archive_task
     file @archive_name do
       if File.exist?("../#{@archive_name}")

@@ -14,8 +14,19 @@
 
 module Helper
   module_function
+  def cmake_lists_txt
+    File.join(__dir__, "CMakeLists.txt")
+  end
+
   def detect_version
-    cmakelists = File.join(__dir__, "CMakeLists.txt")
-    File.read(cmakelists)[/^project\(.+ VERSION (.+?)\)/, 1]
+    File.read(cmake_lists_txt)[/^project\(.+ VERSION (.+?)\)/, 1]
+  end
+
+  def update_cmake_lists_txt_version(new_version)
+    content = File.read(cmake_lists_txt)
+    content.gsub!(/^(project\(.* VERSION )(?:.*?)(\))/) do
+      "#{$1}#{new_version}#{$2}"
+    end
+    File.write(cmake_lists_txt, content)
   end
 end
