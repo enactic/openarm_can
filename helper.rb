@@ -22,11 +22,17 @@ module Helper
     File.read(cmake_lists_txt)[/^project\(.+ VERSION (.+?)\)/, 1]
   end
 
+  def update_content(path)
+    content = File.read(path)
+    content = yield(content)
+    File.write(path, content)
+  end
+
   def update_cmake_lists_txt_version(new_version)
-    content = File.read(cmake_lists_txt)
-    content.gsub!(/^(project\(.* VERSION )(?:.*?)(\))/) do
-      "#{$1}#{new_version}#{$2}"
+    update_content(cmake_lists_txt) do |content|
+      content.sub(/^(project\(.* VERSION )(?:.*?)(\))/) do
+        "#{$1}#{new_version}#{$2}"
+      end
     end
-    File.write(cmake_lists_txt, content)
   end
 end

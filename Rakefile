@@ -39,6 +39,21 @@ namespace :release do
       end
       new_release_date = ENV["NEW_RELEASE_DATE"] || Date.today.iso8601
       Helper.update_cmake_lists_txt_version(new_version)
+      Helper.update_content("python/meson.build") do |content|
+        content.sub(/^(    version: ').*?('.*)$/) do
+          "#{$1}#{new_version}#{$2}"
+        end
+      end
+      Helper.update_content("python/pyproject.toml") do |content|
+        content.sub(/^(version = ").*?(")$/) do
+          "#{$1}#{new_version}#{$2}"
+        end
+      end
+      Helper.update_content("python/openarm/can/__init__.py") do |content|
+        content.sub(/^(__version__ = ").*?(")$/) do
+          "#{$1}#{new_version}#{$2}"
+        end
+      end
       ruby("-C",
            "packages",
            "-S",
@@ -49,7 +64,10 @@ namespace :release do
          "add",
          "CMakeLists.txt",
          "packages/debian/changelog",
-         "packages/fedora/openarm-can.spec")
+         "packages/fedora/openarm-can.spec",
+         "python/meson.build",
+         "python/pyproject.toml",
+         "python/openarm/can/__init__.py")
       sh("git",
          "commit",
          "-m",
