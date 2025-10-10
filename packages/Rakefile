@@ -20,11 +20,26 @@ if apache_arrow_repository.nil?
 end
 require "#{apache_arrow_repository}/dev/tasks/linux-packages/package-task"
 
+groonga_repository = ENV["GROONGA_REPOSITORY"]
+if groonga_repository.nil?
+  puts("You need to specify GROONGA_REPOSITORY environment variable " +
+       "to push packages to Launchpad")
+else
+  require "#{groonga_repository}/packages/launchpad-helper"
+end
+
 require_relative "../helper"
 
 class OpenArmCANPackageTask < PackageTask
+  include LaunchpadHelper if Object.const_defined?(:LaunchpadHelper)
+
   def initialize
     super("openarm-can", detect_version, detect_release_time)
+  end
+
+  def define
+    super
+    define_ubuntu_tasks if respond_to?(:define_ubuntu_tasks, true)
   end
 
   private
@@ -64,6 +79,14 @@ class OpenArmCANPackageTask < PackageTask
 
   def docker_image(os, architecture)
     "ghcr.io/#{github_repository.gsub("_", "-")}-package:#{super}"
+  end
+
+  def dput_configuration_name
+    "openarm-ppa"
+  end
+
+  def dput_incoming
+    "~openarm/main/ubuntu/"
   end
 end
 
