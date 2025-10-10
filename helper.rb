@@ -58,13 +58,22 @@ module Helper
   end
 
   def wait_github_actions_workflow(branch, workflow_file)
-    response = call_github_api("repos/#{github_repository}/actions/runs",
-                               branch: branch)
-    run = response["workflow_runs"].find do |workflow_run|
-      workflow_run["path"] == ".github/workflows/#{workflow_file}"
-    end
+    run_id = nil
 
-    run_id = run["id"]
+    3.times do
+      response = call_github_api("repos/#{github_repository}/actions/runs",
+                                 branch: branch)
+      run = response["workflow_runs"].find do |workflow_run|
+        workflow_run["path"] == ".github/workflows/#{workflow_file}"
+      end
+      if run.nil?
+        run_id = run["id"]
+        break
+      end
+      sleep(60)
+    end
+    raise "Couldn't find target workflow" if run_id.nil?
+
     run_request_path = "repos/#{github_repository}/actions/runs/#{run_id}"
     loop do
       response = call_github_api(run_request_path)

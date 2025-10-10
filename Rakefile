@@ -104,7 +104,6 @@ namespace :release do
   task :ubuntu do
     current_version = Helper.detect_version
     Helper.wait_github_actions_workflow(current_version, "release.yaml")
-    exit
     ruby("-C",
          "packages",
          "-S",
