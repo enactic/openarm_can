@@ -14,7 +14,7 @@
 
 # https://packit.dev/docs/configuration/
 
-specfile_path: packages/fedora/openarm-can.spec
+specfile_path: packages/fedora/openarm_can.spec
 
 notifications:
   pull_request:
