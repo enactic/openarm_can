@@ -21,6 +21,13 @@ notifications:
     successful_build: true
 
 jobs:
+
+- job: propose_downstream
+  trigger: release
+  dist_git_branches:
+   - fedora-all
+   - epel-all
+
 - job: copr_build
   trigger: pull_request
   targets:
