@@ -36,6 +36,12 @@ Requires:  %{name}%{?_isa} = %{version}-%{release}
 %description devel
 Header files and development libraries for OpenARM CAN control library.
 
+%package utils
+Summary: Setup and configuration utility scripts
+
+%description utils
+Setup and configuration utility scripts.
+
 %prep
 %autosetup
 
@@ -48,6 +54,14 @@ Header files and development libraries for OpenARM CAN control library.
 %install
 %cmake_install
 
+mkdir -p %{buildroot}%{_libexecdir}/openarm_can
+install -pm 0751 setup/configure_socketcan.sh \
+ %{buildroot}%{_libexecdir}/openarm_can/configure_socketcan.sh
+install -pm 0751 setup/set_zero.sh \
+ %{buildroot}%{_libexecdir}/openarm_can/set_zero.sh
+# Python package not installed yet as not on PyPI
+#install -pm 0751 setup/change_baudrate.py \
+# %%{buildroot}%%{_libexecdir}/openarm_can/change_baudrate.py
 
 %files
 %license LICENSE.txt
@@ -59,6 +73,10 @@ Header files and development libraries for OpenARM CAN control library.
 %{_libdir}/cmake/OpenArmCAN/
 %{_libdir}/libopenarm_can.so
 %{_libdir}/pkgconfig/openarm-can.pc
+
+%files utils
+%license LICENSE.txt
+%{_libexecdir}/openarm_can/
 
 %changelog
 %autochangelog
