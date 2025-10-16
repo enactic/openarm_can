@@ -13,7 +13,8 @@ This library is a part of [OpenArm](https://github.com/enactic/openarm/). See de
 
 ### 1. Install
 
-#### Ubuntu
+<details>
+<summary>Ubuntu</summary>
 
 * 22.04 Jammy Jellyfish
 * 24.04 Noble Numbat
@@ -26,6 +27,99 @@ sudo apt install -y \
   libopenarm-can-dev \
   openarm-can-utils
 ```
+</details>
+
+<details>
+<summary>AlmaLinux, CentOS, Fedora, RHEL and Rocky Linux</summary>
+
+For [AlmaLinux](https://almalinux.org/), [CentOS](https://centos.org/),
+[RHEL](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)
+and [Rocky Linux](https://rockylinux.org/),
+first enable [EPEL](https://docs.fedoraproject.org/en-US/epel/):
+
+<details>
+<summary>AlmaLinux 8</summary>
+```bash
+sudo dnf install epel-release
+sudo dnf config-manager --set-enabled powertools
+```
+</details>
+
+<details>
+<summary>AlmaLinux 9 & 10</summary>
+```bash
+sudo dnf install epel-release
+sudo dnf config-manager --set-enabled crb
+```
+</details>
+
+<details>
+<summary>CentOS Stream 9</summary>
+```bash
+sudo dnf config-manager --set-enabled crb
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel{,-next}-release-latest-9.noarch.rpm
+```
+</details>
+
+<details>
+<summary>CentOS Stream 10</summary>
+```bash
+sudo dnf config-manager --set-enabled crb
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+```
+</details>
+
+<details>
+<summary>RHEL 8</summary>
+```bash
+sudo subscription-manager repos --enable codeready-builder-for-rhel-8-$(arch)-rpms
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+```
+</details>
+
+<details>
+<summary>RHEL 9</summary>
+```bash
+sudo subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+```
+</details>
+
+<details>
+<summary>RHEL 10</summary>
+```bash
+sudo subscription-manager repos --enable codeready-builder-for-rhel-10-$(arch)-rpms
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+```
+</details>
+
+<details>
+<summary>Rocky Linux 8</summary>
+```bash
+sudo dnf install epel-release
+sudo dnf config-manager --set-enabled powertools
+```
+</details>
+
+<details>
+<summary>Rocky Linux 9 & 10</summary>
+```bash
+sudo dnf install epel-release
+sudo crb enable
+```
+</details>
+
+EPEL is not required for [Fedora](https://fedoraproject.org/).
+
+Install the package using:
+
+```bash
+sudo dnf update
+sudo dnf install -y \
+  openarm_can-devel \
+  openarm_can-utils
+```
+</details>
 
 ### 2. Setup CAN Interface
 
