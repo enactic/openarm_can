@@ -118,12 +118,21 @@ configure_file(openarm-can.pc.in ${CMAKE_CURRENT_BINARY_DIR}/openarm-can.pc
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/openarm-can.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
+set(OPENARM_CAN_LIBEXEC_DIR "${CMAKE_INSTALL_LIBEXECDIR}/openarm-can")
+
 add_executable(motor-check setup/motor_check.cpp)
 target_link_libraries(motor-check openarm_can)
+install(TARGETS motor-check DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
 
 # Add motor control example executable
 add_executable(openarm-demo examples/demo.cpp)
 target_link_libraries(openarm-demo openarm_can)
+install(TARGETS openarm-demo DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
+
+# Install scripts
+install(PROGRAMS setup/change_baudrate.py setup/configure_socketcan.sh
+                 setup/configure_socketcan_4_arms.sh setup/set_zero.sh
+        DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
 
 # Add tests
 if(BUILD_TESTING)

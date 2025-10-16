@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-usr/include/*
+usr/include/
 usr/lib/*/lib*.so
-usr/lib/*/pkgconfig/*
-usr/lib/*/cmake/OpenArmCAN/*
+usr/lib/*/pkgconfig/
+usr/lib/*/cmake/OpenArmCAN/
