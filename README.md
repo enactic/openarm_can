@@ -31,8 +31,6 @@ sudo apt install -y \
 
 Configure your CAN interface using the provided script:
 
-<details>
-<Summary>Ubuntu</Summary>
 ```bash
 # CAN 2.0 (default)
 /usr/libexec/openarm-can/configure_socketcan.sh can0
@@ -40,18 +38,6 @@ Configure your CAN interface using the provided script:
 # CAN-FD with 5Mbps data rate
 /usr/libexec/openarm-can/configure_socketcan.sh can0 -fd
 ```
-</details>
-
-<details>
-<Summary>AlmaLinux, Cent OS, Fedora, RHEL & Rocky Linux</Summary>
-```bash
-# CAN 2.0 (default)
-/usr/libexec/openarm_can/configure_socketcan.sh can0
-
-# CAN-FD with 5Mbps data rate
-/usr/libexec/openarm_can/configure_socketcan.sh can0 -fd
-```
-</details>
 
 ### 3. C++ Library
 

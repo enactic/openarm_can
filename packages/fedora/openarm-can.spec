@@ -54,14 +54,6 @@ Setup and configuration utility scripts.
 %install
 %cmake_install
 
-mkdir -p %{buildroot}%{_libexecdir}/openarm_can
-install -pm 0751 setup/configure_socketcan.sh \
- %{buildroot}%{_libexecdir}/openarm_can/configure_socketcan.sh
-install -pm 0751 setup/set_zero.sh \
- %{buildroot}%{_libexecdir}/openarm_can/set_zero.sh
-# Python package not installed yet as not on PyPI
-#install -pm 0751 setup/change_baudrate.py \
-# %%{buildroot}%%{_libexecdir}/openarm_can/change_baudrate.py
 
 %files
 %license LICENSE.txt
@@ -76,7 +68,7 @@ install -pm 0751 setup/set_zero.sh \
 
 %files utils
 %license LICENSE.txt
-%{_libexecdir}/openarm_can/
+%{_libexecdir}/openarm-can/
 
 %changelog
 %autochangelog
