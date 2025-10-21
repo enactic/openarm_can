@@ -92,6 +92,17 @@ arm.enable_all()
 - **C++**: `examples/demo.cpp` - Complete arm control demo
 - **Python**: `python/examples/example.py` - Basic Python usage
 
+### Control Sequences
+
+These C++ scripts can be used to run the arm through a series of basic motions. Currently only supports trapezoid profile for low level torque input.
+
+- `control_sequences/one_motor_current.cpp` - A simple fixed test on one motor
+- `control_sequences/trapezoid.cpp` - An adjustable trapezoid profile for torque control.
+
+After building the script, run `trapezoid.cpp` using the following command: `./build/trapezoid ./control_sequences/inputs/test.in`.
+
+A variety of input files have been generated in `control_sequences/inputs` to explore the full range of each motor.
+
 ## For developers
 
 See [dev/README.md](dev/README.md).
