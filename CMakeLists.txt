@@ -134,6 +134,9 @@ install(PROGRAMS setup/change_baudrate.py setup/configure_socketcan.sh
                  setup/configure_socketcan_4_arms.sh setup/set_zero.sh
         DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
 
+add_executable(openarm-diagnosis setup/openarm_can_diagnosis.cpp)
+target_link_libraries(openarm-diagnosis openarm_can)
+
 # Add tests
 if(BUILD_TESTING)
   # add_subdirectory(test)
