@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
             missing_ids.push_back(recv_can_ids[i]);
         } else {
             std::cout << "[arm#" << i << "] queried_mst_id: " << static_cast<uint32_t>(mst)
-                      << "  queried_br: " << (int)br << " (" << br_label((int)br) << ")\n";
+                      << "  queried_br: " << static_cast<int>(br) << " (" << br_label(static_cast<int>(br)) << ")\n";
         }
     }
 
