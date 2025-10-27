@@ -157,8 +157,8 @@ int main(int argc, char* argv[]) {
             std::cout << "[gripper] id=0x18 -> NG (no response)\n";
             missing_ids.push_back(0x18);
         } else {
-            std::cout << "[gripper] queried_mst_id: " << (uint32_t)mst
-                      << "  queried_br: " << (int)br << " (" << br_label((int)br) << ")\n";
+            std::cout << "[gripper] queried_mst_id: " << static_cast<uint32_t>(mst)
+                      << "  queried_br: " << static_cast<int>(br) << " (" << br_label(static_cast<int>(br)) << ")\n";
         }
     }
 
