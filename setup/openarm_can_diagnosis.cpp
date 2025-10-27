@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
     if (!missing_ids.empty()) {
         std::cout << "NG: failed IDs:";
         for (auto id : missing_ids) std::cout << " 0x" << std::hex << id;
-        std::cout << std::dec << "\n";
+        std::cout << std::dec << std::endl;
 
         std::cout << "Hints:\n";
         std::cout << "  • Motor internal CAN bitrate may be different from host setting\n";
