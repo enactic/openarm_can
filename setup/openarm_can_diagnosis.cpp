@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
                       << " -> NG (no response)\n";
             missing_ids.push_back(recv_can_ids[i]);
         } else {
-            std::cout << "[arm#" << i << "] queried_mst_id: " << (uint32_t)mst
+            std::cout << "[arm#" << i << "] queried_mst_id: " << static_cast<uint32_t>(mst)
                       << "  queried_br: " << (int)br << " (" << br_label((int)br) << ")\n";
         }
     }
