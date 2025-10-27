@@ -39,6 +39,7 @@ static bool iface_is_canfd(const char* ifname) {
     }
     struct ifreq ifr{};
     std::strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+    ifr.ifr_name[IFNAMSIZ] = '\0';
     if (ioctl(s, SIOCGIFMTU, &ifr) < 0) {
         perror("ioctl(SIOCGIFMTU)");
         close(s);
