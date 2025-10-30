@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
         namespace fs = std::filesystem;
         fs::create_directories("./data");
         std::ostringstream filename;
-        filename << "data/motor" << send_can_id << "_log.csv";
+        filename << "data/trap/motor" << send_can_id << "_log.csv";
         std::ofstream csv_file(filename.str());
 
         // Header
@@ -116,25 +116,6 @@ int main(int argc, char* argv[]) {
             csv_file << ",Pos" << i << ",Vel" << i;
         }
         csv_file << ",Torque" << send_can_id << "\n";
-
-        // Start time for relative timestamps
-        auto start_time = std::chrono::steady_clock::now();
-
-        auto log_motor = [&](double torque) {
-            openarm.refresh_all();
-            const auto& motors = openarm.get_arm().get_motors();
-
-            double t = std::chrono::duration<double>(
-                std::chrono::steady_clock::now() - start_time
-            ).count();
-
-            csv_file << t;
-            for (const auto& m : motors) {
-                csv_file << "," << m.get_position()
-                        << "," << m.get_velocity();
-            }
-            csv_file << "," << torque << "\n";
-        };
 
         // Set callback mode for state monitoring
         openarm.set_callback_mode_all(openarm::damiao_motor::CallbackMode::STATE);
@@ -174,6 +155,31 @@ int main(int argc, char* argv[]) {
             openarm.recv_all(500);
         }
 
+        // Start the clock
+        auto start_time = std::chrono::steady_clock::now();
+        auto log_motor = [&](double torque) {
+            openarm.refresh_all();
+            const auto& motors = openarm.get_arm().get_motors();
+
+            double t = std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - start_time
+            ).count();
+
+            csv_file << t;
+            for (const auto& m : motors) {
+                csv_file << "," << m.get_position()
+                        << "," << m.get_velocity();
+            }
+            csv_file << "," << torque << "\n";
+        };
+
+        // Blank second
+        int zero_steps = static_cast<int>(1000000 / resolution_us);
+        for (int i = 0; i <= zero_steps; i++) {
+            log_motor(0.0);
+            openarm.recv_all(resolution_us);
+        }
+
         // Ramp up
         int up_steps = static_cast<int>(rise_width * 1000000 / resolution_us);
         for (int i = 1; i <= up_steps; i++) {
@@ -200,6 +206,12 @@ int main(int argc, char* argv[]) {
             openarm.recv_all(resolution_us);
             openarm.refresh_all();
             log_motor(torque);
+        }
+
+        // Blank second
+        for (int i = 0; i <= zero_steps; i++) {
+            log_motor(0.0);
+            openarm.recv_all(resolution_us);
         }
 
         // Reset to Zero
