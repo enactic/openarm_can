@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
         std::string can_interface = params.at("can_interface");
 
         // Trapezoid curve parameters
-        double max_current = std::stod(params.at("max_current"));
+        double max_torque = std::stod(params.at("max_torque"));
         double rise_width = std::stod(params.at("rise_width"));
         double plateau_width = std::stod(params.at("plateau_width"));
         double fall_width = std::stod(params.at("fall_width"));
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Send CAN ID: " << send_can_id << "\n";
         std::cout << "CAN Interface: " << can_interface << "\n";
         std::cout << "\nTrapezoid Profile:\n";
-        std::cout << "  Height: " << max_current << "\n";
+        std::cout << "  Height: " << max_torque << "\n";
         std::cout << "  Rise width: " << rise_width << "\n";
         std::cout << "  Plateau width: " << plateau_width << "\n";
         std::cout << "  Fall width: " << fall_width << "\n";
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
         namespace fs = std::filesystem;
         fs::create_directories("./data");
         std::ostringstream filename;
-        filename << "data/motor_log_" << send_can_id << ".csv";
+        filename << "data/motor" << send_can_id << "_log.csv";
         std::ofstream csv_file(filename.str());
 
         // Header
@@ -115,12 +115,12 @@ int main(int argc, char* argv[]) {
         for (size_t i = 1; i < openarm.get_arm().get_motors().size() + 1; ++i) {
             csv_file << ",Pos" << i << ",Vel" << i;
         }
-        csv_file << ",Current" << send_can_id << "\n";
+        csv_file << ",Torque" << send_can_id << "\n";
 
         // Start time for relative timestamps
         auto start_time = std::chrono::steady_clock::now();
 
-        auto log_motor = [&](double current) {
+        auto log_motor = [&](double torque) {
             openarm.refresh_all();
             const auto& motors = openarm.get_arm().get_motors();
 
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
                 csv_file << "," << m.get_position()
                         << "," << m.get_velocity();
             }
-            csv_file << "," << current << "\n";
+            csv_file << "," << torque << "\n";
         };
 
         // Set callback mode for state monitoring
@@ -147,12 +147,12 @@ int main(int argc, char* argv[]) {
         for (size_t i = 0; i < send_can_ids.size(); ++i) {
             motor_index[send_can_ids[i]] = i;
         }
-        auto control_motor = [&](uint32_t target_id, double current) {
+        auto control_motor = [&](uint32_t target_id, double torque) {
             std::vector<openarm::damiao_motor::MITParam> params(send_can_ids.size());
             
             for (size_t i = 0; i < params.size(); ++i) {
                 if (i == motor_index.at(target_id))
-                    params[i] = {0, 0, 0, 0, current};  // Apply current to target motor
+                    params[i] = {0, 0, 0, 0, torque};  // Apply torque to target motor
                 else
                     params[i] = {0, 0, 0, 0, 0};        // Others stay idle
             }
@@ -177,29 +177,29 @@ int main(int argc, char* argv[]) {
         // Ramp up
         int up_steps = static_cast<int>(rise_width * 1000000 / resolution_us);
         for (int i = 1; i <= up_steps; i++) {
-            double current = max_current * i / up_steps;
-            control_motor(send_can_id, current);
+            double torque = max_torque * i / up_steps;
+            control_motor(send_can_id, torque);
             openarm.recv_all(resolution_us);
-            log_motor(current);
+            log_motor(torque);
         }
 
         // Hold
         auto hold_start = std::chrono::steady_clock::now();
         while (std::chrono::steady_clock::now() - hold_start < std::chrono::duration<double>(plateau_width)) {
-            control_motor(send_can_id, max_current);
+            control_motor(send_can_id, max_torque);
             openarm.recv_all(resolution_us);
             openarm.refresh_all();
-            log_motor(max_current);
+            log_motor(max_torque);
         }
 
         // Ramp down
         int down_steps = static_cast<int>(fall_width * 1000000 / resolution_us);
         for (int i = down_steps; i >= 0; i--) {
-            double current = max_current * i / down_steps;
-            control_motor(send_can_id, current);
+            double torque = max_torque * i / down_steps;
+            control_motor(send_can_id, torque);
             openarm.recv_all(resolution_us);
             openarm.refresh_all();
-            log_motor(current);
+            log_motor(torque);
         }
 
         // Reset to Zero

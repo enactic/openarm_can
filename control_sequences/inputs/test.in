@@ -1,5 +1,5 @@
 # CAN parameters
-send_can_id = 1
+send_can_id = 7
 can_interface = can1
 
 # Trapezoid parameters (Seconds)
@@ -7,8 +7,8 @@ rise_width = 1.0
 plateau_width = 0.5
 fall_width = 1.0
 
-# Max current / torque
-max_current = 2.5
+# Max torque
+max_torque = 1.5
 
 # Recording resolution (microseconds)
 resolution = 5000

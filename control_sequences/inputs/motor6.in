@@ -7,8 +7,8 @@ rise_width = 1.0
 plateau_width = 1.0
 fall_width = 1.0
 
-# Max current / torque
-max_current = -0.5
+# Max torque
+max_torque = -0.5
 
 # Recording resolution (microseconds)
 resolution = 5000
