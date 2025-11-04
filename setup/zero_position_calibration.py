@@ -258,7 +258,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Zero-pos calibration (compact)')
     parser.add_argument('--canport', type=str, default='can0')
-    parser.add_argument('--arm_side', type=str,
+    parser.add_argument('--arm-side', type=str,
                         default='right_arm', choices=['right_arm', 'left_arm'])
     args = parser.parse_args()
     print(f"parser arg : {args}")
