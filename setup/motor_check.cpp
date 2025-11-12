@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
         // Set callback mode to param for initial parameter reading
         openarm.set_callback_mode_all(openarm::damiao_motor::CallbackMode::PARAM);
 
-        // Query motor parameters (Master ID and Baudrate)
+        // Query motor parameters (Master ID, Baudrate, and Control Mode)
         std::cout << "Reading motor parameters..." << std::endl;
         openarm.query_param_all(static_cast<int>(openarm::damiao_motor::RID::MST_ID));
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -113,6 +113,11 @@ int main(int argc, char* argv[]) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         openarm.query_param_all(static_cast<int>(openarm::damiao_motor::RID::can_br));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        openarm.recv_all();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        openarm.query_param_all(static_cast<int>(openarm::damiao_motor::RID::CTRL_MODE));
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         openarm.recv_all();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -125,11 +130,19 @@ int main(int argc, char* argv[]) {
                 motor.get_param(static_cast<int>(openarm::damiao_motor::RID::MST_ID));
             double queried_baudrate =
                 motor.get_param(static_cast<int>(openarm::damiao_motor::RID::can_br));
+            double queried_control_mode =
+                motor.get_param(static_cast<int>(openarm::damiao_motor::RID::CTRL_MODE));
 
             std::cout << "\n=== Motor Parameters ===" << std::endl;
             std::cout << "Send CAN ID: " << motor.get_send_can_id() << std::endl;
             std::cout << "Queried Master ID: " << queried_mst_id << std::endl;
             std::cout << "Queried Baudrate (1-9): " << queried_baudrate << std::endl;
+            std::cout << "Queried Control Mode (1: MIT, 2: POS_VEL, 3: VEL, 4: TORQUE_POS): "
+                      << queried_control_mode << std::endl;
+            if (queried_control_mode != static_cast<int>(openarm::damiao_motor::ControlMode::MIT)) {
+                std::cout << "Warning: Queried Control Mode (" << queried_control_mode
+                          << ") is not MIT. Currently not supported." << std::endl;
+            }
 
             // Verify recv_can_id matches queried master ID
             if (static_cast<uint32_t>(queried_mst_id) != recv_can_id) {
@@ -168,12 +181,6 @@ int main(int argc, char* argv[]) {
         openarm.disable_all();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         openarm.recv_all();
-
-        // Print final status
-        if (!motors.empty()) {
-            std::cout << "\n=== Final Motor Status ===" << std::endl;
-            print_motor_status(motors[0]);
-        }
 
         std::cout << "\n=== Script Completed Successfully ===" << std::endl;
 
