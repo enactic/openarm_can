@@ -17,8 +17,8 @@ if SEQUENCE_TYPE not in {"step", "ramp"}:
 
 # === Hardcoded configuration ===
 SEND_CAN_ID = 7
-CAN_INTERFACE = "can1"
-SAMPLE_RATE_HZ = 100
+CAN_INTERFACE = "can0"
+SAMPLE_RATE_HZ = 2000
 EXECUTABLE = f"./build/{SEQUENCE_TYPE}"
 INPUT_DIR = f"control_sequences/inputs/{SEQUENCE_TYPE}"
 CSV_FILE = f"{INPUT_DIR}/motor{SEND_CAN_ID}.csv"

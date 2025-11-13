@@ -1,6 +1,6 @@
 # CAN parameters
 send_can_id = 7
-can_interface = can1
+can_interface = can0
 
 # Trapezoid parameters (Seconds)
 rise_width = 1.0
@@ -11,4 +11,4 @@ fall_width = 1.0
 max_torque = -0.3
 
 # Sample rate (Hz)
-resolution = 100
+resolution = 2000

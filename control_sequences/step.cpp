@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
                   << "CAN Interface: " << can_interface << "\n"
                   << "Torque: " << step_torque << " Nm\n"
                   << "Duration: " << step_duration << " s\n"
-                  << "Resolution: " << sample_rate_hz << " Hz\n";
+                  << "  Resolution: " << sample_rate_hz << " Hz (dt_us = " << dt_us << ")\n";
 
         openarm::can::socket::OpenArm openarm(can_interface, true);
 
@@ -126,13 +126,13 @@ int main(int argc, char* argv[]) {
         // Reset to Zero
         for (int i = 1; i <= 2000; i++) {
             openarm.get_arm().mit_control_all({
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0}
+                openarm::damiao_motor::MITParam{50, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{50, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{50, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{50, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{50, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{50, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{50, 1, 0, 0, 0}
             });
             openarm.recv_all(500);
         }
@@ -176,15 +176,16 @@ int main(int argc, char* argv[]) {
         }
 
         // Reset to Zero
-        for (int i = 1; i <= 2000; i++) {
+        for (int i = 1; i <= 4000; i++) {
+            double strength = std::round((i / 4000.0) * 100.0);
             openarm.get_arm().mit_control_all({
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0} 
+                openarm::damiao_motor::MITParam{strength, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{strength, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{strength, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{strength, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{strength, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{strength, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{strength, 1, 0, 0, 0}
             });
             openarm.recv_all(500);
         }

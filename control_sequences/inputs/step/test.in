@@ -1,10 +1,10 @@
 # CAN configuration
 send_can_id = 7
-can_interface = can1
+can_interface = can0
 
 # Step input parameters
-step_torque = -0.8
-step_duration = 0.1
+step_torque = 0.4
+step_duration = 1.0
 
 # Sample rate (Hz)
-resolution = 100
+resolution = 2000
