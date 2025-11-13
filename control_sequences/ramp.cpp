@@ -59,29 +59,38 @@ int main(int argc, char* argv[]) {
     try {
         auto params = parse_input_file(argv[1]);
 
-        // Required CAN parameters
+        // Input parameters
         uint32_t send_can_id = std::stoul(params.at("send_can_id"));
         std::string can_interface = params.at("can_interface");
-
-        // Trapezoid curve parameters
         double max_torque = std::stod(params.at("max_torque"));
         double rise_width = std::stod(params.at("rise_width"));
         double plateau_width = std::stod(params.at("plateau_width"));
         double fall_width = std::stod(params.at("fall_width"));
+        double sample_rate_hz = std::stod(params.at("resolution"));
 
-        // Resolution
-        int resolution_us = std::stoi(params.at("resolution"));
+        // Optional parameter
+        std::string test_name = "default";
+        if (params.find("test_name") != params.end()) {
+            test_name = params["test_name"];
+        }
+
+        double dt_us = static_cast<int>(1e6 / sample_rate_hz);
+        int zero_steps_start = std::max(1, static_cast<int>(0.5 * sample_rate_hz));
+        int zero_steps_end = std::max(1, static_cast<int>(1.0 * sample_rate_hz));
+        int ramp_up_steps = std::max(1, static_cast<int>(rise_width * sample_rate_hz));
+        int plateau_steps = std::max(1, static_cast<int>(plateau_width * sample_rate_hz));
+        int ramp_down_steps = std::max(1, static_cast<int>(fall_width * sample_rate_hz));
 
         // Print everything out
         std::cout << "=== OpenArm Motor Control Configuration ===\n";
         std::cout << "Send CAN ID: " << send_can_id << "\n";
         std::cout << "CAN Interface: " << can_interface << "\n";
         std::cout << "\nTrapezoid Profile:\n";
-        std::cout << "  Height: " << max_torque << "\n";
-        std::cout << "  Rise width: " << rise_width << "\n";
-        std::cout << "  Plateau width: " << plateau_width << "\n";
-        std::cout << "  Fall width: " << fall_width << "\n";
-        std::cout << "  Resolution: " << resolution_us << "\n";
+        std::cout << "  Height: " << max_torque << " Nm\n";
+        std::cout << "  Rise width: " << rise_width << " s\n";
+        std::cout << "  Plateau width: " << plateau_width << " s\n";
+        std::cout << "  Fall width: " << fall_width << " s\n";
+        std::cout << "  Resolution: " << sample_rate_hz << " Hz\n";
         std::cout << std::endl;
 
         // Initialize OpenArm with CAN interface
@@ -105,17 +114,17 @@ int main(int argc, char* argv[]) {
 
         // Open CSV file
         namespace fs = std::filesystem;
-        fs::create_directories("./data");
+        fs::create_directories("./data/trap");
         std::ostringstream filename;
-        filename << "data/trap/motor" << send_can_id << "_log.csv";
+        filename << "data/trap/motor" << send_can_id << "_trap_" << test_name << ".csv";
         std::ofstream csv_file(filename.str());
 
         // Header
-        csv_file << "Time_s";
+        csv_file << "Torque" << send_can_id << ",Time_s";
         for (size_t i = 1; i < openarm.get_arm().get_motors().size() + 1; ++i) {
             csv_file << ",Pos" << i << ",Vel" << i;
         }
-        csv_file << ",Torque" << send_can_id << "\n";
+        csv_file << "\n";
 
         // Set callback mode for state monitoring
         openarm.set_callback_mode_all(openarm::damiao_motor::CallbackMode::STATE);
@@ -135,7 +144,7 @@ int main(int argc, char* argv[]) {
                 if (i == motor_index.at(target_id))
                     params[i] = {0, 0, 0, 0, torque};  // Apply torque to target motor
                 else
-                    params[i] = {0, 0, 0, 0, 0};        // Others stay idle
+                    params[i] = {30, 1, 0, 0, 0};      // Force other motors to hold position
             }
 
             openarm.get_arm().mit_control_all(params);
@@ -144,13 +153,13 @@ int main(int argc, char* argv[]) {
         // Reset to Zero
         for (int i = 1; i <= 2000; i++) {
             openarm.get_arm().mit_control_all({
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0} 
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0}
             });
             openarm.recv_all(500);
         }
@@ -165,65 +174,61 @@ int main(int argc, char* argv[]) {
                 std::chrono::steady_clock::now() - start_time
             ).count();
 
-            csv_file << t;
+            csv_file << torque << "," << t;
             for (const auto& m : motors) {
                 csv_file << "," << m.get_position()
                         << "," << m.get_velocity();
             }
-            csv_file << "," << torque << "\n";
+            csv_file << "\n";
         };
 
-        // Blank second
-        int zero_steps = static_cast<int>(1000000 / resolution_us);
-        for (int i = 0; i <= zero_steps; i++) {
+        // --- Zero torque start ---
+        for (int i = 0; i < zero_steps_start; i++) {
+            control_motor(send_can_id, 0.0);
+            openarm.recv_all(dt_us);
             log_motor(0.0);
-            openarm.recv_all(resolution_us);
         }
 
-        // Ramp up
-        int up_steps = static_cast<int>(rise_width * 1000000 / resolution_us);
-        for (int i = 1; i <= up_steps; i++) {
-            double torque = max_torque * i / up_steps;
+        // --- Ramp up ---
+        for (int i = 1; i <= ramp_up_steps; i++) {
+            double torque = max_torque * i / ramp_up_steps;
             control_motor(send_can_id, torque);
-            openarm.recv_all(resolution_us);
+            openarm.recv_all(dt_us);
             log_motor(torque);
         }
 
-        // Hold
-        auto hold_start = std::chrono::steady_clock::now();
-        while (std::chrono::steady_clock::now() - hold_start < std::chrono::duration<double>(plateau_width)) {
+        // --- Hold ---
+        for (int i = 0; i < plateau_steps; i++) {
             control_motor(send_can_id, max_torque);
-            openarm.recv_all(resolution_us);
-            openarm.refresh_all();
+            openarm.recv_all(dt_us);
             log_motor(max_torque);
         }
 
-        // Ramp down
-        int down_steps = static_cast<int>(fall_width * 1000000 / resolution_us);
-        for (int i = down_steps; i >= 0; i--) {
-            double torque = max_torque * i / down_steps;
+        // --- Ramp down ---
+        for (int i = ramp_down_steps; i >= 0; i--) {
+            double torque = max_torque * i / ramp_down_steps;
             control_motor(send_can_id, torque);
-            openarm.recv_all(resolution_us);
-            openarm.refresh_all();
+            openarm.recv_all(dt_us);
             log_motor(torque);
         }
 
-        // Blank second
-        for (int i = 0; i <= zero_steps; i++) {
+        // --- Zero torque end ---
+        for (int i = 0; i < zero_steps_end; i++) {
+            control_motor(send_can_id, 0.0);
+            openarm.recv_all(dt_us);
             log_motor(0.0);
-            openarm.recv_all(resolution_us);
         }
 
         // Reset to Zero
         for (int i = 1; i <= 2000; i++) {
             openarm.get_arm().mit_control_all({
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0},
-                openarm::damiao_motor::MITParam{5, 1, 0, 0, 0} 
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0},
+                openarm::damiao_motor::MITParam{30, 1, 0, 0, 0}
             });
             openarm.recv_all(500);
         }

@@ -133,10 +133,13 @@ install(TARGETS openarm-demo DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
 add_executable(one-motor-current control_sequences/one_motor_current.cpp)
 target_link_libraries(one-motor-current openarm_can)
 
-# Add trapezoid test executable
-add_executable(trapezoid control_sequences/trapezoid.cpp)
-target_link_libraries(trapezoid openarm_can)
+# Add ramp test executable
+add_executable(ramp control_sequences/ramp.cpp)
+target_link_libraries(ramp openarm_can)
 
+# Add step test executable
+add_executable(step control_sequences/step.cpp)
+target_link_libraries(step openarm_can)
 
 # Install scripts
 install(PROGRAMS setup/change_baudrate.py setup/configure_socketcan.sh
