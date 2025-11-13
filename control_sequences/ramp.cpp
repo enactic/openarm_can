@@ -114,9 +114,9 @@ int main(int argc, char* argv[]) {
 
         // Open CSV file
         namespace fs = std::filesystem;
-        fs::create_directories("./data/trap");
+        fs::create_directories("./data/ramp");
         std::ostringstream filename;
-        filename << "data/trap/motor" << send_can_id << "_trap_" << test_name << ".csv";
+        filename << "data/ramp/motor" << send_can_id << "_ramp_" << test_name << ".csv";
         std::ofstream csv_file(filename.str());
 
         // Header
