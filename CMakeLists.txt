@@ -118,24 +118,25 @@ configure_file(openarm-can.pc.in ${CMAKE_CURRENT_BINARY_DIR}/openarm-can.pc
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/openarm-can.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
-set(OPENARM_CAN_LIBEXEC_DIR "${CMAKE_INSTALL_LIBEXECDIR}/openarm-can")
+add_executable(openarm-motor-check setup/motor_check.cpp)
+target_link_libraries(openarm-motor-check openarm_can)
+install(TARGETS openarm-motor-check DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(motor-check setup/motor_check.cpp)
-target_link_libraries(motor-check openarm_can)
-install(TARGETS motor-check DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
+add_executable(openarm-diagnosis setup/openarm_can_diagnosis.cpp)
+target_link_libraries(openarm-diagnosis openarm_can)
+install(TARGETS openarm-diagnosis DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Add motor control example executable
 add_executable(openarm-demo examples/demo.cpp)
 target_link_libraries(openarm-demo openarm_can)
-install(TARGETS openarm-demo DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
+install(TARGETS openarm-demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Install scripts
-install(PROGRAMS setup/change_baudrate.py setup/configure_socketcan.sh
-                 setup/configure_socketcan_4_arms.sh setup/set_zero.sh
-        DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
-
-add_executable(openarm-diagnosis setup/openarm_can_diagnosis.cpp)
-target_link_libraries(openarm-diagnosis openarm_can)
+install(
+  PROGRAMS setup/openarm-change-baudrate setup/openarm-configure-socketcan
+           setup/openarm-configure-socketcan-4-arms setup/openarm-set-zero
+           setup/openarm-zero-position-calibration
+  DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Add tests
 if(BUILD_TESTING)

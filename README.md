@@ -70,10 +70,10 @@ Configure your CAN interface using the provided script:
 
 ```bash
 # CAN 2.0 (default)
-/usr/libexec/openarm-can/configure_socketcan.sh can0
+openarm-configure-socketcan can0
 
 # CAN-FD with 5Mbps data rate
-/usr/libexec/openarm-can/configure_socketcan.sh can0 -fd
+openarm-configure-socketcan can0 -fd
 ```
 
 ### 3. C++ Library

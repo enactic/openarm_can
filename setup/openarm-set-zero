@@ -17,7 +17,6 @@
 set -eu
 
 # CAN Interface Script
-# Usage: setup/set_zero.sh <CAN_IF> [CAN_ID] [--all]
 
 # Function to display usage
 usage() {

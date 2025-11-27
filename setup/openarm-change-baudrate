@@ -178,13 +178,13 @@ def main():
         epilog="""
 Examples:
   # Write baudrate 1000000 to motor ID 2 on can0
-  python change_baudrate.py --baudrate 1000000 --canid 2 --socketcan can0
+  openarm-change-baudrate --baudrate 1000000 --canid 2 --socketcan can0
 
   # Write baudrate and save to flash
-  python change_baudrate.py --baudrate 500000 --canid 1 --socketcan can0 --flash
+  openarm-change-baudrate --baudrate 500000 --canid 1 --socketcan can0 --flash
 
   # Write to motor on different CAN port
-  python change_baudrate.py --baudrate 2000000 --canid 3 --socketcan can1
+  openarm-change-baudrate --baudrate 2000000 --canid 3 --socketcan can1
 
 Supported baudrates:
   125000, 200000, 250000, 500000, 1000000, 2000000, 2500000, 3200000, 4000000, 5000000
