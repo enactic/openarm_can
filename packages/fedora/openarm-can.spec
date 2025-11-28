@@ -68,7 +68,7 @@ Setup and configuration utility scripts.
 
 %files utils
 %license LICENSE.txt
-%{_bindir}
+%{_bindir}/*
 
 %changelog
 %autochangelog
