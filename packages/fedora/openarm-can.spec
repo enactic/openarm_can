@@ -68,14 +68,7 @@ Setup and configuration utility scripts.
 
 %files utils
 %license LICENSE.txt
-%{_bindir}/openarm-change-baudrate
-%{_bindir}/openarm-configure-socketcan
-%{_bindir}/openarm-configure-socketcan-4-arms
-%{_bindir}/openarm-demo
-%{_bindir}/openarm-diagnosis
-%{_bindir}/openarm-motor-check
-%{_bindir}/openarm-set-zero
-%{_bindir}/openarm-zero-position-calibration
+%{_bindir}
 
 %changelog
 %autochangelog
