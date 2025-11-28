@@ -133,8 +133,10 @@ install(TARGETS openarm-can-demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Install scripts
 install(
-  PROGRAMS setup/openarm-can-change-baudrate setup/openarm-can-configure-socketcan
-           setup/openarm-can-configure-socketcan-4-arms setup/openarm-can-set-zero
+  PROGRAMS setup/openarm-can-change-baudrate
+           setup/openarm-can-configure-socketcan
+           setup/openarm-can-configure-socketcan-4-arms
+           setup/openarm-can-set-zero
            setup/openarm-can-zero-position-calibration
   DESTINATION ${CMAKE_INSTALL_BINDIR})
 
