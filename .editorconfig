@@ -25,3 +25,7 @@ trim_trailing_whitespace = true
 [*.sh]
 indent_size = 4
 indent_style = space
+
+[setup/*]
+indent_size = 4
+indent_style = space

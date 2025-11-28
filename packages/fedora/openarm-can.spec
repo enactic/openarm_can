@@ -68,7 +68,7 @@ Setup and configuration utility scripts.
 
 %files utils
 %license LICENSE.txt
-%{_libexecdir}/openarm-can/
+%{_bindir}/*
 
 %changelog
 %autochangelog

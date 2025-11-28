@@ -17,7 +17,6 @@
 set -eu
 
 # Simple CAN Interface Setup Script
-# Usage: script/configure_socketcan.sh <interface> [options]
 
 # Default values
 BITRATE=1000000
@@ -40,16 +39,6 @@ usage() {
     echo "  $0 can0 -b 500000          # CAN 2.0 at 500kbps"
     echo "  $0 can0 -fd -d 8000000     # CAN FD with 8Mbps data rate"
 }
-
-# Check if interface provided
-if [ -z "$1" ]; then
-    echo "Error: Specify CAN interface (e.g., can0)"
-    usage
-    exit 1
-fi
-
-CAN_IF=$1
-shift
 
 # Parse options
 while [[ $# -gt 0 ]]; do
@@ -78,39 +67,46 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Check if interface exists
-if ! ip link show "$CAN_IF" &>/dev/null; then
-    echo "Error: CAN interface '$CAN_IF' not found"
-    echo "Available interfaces:"
-    ip link show | grep -E "can[0-9]" | cut -d: -f2 | tr -d ' ' || echo "  No CAN interfaces found"
-    exit 1
-fi
+CAN_DEVICES=("can0" "can1" "can2" "can3")
+# for each device, check if it exists and configure it
+for CAN_IF in "${CAN_DEVICES[@]}"; do
+    echo "Configuring $CAN_IF..."
 
-# Configure CAN interface
-echo "Configuring $CAN_IF..."
-
-if ! sudo ip link set "$CAN_IF" down; then
-    echo "Error: Failed to bring down $CAN_IF"
-    exit 1
-fi
-
-if [ "$FD_MODE" = true ]; then
-    if ! sudo ip link set "$CAN_IF" type can bitrate "$BITRATE" dbitrate "$DBITRATE" fd on; then
-        echo "Error: Failed to configure CAN FD mode"
+    # Check if interface exists
+    if ! ip link show "$CAN_IF" &>/dev/null; then
+        echo "Error: CAN interface '$CAN_IF' not found"
+        echo "Available interfaces:"
+        ip link show | grep -E "can[0-9]" | cut -d: -f2 | tr -d ' ' || echo "  No CAN interfaces found"
         exit 1
     fi
-    echo "$CAN_IF is now set to CAN FD mode (${BITRATE} bps / ${DBITRATE} bps)"
-else
-    if ! sudo ip link set "$CAN_IF" type can bitrate "$BITRATE"; then
-        echo "Error: Failed to configure CAN 2.0 mode"
+
+    # Configure CAN interface
+    echo "Configuring $CAN_IF..."
+
+    if ! sudo ip link set "$CAN_IF" down; then
+        echo "Error: Failed to bring down $CAN_IF"
         exit 1
     fi
-    echo "$CAN_IF is now set to CAN 2.0 mode (${BITRATE} bps)"
-fi
 
-if ! sudo ip link set "$CAN_IF" up; then
-    echo "Error: Failed to bring up $CAN_IF"
-    exit 1
-fi
+    if [ "$FD_MODE" = true ]; then
+        if ! sudo ip link set "$CAN_IF" type can bitrate "$BITRATE" dbitrate "$DBITRATE" fd on; then
+            echo "Error: Failed to configure CAN FD mode"
+            exit 1
+        fi
+        echo "$CAN_IF is now set to CAN FD mode (${BITRATE} bps / ${DBITRATE} bps)"
+    else
+        if ! sudo ip link set "$CAN_IF" type can bitrate "$BITRATE"; then
+            echo "Error: Failed to configure CAN 2.0 mode"
+            exit 1
+        fi
+        echo "$CAN_IF is now set to CAN 2.0 mode (${BITRATE} bps)"
+    fi
 
-echo "✓ $CAN_IF is active"
+    if ! sudo ip link set "$CAN_IF" up; then
+        echo "Error: Failed to bring up $CAN_IF"
+        exit 1
+    fi
+
+    echo "✓ $CAN_IF is active"
+
+done
