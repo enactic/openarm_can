@@ -47,12 +47,19 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-CAN_IF=$1
+case "$1" in
+-h)
+    usage
+    exit 0
+    ;;
+esac
+
+CAN_IF="$1"
 shift
 
 # Parse options
 while [[ $# -gt 0 ]]; do
-    case $1 in
+    case "$1" in
     -fd)
         FD_MODE=true
         shift

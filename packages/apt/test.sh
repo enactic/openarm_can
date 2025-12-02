@@ -28,4 +28,8 @@ apt install -V -y \
     "${repositories_dir}"/"${distribution}"/pool/"${code_name}"/*/*/*/*_"${architecture}".deb
 
 openarm-can-change-baudrate -h
+openarm-can-configure-socketcan -h
 openarm-can-configure-socketcan-4-arms -h
+openarm-can-diagnosis -h
+openarm-can-motor-check -h
+openarm-can-set-zero -h

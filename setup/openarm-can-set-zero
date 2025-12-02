@@ -28,7 +28,6 @@ usage() {
     echo "Examples:"
     echo "  $0 can0 001"
     echo "  $0 can0 --all"
-    exit 1
 }
 
 # Function to check if CAN interface is up and get baudrate
@@ -104,7 +103,15 @@ main() {
     # Check for minimum arguments
     if [ $# -lt 1 ]; then
         usage
+        exit 1
     fi
+
+    case "$1" in
+    -h)
+        usage
+        exit 0
+        ;;
+    esac
 
     local CAN_IF=$1
     local CAN_ID=""
@@ -120,12 +127,14 @@ main() {
     # Validate CAN_IF
     if [ -z "$CAN_IF" ]; then
         usage
+        exit 1
     fi
 
     # Validate CAN_ID only if --all flag is not set
     if [ "$all_flag" = false ] && [ -z "$CAN_ID" ]; then
         echo "Error: CAN_ID is required when -all flag is not used"
         usage
+        exit 1
     fi
 
     # Check if cansend command is available

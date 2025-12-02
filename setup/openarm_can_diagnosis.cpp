@@ -29,6 +29,10 @@
 #include <thread>
 #include <vector>
 
+static void print_usage(const char* program_name) {
+    std::cerr << "Usage: " << program_name << " <can_interface> [-fd]" << std::endl;
+}
+
 // Return true if the netdev is configured for CAN-FD (MTU == CANFD_MTU), false if Classical (MTU ==
 // CAN_MTU)
 static bool iface_is_canfd(const char* ifname) {
@@ -68,9 +72,16 @@ static const char* br_label(int br_code) {
 int main(int argc, char* argv[]) {
     std::cout << "OpenArm CAN diagnostics\n";
 
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "-h") {
+            print_usage(argv[0]);
+            return 0;
+        }
+    }
+
     // Args: <can_interface> [-fd]
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <can_interface> [-fd]\n";
+        print_usage(argv[0]);
         return 1;
     }
     std::string can_if = argv[1];

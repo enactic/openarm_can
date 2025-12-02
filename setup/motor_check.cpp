@@ -43,6 +43,13 @@ void print_motor_status(const openarm::damiao_motor::Motor& motor) {
 }  // namespace
 
 int main(int argc, char* argv[]) {
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "-h") {
+            print_usage(argv[0]);
+            return 0;
+        }
+    }
+
     if (argc < 3 || argc > 5) {
         print_usage(argv[0]);
         return 1;
