@@ -4,11 +4,11 @@ can_interface = can0
 
 # Trapezoid parameters (Seconds)
 rise_width = 1.0
-plateau_width = 0.1
+plateau_width = 1.0
 fall_width = 1.0
 
 # Max torque
-max_torque = -0.3
+max_torque = 0.3
 
-# Sample rate (Hz)
-resolution = 2000
+# Timeout (Microseconds)
+timeout = 500

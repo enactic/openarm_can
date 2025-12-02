@@ -18,7 +18,7 @@ if SEQUENCE_TYPE not in {"step", "ramp"}:
 # === Hardcoded configuration ===
 SEND_CAN_ID = 7
 CAN_INTERFACE = "can0"
-SAMPLE_RATE_HZ = 2000
+TIMEOUT = 500
 EXECUTABLE = f"./build/{SEQUENCE_TYPE}"
 INPUT_DIR = f"control_sequences/inputs/{SEQUENCE_TYPE}"
 CSV_FILE = f"{INPUT_DIR}/motor{SEND_CAN_ID}.csv"
@@ -48,7 +48,7 @@ with open(CSV_FILE, newline="") as csvfile:
                 tmpfile.write(f"fall_width = {row['fall_width']}\n")
                 tmpfile.write(f"max_torque = {row['max_torque']}\n")
 
-            tmpfile.write(f"\nresolution = {SAMPLE_RATE_HZ}\n")
+            tmpfile.write(f"\ntimeout = {TIMEOUT}\n")
             tmpfile.write(f"test_name = {test_name}\n")
 
         print(f"→ Running {SEQUENCE_TYPE} test {i}: {test_name}")

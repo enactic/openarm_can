@@ -54,7 +54,9 @@ int main(int argc, char* argv[]) {
         std::string can_interface = params.at("can_interface");
         double step_torque = std::stod(params.at("step_torque"));
         double step_duration = std::stod(params.at("step_duration"));
-        double sample_rate_hz = std::stod(params.at("resolution"));
+        double timeout = std::stod(params.at("timeout"));
+        double zero_start_time = 0.5;
+        double zero_end_time = 1.0;
 
         // Optional parameter
         std::string test_name = "default";
@@ -62,18 +64,12 @@ int main(int argc, char* argv[]) {
             test_name = params["test_name"];
         }
 
-
-        double dt_us = 1e6 / sample_rate_hz;
-        int zero_steps_start = std::max(1, static_cast<int>(0.5 * sample_rate_hz));
-        int zero_steps_end = std::max(1, static_cast<int>(1.0 * sample_rate_hz));
-        int step_steps = std::max(1, static_cast<int>(step_duration * sample_rate_hz));
-
         std::cout << "=== Step Input Test ===\n"
                   << "Send CAN ID: " << send_can_id << "\n"
                   << "CAN Interface: " << can_interface << "\n"
                   << "Torque: " << step_torque << " Nm\n"
                   << "Duration: " << step_duration << " s\n"
-                  << "  Resolution: " << sample_rate_hz << " Hz (dt_us = " << dt_us << ")\n";
+                  << "  Timeout: " << timeout << " s\n";
 
         openarm::can::socket::OpenArm openarm(can_interface, true);
 
@@ -96,9 +92,9 @@ int main(int argc, char* argv[]) {
         std::ostringstream filename;
         filename << "data/step/motor" << send_can_id << "_step_" << test_name << ".csv";
         std::ofstream csv_file(filename.str());
-        csv_file << "Torque" << send_can_id << ",Time_s";
+        csv_file << "tau" << send_can_id << ",time";
         for (size_t i = 1; i < openarm.get_arm().get_motors().size() + 1; ++i) {
-            csv_file << ",Pos" << i << ",Vel" << i;
+            csv_file << ",pos" << i << ",vel" << i;
         }
         csv_file << "\n";
 
@@ -155,23 +151,38 @@ int main(int argc, char* argv[]) {
         };
 
         // --- Zero torque start ---
-        for (int i = 0; i < zero_steps_start; i++) {
+        auto loop_start = std::chrono::steady_clock::now();
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - loop_start).count();
+            if (elapsed >= zero_start_time) break;
+
             control_motor(send_can_id, 0.0);
-            openarm.recv_all(static_cast<int>(dt_us));
+            openarm.recv_all(timeout);
             log_motor(0.0);
         }
 
         // --- Step Hold ---
-        for (int i = 0; i < step_steps; i++) {
+        loop_start = std::chrono::steady_clock::now();
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - loop_start).count();
+            if (elapsed >= step_duration) break;
+
             control_motor(send_can_id, step_torque);
-            openarm.recv_all(static_cast<int>(dt_us));
+            openarm.recv_all(timeout);
             log_motor(step_torque);
         }
 
         // --- Zero torque end ---
-        for (int i = 0; i < zero_steps_end; i++) {
+        loop_start = std::chrono::steady_clock::now();
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - loop_start).count();
+            if (elapsed >= zero_end_time) break;
+
             control_motor(send_can_id, 0.0);
-            openarm.recv_all(static_cast<int>(dt_us));
+            openarm.recv_all(timeout);
             log_motor(0.0);
         }
 

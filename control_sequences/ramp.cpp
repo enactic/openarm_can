@@ -63,10 +63,12 @@ int main(int argc, char* argv[]) {
         uint32_t send_can_id = std::stoul(params.at("send_can_id"));
         std::string can_interface = params.at("can_interface");
         double max_torque = std::stod(params.at("max_torque"));
-        double rise_width = std::stod(params.at("rise_width"));
-        double plateau_width = std::stod(params.at("plateau_width"));
-        double fall_width = std::stod(params.at("fall_width"));
-        double sample_rate_hz = std::stod(params.at("resolution"));
+        double ramp_up_time = std::stod(params.at("rise_width"));
+        double hold_time = std::stod(params.at("plateau_width"));
+        double ramp_down_time = std::stod(params.at("fall_width"));
+        double timeout = std::stod(params.at("timeout"));
+        double zero_start_time = 0.5;
+        double zero_end_time = 1.0;
 
         // Optional parameter
         std::string test_name = "default";
@@ -74,23 +76,16 @@ int main(int argc, char* argv[]) {
             test_name = params["test_name"];
         }
 
-        double dt_us = static_cast<int>(1e6 / sample_rate_hz);
-        int zero_steps_start = std::max(1, static_cast<int>(0.5 * sample_rate_hz));
-        int zero_steps_end = std::max(1, static_cast<int>(1.0 * sample_rate_hz));
-        int ramp_up_steps = std::max(1, static_cast<int>(rise_width * sample_rate_hz));
-        int plateau_steps = std::max(1, static_cast<int>(plateau_width * sample_rate_hz));
-        int ramp_down_steps = std::max(1, static_cast<int>(fall_width * sample_rate_hz));
-
         // Print everything out
         std::cout << "=== OpenArm Motor Control Configuration ===\n"
                 << "Send CAN ID: " << send_can_id << "\n"
                 << "CAN Interface: " << can_interface << "\n"
                 << "\nTrapezoid Profile:\n"
-                << "  Height: " << max_torque << " Nm\n"
-                << "  Rise width: " << rise_width << " s\n"
-                << "  Plateau width: " << plateau_width << " s\n"
-                << "  Fall width: " << fall_width << " s\n"
-                << "  Resolution: " << sample_rate_hz << " Hz (dt_us = " << dt_us << ")\n";
+                << "  Max Torque: " << max_torque << " Nm\n"
+                << "  Rise Time: " << ramp_up_time << " s\n"
+                << "  Plateau Time: " << hold_time << " s\n"
+                << "  Fall Time: " << ramp_down_time << " s\n"
+                << "  Timeout: " << timeout << " us\n";
 
 
         // Initialize OpenArm with CAN interface
@@ -122,7 +117,7 @@ int main(int argc, char* argv[]) {
         // Header
         csv_file << "Torque" << send_can_id << ",Time_s";
         for (size_t i = 1; i < openarm.get_arm().get_motors().size() + 1; ++i) {
-            csv_file << ",Pos" << i << ",Vel" << i;
+            csv_file << ",Pos" << i << ",Vel" << i << ",Tor" << i;
         }
         csv_file << "\n";
 
@@ -177,45 +172,73 @@ int main(int argc, char* argv[]) {
             csv_file << torque << "," << t;
             for (const auto& m : motors) {
                 csv_file << "," << m.get_position()
-                        << "," << m.get_velocity();
+                        << "," << m.get_velocity()
+                        << "," << m.get_torque();
             }
             csv_file << "\n";
         };
 
         // --- Zero torque start ---
-        for (int i = 0; i < zero_steps_start; i++) {
+        auto loop_start = std::chrono::steady_clock::now();
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - loop_start).count();
+            if (elapsed >= zero_start_time) break;
+
             control_motor(send_can_id, 0.0);
-            openarm.recv_all(dt_us);
+            openarm.recv_all(timeout);
             log_motor(0.0);
         }
 
         // --- Ramp up ---
-        for (int i = 1; i <= ramp_up_steps; i++) {
-            double torque = max_torque * i / ramp_up_steps;
+        loop_start = std::chrono::steady_clock::now();
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - loop_start).count();
+            if (elapsed >= ramp_up_time) break;
+
+            double factor = elapsed / ramp_up_time;
+            double torque = max_torque * factor;
             control_motor(send_can_id, torque);
-            openarm.recv_all(dt_us);
+            openarm.recv_all(timeout);
             log_motor(torque);
         }
 
         // --- Hold ---
-        for (int i = 0; i < plateau_steps; i++) {
+        loop_start = std::chrono::steady_clock::now();
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - loop_start).count();
+            if (elapsed >= hold_time) break;
+
             control_motor(send_can_id, max_torque);
-            openarm.recv_all(dt_us);
+            openarm.recv_all(timeout);
             log_motor(max_torque);
         }
 
         // --- Ramp down ---
-        for (int i = ramp_down_steps; i >= 0; i--) {
-            double torque = max_torque * i / ramp_down_steps;
+        loop_start = std::chrono::steady_clock::now();
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - loop_start).count();
+            if (elapsed >= ramp_down_time) break;
+
+            double factor = elapsed / ramp_down_time;
+            double torque = max_torque * (1 - factor);
             control_motor(send_can_id, torque);
-            openarm.recv_all(dt_us);
+            openarm.recv_all(timeout);
             log_motor(torque);
         }
 
         // --- Zero torque end ---
-        for (int i = 0; i < zero_steps_end; i++) {
+        loop_start = std::chrono::steady_clock::now();
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            double elapsed = std::chrono::duration<double>(now - loop_start).count();
+            if (elapsed >= zero_end_time) break;
+
             control_motor(send_can_id, 0.0);
-            openarm.recv_all(dt_us);
+            openarm.recv_all(timeout);
             log_motor(0.0);
         }
 
