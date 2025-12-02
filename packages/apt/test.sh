@@ -27,4 +27,5 @@ repositories_dir=/host/packages/apt/repositories
 apt install -V -y \
     "${repositories_dir}"/"${distribution}"/pool/"${code_name}"/*/*/*/*_"${architecture}".deb
 
+openarm-can-change-baudrate -h
 openarm-can-configure-socketcan-4-arms -h

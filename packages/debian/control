@@ -59,6 +59,7 @@ Depends:
  can-utils,
  iproute2,
  python3,
+ python3-can,
 Description: Utility tools for OpenArm CAN configuration
  OpenArm CAN Library is a communication bridge between high-level
  OpenArm control applications and low-level motor protocols.
