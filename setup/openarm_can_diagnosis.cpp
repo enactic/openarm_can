@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     std::cout << "OpenArm CAN diagnostics\n";
 
     for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "-h") {
+        if (std::string_view(argv[i]) == "-h") {
             print_usage(argv[0]);
             return 0;
         }
