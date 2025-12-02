@@ -47,12 +47,10 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-case "$1" in
--h)
+if [ "$1" = "-h" ]; then
     usage
     exit 0
-    ;;
-esac
+fi
 
 CAN_IF="$1"
 shift
