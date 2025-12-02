@@ -106,12 +106,10 @@ main() {
         exit 1
     fi
 
-    case "$1" in
-    -h)
+    if [ "$1" = "-h" ]; then
         usage
         exit 0
-        ;;
-    esac
+    fi
 
     local CAN_IF=$1
     local CAN_ID=""
