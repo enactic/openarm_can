@@ -1,0 +1,37 @@
+# Select arm
+can_interface = can0
+
+# amplitude in Nm
+# frequency in Hz, non-harmonic: 0.5, 0.8, 1.3, 1.7
+
+# motor 1
+send_can_id = 1
+signal = none
+
+# motor 2
+send_can_id = 2
+signal = none
+
+# motor 3
+send_can_id = 3
+signal = none
+
+# motor 4
+send_can_id = 4
+signal = none
+
+# motor 5
+send_can_id = 5
+signal = none
+
+# motor 6
+send_can_id = 6
+signal = none
+
+# motor 7
+send_can_id = 7
+signal = sine
+amplitude = 0.3
+frequency = 0.3
+phase = 0.0
+shift = 0.0

@@ -39,7 +39,9 @@ add_library(
   src/openarm/damiao_motor/dm_motor.cpp
   src/openarm/damiao_motor/dm_motor_control.cpp
   src/openarm/damiao_motor/dm_motor_device.cpp
-  src/openarm/damiao_motor/dm_motor_device_collection.cpp)
+  src/openarm/damiao_motor/dm_motor_device_collection.cpp
+  src/sysid/signal/factory.cpp
+  src/sysid/utils/parser.cpp)
 set_target_properties(
   openarm_can
   PROPERTIES POSITION_INDEPENDENT_CODE ON
@@ -140,6 +142,14 @@ target_link_libraries(ramp openarm_can)
 # Add step test executable
 add_executable(step control_sequences/step.cpp)
 target_link_libraries(step openarm_can)
+
+# Add test executable
+add_executable(tester control_sequences/tester.cpp)
+target_link_libraries(tester openarm_can)
+
+# Add periodic executable
+add_executable(periodic control_sequences/periodic.cpp)
+target_link_libraries(periodic openarm_can)
 
 # Install scripts
 install(PROGRAMS setup/change_baudrate.py setup/configure_socketcan.sh
