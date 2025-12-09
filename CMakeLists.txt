@@ -122,10 +122,6 @@ add_executable(openarm-can-motor-check setup/motor_check.cpp)
 target_link_libraries(openarm-can-motor-check openarm_can)
 install(TARGETS openarm-can-motor-check DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(posvel-check examples/motor_posvel_test.cpp)
-target_link_libraries(posvel-check openarm_can)
-install(TARGETS posvel-check DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
-
 add_executable(motor-check setup/motor_check.cpp)
 target_link_libraries(motor-check openarm_can)
 install(TARGETS motor-check DESTINATION ${OPENARM_CAN_LIBEXEC_DIR})
