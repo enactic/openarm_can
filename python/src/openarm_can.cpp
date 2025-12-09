@@ -168,6 +168,18 @@ NB_MODULE(openarm_can, m) {
         .def_rw("q", &MITParam::q)
         .def_rw("dq", &MITParam::dq)
         .def_rw("tau", &MITParam::tau);
+
+    // PosVelParam struct
+    nb::class_<PosVelParam>(m, "PosVelParam")
+        .def(nb::init<>())
+        .def(
+            "__init__",
+            [](PosVelParam* param, double q, double dq) {
+                new (param) PosVelParam(PosVelParam{q, dq});
+            },
+            nb::arg("q"), nb::arg("dq"))
+        .def_rw("q", &PosVelParam::q)
+        .def_rw("dq", &PosVelParam::dq);
     // ============================================================================
     // DAMIAO MOTOR NAMESPACE - MAIN CLASSES
     // ============================================================================
@@ -200,6 +212,9 @@ NB_MODULE(openarm_can, m) {
                     nb::arg("motor"))
         .def_static("create_mit_control_command", &CanPacketEncoder::create_mit_control_command,
                     nb::arg("motor"), nb::arg("mit_param"))
+        .def_static("create_posvel_control_command",
+                    &CanPacketEncoder::create_posvel_control_command, nb::arg("motor"),
+                    nb::arg("posvel_param"))
         .def_static("create_query_param_command", &CanPacketEncoder::create_query_param_command,
                     nb::arg("motor"), nb::arg("rid"));
 
@@ -350,6 +365,10 @@ NB_MODULE(openarm_can, m) {
         .def("mit_control_one", &DMDeviceCollection::mit_control_one, nb::arg("index"),
              nb::arg("mit_param"))
         .def("mit_control_all", &DMDeviceCollection::mit_control_all, nb::arg("mit_params"))
+        .def("posvel_control_one", &DMDeviceCollection::posvel_control_one, nb::arg("index"),
+             nb::arg("posvel_param"))
+        .def("posvel_control_all", &DMDeviceCollection::posvel_control_all,
+             nb::arg("posvel_params"))
         .def("get_motors", &DMDeviceCollection::get_motors)
         .def("get_device_collection", &DMDeviceCollection::get_device_collection,
              nb::rv_policy::reference);

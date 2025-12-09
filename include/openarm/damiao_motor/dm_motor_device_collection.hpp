@@ -50,6 +50,10 @@ public:
     void mit_control_one(int i, const MITParam& mit_param);
     void mit_control_all(const std::vector<MITParam>& mit_params);
 
+    // PosVel control operation
+    void posvel_control_one(int i, const PosVelParam& posvel_param);
+    void posvel_control_all(const std::vector<PosVelParam>& posvel_params);
+
     // Device collection access
     std::vector<Motor> get_motors() const;
     Motor get_motor(int i) const;
