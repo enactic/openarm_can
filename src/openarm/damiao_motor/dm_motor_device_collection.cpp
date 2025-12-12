@@ -112,6 +112,18 @@ void DMDeviceCollection::mit_control_all(const std::vector<MITParam>& mit_params
     }
 }
 
+void DMDeviceCollection::posvel_control_one(int i, const PosVelParam& posvel_param) {
+    CANPacket posvel_cmd = CanPacketEncoder::create_posvel_control_command(
+        get_dm_devices()[i]->get_motor(), posvel_param);
+    send_command_to_device(get_dm_devices()[i], posvel_cmd);
+}
+
+void DMDeviceCollection::posvel_control_all(const std::vector<PosVelParam>& posvel_params) {
+    for (size_t i = 0; i < posvel_params.size(); i++) {
+        posvel_control_one(i, posvel_params[i]);
+    }
+}
+
 std::vector<Motor> DMDeviceCollection::get_motors() const {
     std::vector<Motor> motors;
     for (auto dm_device : get_dm_devices()) {

@@ -39,6 +39,13 @@ CANPacket CanPacketEncoder::create_mit_control_command(const Motor& motor,
     return {motor.get_send_can_id(), pack_mit_control_data(motor.get_motor_type(), mit_param)};
 }
 
+CANPacket CanPacketEncoder::create_posvel_control_command(const Motor& motor,
+                                                          const PosVelParam& posvel_param) {
+    // pos vel mode needs extra 0x100
+    return {motor.get_send_can_id() + 0x100,
+            pack_posvel_control_data(motor.get_motor_type(), posvel_param)};
+}
+
 CANPacket CanPacketEncoder::create_query_param_command(const Motor& motor, int RID) {
     return {0x7FF, pack_query_param_data(motor.get_send_can_id(), RID)};
 }
@@ -123,6 +130,18 @@ std::vector<uint8_t> CanPacketEncoder::pack_mit_control_data(MotorType motor_typ
             static_cast<uint8_t>(tau_uint & 0xFF)};
 }
 
+std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(MotorType motor_type,
+                                                                const PosVelParam& posvel_param) {
+    double pos = posvel_param.q;
+    double vel = posvel_param.dq;
+
+    auto pb = float_to_uint8s(static_cast<float>(pos));
+    auto vb = float_to_uint8s(static_cast<float>(vel));
+
+    // Pack into 8 bytes: [pos(4)][vel(4)]
+    return {pb[0], pb[1], pb[2], pb[3], vb[0], vb[1], vb[2], vb[3]};
+}
+
 std::vector<uint8_t> CanPacketEncoder::pack_query_param_data(uint32_t send_can_id, int RID) {
     return {static_cast<uint8_t>(send_can_id & 0xFF),
             static_cast<uint8_t>((send_can_id >> 8) & 0xFF),
@@ -148,6 +167,12 @@ uint16_t CanPacketEncoder::double_to_uint(double x, double x_min, double x_max, 
     double span = x_max - x_min;
     double data_norm = (x - x_min) / span;
     return static_cast<uint16_t>(data_norm * ((1 << bits) - 1));
+}
+
+std::array<uint8_t, 4> CanPacketEncoder::float_to_uint8s(float value) {
+    std::array<uint8_t, 4> bytes{};
+    std::memcpy(bytes.data(), &value, sizeof(float));
+    return bytes;
 }
 
 double CanPacketDecoder::uint_to_double(uint16_t x, double min, double max, int bits) {
