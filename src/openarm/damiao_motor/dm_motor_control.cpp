@@ -132,8 +132,6 @@ std::vector<uint8_t> CanPacketEncoder::pack_mit_control_data(MotorType motor_typ
 
 std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(MotorType motor_type,
                                                                 const PosVelParam& posvel_param) {
-    const auto& lim = MOTOR_LIMIT_PARAMS[static_cast<int>(motor_type)];
-
     double pos = posvel_param.q;
     double vel = posvel_param.dq;
 
