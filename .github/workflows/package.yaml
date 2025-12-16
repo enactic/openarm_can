@@ -31,14 +31,39 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y reprotest
+      - name: Prepare environment variables
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "VERSION=${GITHUB_REF_NAME}" >> "${GITHUB_ENV}"
+          else
+            VERSION=$(grep '^project' CMakeLists.txt | grep -o '[0-9.]*')
+            echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+          fi
+      - name: Test source archive reproducible
+        run: |
+          sudo reprotest \
+            "rake dist VERSION=${VERSION}" \
+            openarm-can-${VERSION}.tar.gz
       - name: Create source archive
         run: |
           rake dist
+          sha256sum \
+            openarm-can-${VERSION}.tar.gz > \
+            openarm-can-${VERSION}.tar.gz.sha256
+          sha512sum \
+            openarm-can-${VERSION}.tar.gz > \
+            openarm-can-${VERSION}.tar.gz.sha512
       - uses: actions/upload-artifact@v6
         with:
           name: source
           path: |
-            openarm-can-*.tar.gz
+            openarm-can-${{ env.VERSION }}.tar.gz
+            openarm-can-${{ env.VERSION }}.tar.gz.sha256
+            openarm-can-${{ env.VERSION }}.tar.gz.sha512
   build:
     name: Build
     needs: source
@@ -149,3 +174,27 @@ jobs:
             --volume ${PWD}:/host:ro \
             ${TEST_DOCKER_IMAGE} \
             /host/packages/${TASK_NAMESPACE}/test.sh
+  release:
+    name: Release
+    if: github.ref_type == 'tag'
+    needs:
+      - source
+      - build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      discussions: write
+    steps:
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME}
+          gh release create ${version} \
+            --discussion-category Announcements \
+            --generate-notes \
+            --repo ${GITHUB_REPOSITORY} \
+            --title "OpenArm CAN ${version}" \
+            --verify-tag \
+            openarm-can-${version}.tar.gz*
