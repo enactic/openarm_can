@@ -19,6 +19,8 @@ project(openarm_can VERSION 1.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(OPENARM_CAN_USE_SHARED_OBJECT_VERSION "Use shared object version" ON)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -40,11 +42,12 @@ add_library(
   src/openarm/damiao_motor/dm_motor_control.cpp
   src/openarm/damiao_motor/dm_motor_device.cpp
   src/openarm/damiao_motor/dm_motor_device_collection.cpp)
-set_target_properties(
-  openarm_can
-  PROPERTIES POSITION_INDEPENDENT_CODE ON
-             VERSION ${PROJECT_VERSION}
-             SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(openarm_can PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(BUILD_SHARED_LIBS AND OPENARM_CAN_USE_SHARED_OBJECT_VERSION)
+  set_target_properties(
+    openarm_can PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION
+                                                      ${PROJECT_VERSION_MAJOR})
+endif()
 set(USE_FILE_SET_HEADERS FALSE)
 # Meson doesn't support FILE_SET TYPE HEADERS...
 # if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23)
