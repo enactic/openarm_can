@@ -22,11 +22,34 @@ project(
 py = import('python').find_installation(pure: false)
 nanobind_dep = dependency('nanobind')
 
-openarm_cpp_dep = dependency(
+openarm_can_cpp_dep = dependency(
     'openarm-can',
     'OpenArmCAN',
     modules: ['OpenArmCAN::openarm_can'],
+    required: false,
 )
+if not openarm_can_cpp_dep.found()
+    cmake = import('cmake')
+    options = cmake.subproject_options()
+    options.add_cmake_defines(
+        {
+            'BUILD_SHARED_LIBS': true,
+            # meson-python installs only libopenarm_can.so.1.1.0...
+            # libopenarm_can.so.1 isn't installed...
+            'OPENARM_CAN_USE_SHARED_OBJECT_VERSION': false,
+        },
+    )
+    if get_option('buildtype') == 'debug'
+        options.add_cmake_defines({'CMAKE_BUILD_TYPE': 'Debug'})
+    elif get_option('buildtype') == 'release'
+        options.add_cmake_defines({'CMAKE_BUILD_TYPE': 'Release'})
+    endif
+    openarm_can_cpp_subproject = cmake.subproject(
+        'openarm-can',
+        options: options,
+    )
+    openarm_can_cpp_dep = openarm_can_cpp_subproject.dependency('openarm_can')
+endif
 
 py.install_sources(
     'openarm/can/__init__.py',
@@ -37,5 +60,5 @@ py.extension_module(
     'openarm_can',
     'src/openarm_can.cpp',
     install: true,
-    dependencies: [openarm_cpp_dep, nanobind_dep],
+    dependencies: [openarm_can_cpp_dep, nanobind_dep],
 )

@@ -54,6 +54,11 @@ namespace :release do
           "#{$1}#{new_version}#{$2}"
         end
       end
+      Helper.update_content("python/subprojects/openarm-can.wrap") do |content|
+        content.sub(/^(revision = ).*?$/) do
+          "#{$1}#{new_version}"
+        end
+      end
       ruby("-C",
            "packages",
            "-S",
@@ -67,7 +72,8 @@ namespace :release do
          "packages/fedora/openarm-can.spec",
          "python/meson.build",
          "python/pyproject.toml",
-         "python/openarm/can/__init__.py")
+         "python/openarm/can/__init__.py",
+         "python/subprojects/openarm-can.wrap")
       sh("git",
          "commit",
          "-m",
