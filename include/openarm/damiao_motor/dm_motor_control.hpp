@@ -16,6 +16,7 @@
 
 #include <linux/can.h>
 
+#include <array>
 #include <cstdint>
 #include <cstring>  // for memcpy
 #include <iostream>
@@ -62,6 +63,12 @@ struct PosVelParam {
     double dq;
 };
 
+struct PosForceParam {
+    double q;
+    double dq;
+    double i;
+};
+
 class CanPacketEncoder {
 public:
     static CANPacket create_enable_command(const Motor& motor);
@@ -70,6 +77,9 @@ public:
     static CANPacket create_mit_control_command(const Motor& motor, const MITParam& mit_param);
     static CANPacket create_posvel_control_command(const Motor& motor,
                                                    const PosVelParam& posvel_param);
+    static CANPacket create_posforce_control_command(const Motor& motor,
+                                                     const PosForceParam& posforce_param);
+    static CANPacket create_set_control_mode_command(const Motor& motor, ControlMode mode);
     static CANPacket create_query_param_command(const Motor& motor, int RID);
     static CANPacket create_refresh_command(const Motor& motor);
 
@@ -78,6 +88,8 @@ private:
                                                       const MITParam& mit_param);
     static std::vector<uint8_t> pack_posvel_control_data(MotorType motor_type,
                                                          const PosVelParam& posvel_param);
+    static std::vector<uint8_t> pack_posforce_control_data(MotorType motor_type,
+                                                           const PosForceParam& posforce_param);
 
     static std::vector<uint8_t> pack_query_param_data(uint32_t send_can_id, int RID);
     static std::vector<uint8_t> pack_command_data(uint8_t cmd);

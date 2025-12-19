@@ -89,6 +89,18 @@ void DMDeviceCollection::query_param_all(int RID) {
     }
 }
 
+void DMDeviceCollection::set_control_mode_one(int i, ControlMode mode) {
+    CANPacket cmd = CanPacketEncoder::create_set_control_mode_command(
+        get_dm_devices()[i]->get_motor(), mode);
+    send_command_to_device(get_dm_devices()[i], cmd);
+}
+
+void DMDeviceCollection::set_control_mode_all(ControlMode mode) {
+    for (size_t i = 0; i < get_dm_devices().size(); i++) {
+        set_control_mode_one(static_cast<int>(i), mode);
+    }
+}
+
 void DMDeviceCollection::send_command_to_device(std::shared_ptr<DMCANDevice> dm_device,
                                                 const CANPacket& packet) {
     if (can_socket_.is_canfd_enabled()) {
@@ -121,6 +133,18 @@ void DMDeviceCollection::posvel_control_one(int i, const PosVelParam& posvel_par
 void DMDeviceCollection::posvel_control_all(const std::vector<PosVelParam>& posvel_params) {
     for (size_t i = 0; i < posvel_params.size(); i++) {
         posvel_control_one(i, posvel_params[i]);
+    }
+}
+
+void DMDeviceCollection::posforce_control_one(int i, const PosForceParam& posforce_param) {
+    CANPacket posforce_cmd = CanPacketEncoder::create_posforce_control_command(
+        get_dm_devices()[i]->get_motor(), posforce_param);
+    send_command_to_device(get_dm_devices()[i], posforce_cmd);
+}
+
+void DMDeviceCollection::posforce_control_all(const std::vector<PosForceParam>& posforce_params) {
+    for (size_t i = 0; i < posforce_params.size(); i++) {
+        posforce_control_one(i, posforce_params[i]);
     }
 }
 

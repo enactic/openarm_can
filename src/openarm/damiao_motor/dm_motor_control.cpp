@@ -46,8 +46,29 @@ CANPacket CanPacketEncoder::create_posvel_control_command(const Motor& motor,
             pack_posvel_control_data(motor.get_motor_type(), posvel_param)};
 }
 
+CANPacket CanPacketEncoder::create_posforce_control_command(const Motor& motor,
+                                                            const PosForceParam& posforce_param) {
+    // pos force mode needs extra 0x300
+    return {motor.get_send_can_id() + 0x300,
+            pack_posforce_control_data(motor.get_motor_type(), posforce_param)};
+}
+
 CANPacket CanPacketEncoder::create_query_param_command(const Motor& motor, int RID) {
     return {0x7FF, pack_query_param_data(motor.get_send_can_id(), RID)};
+}
+
+CANPacket CanPacketEncoder::create_set_control_mode_command(const Motor& motor, ControlMode mode) {
+    uint8_t send_can_id = motor.get_send_can_id();
+    // Write to RID::CTRL_MODE with mode value (little-endian uint32 per DM protocol).
+    std::vector<uint8_t> data = {static_cast<uint8_t>(send_can_id & 0xFF),
+                                 static_cast<uint8_t>((send_can_id >> 8) & 0xFF),
+                                 0x55,
+                                 static_cast<uint8_t>(RID::CTRL_MODE),
+                                 static_cast<uint8_t>(static_cast<uint8_t>(mode)),
+                                 0x00,
+                                 0x00,
+                                 0x00};
+    return {0x7FF, data};
 }
 
 CANPacket CanPacketEncoder::create_refresh_command(const Motor& motor) {
@@ -140,6 +161,28 @@ std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(MotorType motor_
 
     // Pack into 8 bytes: [pos(4)][vel(4)]
     return {pb[0], pb[1], pb[2], pb[3], vb[0], vb[1], vb[2], vb[3]};
+}
+
+std::vector<uint8_t> CanPacketEncoder::pack_posforce_control_data(
+    MotorType motor_type, const PosForceParam& posforce_param) {
+    (void)motor_type;  // Currently unused; reserved for per-motor limits if needed.
+
+    auto pos_bytes = float_to_uint8s(static_cast<float>(posforce_param.q));
+
+    // Clamp to payload size to avoid overflow before casting.
+    uint16_t vel_uint =
+        static_cast<uint16_t>(limit_min_max(posforce_param.dq, 0.0, static_cast<double>(UINT16_MAX)));
+    uint16_t i_uint =
+        static_cast<uint16_t>(limit_min_max(posforce_param.i, 0.0, 10000.0));
+
+    return {pos_bytes[0],
+            pos_bytes[1],
+            pos_bytes[2],
+            pos_bytes[3],
+            static_cast<uint8_t>(vel_uint & 0xFF),
+            static_cast<uint8_t>((vel_uint >> 8) & 0xFF),
+            static_cast<uint8_t>(i_uint & 0xFF),
+            static_cast<uint8_t>((i_uint >> 8) & 0xFF)};
 }
 
 std::vector<uint8_t> CanPacketEncoder::pack_query_param_data(uint32_t send_can_id, int RID) {
