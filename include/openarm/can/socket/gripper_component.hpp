@@ -33,14 +33,20 @@ public:
         damiao_motor::ControlMode control_mode = damiao_motor::ControlMode::POS_FORCE);
 
     // Gripper-specific controls
+    // speed_rad_s: max closing speed in rad/s, torque_pu: per-unit current limit [0, 1].
+    // position: gripper target (0=closed, 1=open), speed_rad_s: max speed, torque_pu: per-unit
+    // limit. torque_pu: per-unit current limit [0, 1], speed_rad_s: max closing speed in rad/s.
     void open();
     void open(double kp, double kd);
     void close();
     void close(double kp, double kd);
     void set_limit(double speed_rad_s, double torque_pu);
+    void grasp(double torque_pu, double speed_rad_s = 5.0);
+
     // Pos-force control with optional per-call limit overrides.
     void set_position(double position, std::optional<double> speed_rad_s = std::nullopt,
                       std::optional<double> torque_pu = std::nullopt);
+
     // Legacy MIT control path.
     void set_position_mit(double position, double kp = 50.0, double kd = 1.0);
     damiao_motor::Motor* get_motor() const { return motor_.get(); }
@@ -72,6 +78,7 @@ private:
     // Gripper configuration
     double gripper_open_position_ = 1.0;
     double gripper_closed_position_ = 0.0;
+    double gripper_grasp_position_ = -0.1;
     double motor_open_position_ = -1.0472;  // 60 degrees
     double motor_closed_position_ = 0.0;
 };

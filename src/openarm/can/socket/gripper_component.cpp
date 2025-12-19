@@ -53,6 +53,10 @@ void GripperComponent::set_limit(double speed_rad_s, double torque_pu) {
     limit_torque_pu_ = std::clamp(torque_pu, 0.0, 1.0);
 }
 
+void GripperComponent::grasp(double torque_pu, double speed_rad_s) {
+    set_position(gripper_grasp_position_, speed_rad_s, torque_pu);
+}
+
 void GripperComponent::set_position(double gripper_position, std::optional<double> speed_rad_s,
                                     std::optional<double> torque_pu) {
     if (!motor_device_) return;
