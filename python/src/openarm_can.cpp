@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 
@@ -124,7 +125,7 @@ NB_MODULE(openarm_can, m) {
         .value("MIT", ControlMode::MIT)
         .value("POS_VEL", ControlMode::POS_VEL)
         .value("VEL", ControlMode::VEL)
-        .value("TORQUE_POS", ControlMode::TORQUE_POS)
+        .value("POS_FORCE", ControlMode::POS_FORCE)
         .export_values();
 
     // ============================================================================
@@ -413,9 +414,20 @@ NB_MODULE(openarm_can, m) {
     nb::class_<GripperComponent, DMDeviceCollection>(m, "GripperComponent")
         .def(nb::init<CANSocket&>(), nb::arg("can_socket"))
         .def("init_motor_device", &GripperComponent::init_motor_device, nb::arg("motor_type"),
-             nb::arg("send_can_id"), nb::arg("recv_can_id"), nb::arg("use_fd"))
-        .def("open", &GripperComponent::open, nb::arg("kp") = 50.0, nb::arg("kd") = 1.0)
-        .def("close", &GripperComponent::close, nb::arg("kp") = 50.0, nb::arg("kd") = 1.0)
+             nb::arg("send_can_id"), nb::arg("recv_can_id"), nb::arg("use_fd"),
+             nb::arg("control_mode") = ControlMode::POS_FORCE)
+        .def("open", nb::overload_cast<>(&GripperComponent::open))
+        .def("open", nb::overload_cast<double, double>(&GripperComponent::open), nb::arg("kp"),
+             nb::arg("kd"))
+        .def("close", nb::overload_cast<>(&GripperComponent::close))
+        .def("close", nb::overload_cast<double, double>(&GripperComponent::close), nb::arg("kp"),
+             nb::arg("kd"))
+        .def("set_limit", &GripperComponent::set_limit, nb::arg("speed_rad_s"),
+             nb::arg("torque_pu"))
+        .def("set_position", &GripperComponent::set_position, nb::arg("position"),
+             nb::arg("speed_rad_s") = nb::none(), nb::arg("torque_pu") = nb::none())
+        .def("set_position_mit", &GripperComponent::set_position_mit, nb::arg("position"),
+             nb::arg("kp") = 50.0, nb::arg("kd") = 1.0)
         .def("get_motor", &GripperComponent::get_motor, nb::rv_policy::reference_internal);
 
     // OpenArm class (main high-level interface)
@@ -425,7 +437,7 @@ NB_MODULE(openarm_can, m) {
         .def("init_arm_motors", &OpenArm::init_arm_motors, nb::arg("motor_types"),
              nb::arg("send_can_ids"), nb::arg("recv_can_ids"))
         .def("init_gripper_motor", &OpenArm::init_gripper_motor, nb::arg("motor_type"),
-             nb::arg("send_can_id"), nb::arg("recv_can_id"))
+             nb::arg("send_can_id"), nb::arg("recv_can_id"), nb::arg("control_mode")=ControlMode::POS_FORCE)
         .def("get_arm", &OpenArm::get_arm, nb::rv_policy::reference)
         .def("get_gripper", &OpenArm::get_gripper, nb::rv_policy::reference)
         .def("get_master_can_device_collection", &OpenArm::get_master_can_device_collection,

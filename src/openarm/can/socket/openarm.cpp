@@ -15,8 +15,8 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
-#include <iostream>
 #include <openarm/can/socket/openarm.hpp>
+#include "openarm/damiao_motor/dm_motor_constants.hpp"
 
 namespace openarm::can::socket {
 
@@ -43,8 +43,8 @@ void OpenArm::init_arm_motors(const std::vector<damiao_motor::MotorType>& motor_
 }
 
 void OpenArm::init_gripper_motor(damiao_motor::MotorType motor_type, uint32_t send_can_id,
-                                 uint32_t recv_can_id) {
-    gripper_->init_motor_device(motor_type, send_can_id, recv_can_id, enable_fd_);
+                                 uint32_t recv_can_id, damiao_motor::ControlMode control_mode) {
+    gripper_->init_motor_device(motor_type, send_can_id, recv_can_id, enable_fd_, control_mode);
     register_dm_device_collection(*gripper_);
 }
 

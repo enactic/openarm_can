@@ -36,7 +36,7 @@ enum class MotorType : uint8_t {
     COUNT = 13
 };
 
-enum class ControlMode : uint8_t { MIT = 1, POS_VEL = 2, VEL = 3, TORQUE_POS = 4 };
+enum class ControlMode : uint8_t { MIT = 1, POS_VEL = 2, VEL = 3, POS_FORCE = 4 };
 
 enum class RID : uint8_t {
     UV_Value = 0,

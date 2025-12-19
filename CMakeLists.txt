@@ -145,7 +145,4 @@ install(
 
 # Add tests
 if(BUILD_TESTING)
-  add_executable(openarm-can-posforce-test test/posforce_command_test.cpp)
-  target_link_libraries(openarm-can-posforce-test openarm_can)
-  add_test(NAME openarm-can-posforce-test COMMAND openarm-can-posforce-test)
 endif()

@@ -15,8 +15,8 @@
 #pragma once
 
 #define _USE_MATH_DEFINES
-#include <cmath>
 #include <memory>
+#include <optional>
 
 #include "../../damiao_motor/dm_motor.hpp"
 #include "../../damiao_motor/dm_motor_device_collection.hpp"
@@ -29,18 +29,26 @@ public:
     ~GripperComponent() = default;
 
     void init_motor_device(damiao_motor::MotorType motor_type, uint32_t send_can_id,
-                           uint32_t recv_can_id, bool use_fd);
+                           uint32_t recv_can_id, bool use_fd, damiao_motor::ControlMode control_mode = damiao_motor::ControlMode::POS_FORCE);
 
     // Gripper-specific controls
-    void open(double kp = 50.0, double kd = 1.0);
-    void close(double kp = 50.0, double kd = 1.0);
+    void open();
+    void open(double kp, double kd);
+    void close();
+    void close(double kp, double kd);
+    void set_limit(double speed_rad_s, double torque_pu);
+    // Pos-force control with optional per-call limit overrides.
+    void set_position(double position, std::optional<double> speed_rad_s = std::nullopt,
+                      std::optional<double> torque_pu = std::nullopt);
+    // Legacy MIT control path.
+    void set_position_mit(double position, double kp = 50.0, double kd = 1.0);
     damiao_motor::Motor* get_motor() const { return motor_.get(); }
 
 private:
     std::unique_ptr<damiao_motor::Motor> motor_;
     std::shared_ptr<damiao_motor::DMCANDevice> motor_device_;
-
-    void set_position(double position, double kp = 50.0, double kd = 1.0);
+    double limit_speed_rad_s_ = 5.0;
+    double limit_torque_pu_ = 0.5;
 
     // The actual physical gripper uses a slider cranker-like mechanism, this mapping is an
     // approximation.
