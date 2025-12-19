@@ -176,8 +176,7 @@ std::vector<uint8_t> CanPacketEncoder::pack_posforce_control_data(
     auto pos_bytes = float_to_uint8s(static_cast<float>(posforce_param.q));
 
     double vel_scaled = posforce_param.dq * 100.0;
-    uint16_t vel_uint =
-        static_cast<uint16_t>(limit_min_max(vel_scaled, 0.0, 10000.0));
+    uint16_t vel_uint = static_cast<uint16_t>(limit_min_max(vel_scaled, 0.0, 10000.0));
     double i_scaled = limit_min_max(posforce_param.i, 0.0, 1.0) * 10000.0;
     uint16_t i_uint = static_cast<uint16_t>(limit_min_max(i_scaled, 0.0, 10000.0));
 

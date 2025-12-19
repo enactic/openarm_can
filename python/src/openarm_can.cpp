@@ -437,7 +437,8 @@ NB_MODULE(openarm_can, m) {
         .def("init_arm_motors", &OpenArm::init_arm_motors, nb::arg("motor_types"),
              nb::arg("send_can_ids"), nb::arg("recv_can_ids"))
         .def("init_gripper_motor", &OpenArm::init_gripper_motor, nb::arg("motor_type"),
-             nb::arg("send_can_id"), nb::arg("recv_can_id"), nb::arg("control_mode")=ControlMode::POS_FORCE)
+             nb::arg("send_can_id"), nb::arg("recv_can_id"),
+             nb::arg("control_mode") = ControlMode::POS_FORCE)
         .def("get_arm", &OpenArm::get_arm, nb::rv_policy::reference)
         .def("get_gripper", &OpenArm::get_gripper, nb::rv_policy::reference)
         .def("get_master_can_device_collection", &OpenArm::get_master_can_device_collection,

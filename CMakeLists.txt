@@ -145,4 +145,5 @@ install(
 
 # Add tests
 if(BUILD_TESTING)
+
 endif()

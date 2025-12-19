@@ -24,7 +24,8 @@ GripperComponent::GripperComponent(canbus::CANSocket& can_socket)
     : DMDeviceCollection(can_socket) {}
 
 void GripperComponent::init_motor_device(damiao_motor::MotorType motor_type, uint32_t send_can_id,
-                                         uint32_t recv_can_id, bool use_fd, damiao_motor::ControlMode control_mode) {
+                                         uint32_t recv_can_id, bool use_fd,
+                                         damiao_motor::ControlMode control_mode) {
     // Create the motor
     motor_ = std::make_unique<damiao_motor::Motor>(motor_type, send_can_id, recv_can_id);
     // Create the device with a reference to the motor
@@ -52,8 +53,7 @@ void GripperComponent::set_limit(double speed_rad_s, double torque_pu) {
     limit_torque_pu_ = std::clamp(torque_pu, 0.0, 1.0);
 }
 
-void GripperComponent::set_position(double gripper_position,
-                                    std::optional<double> speed_rad_s,
+void GripperComponent::set_position(double gripper_position, std::optional<double> speed_rad_s,
                                     std::optional<double> torque_pu) {
     if (!motor_device_) return;
 
@@ -61,9 +61,8 @@ void GripperComponent::set_position(double gripper_position,
     double torque_limit = torque_pu.value_or(limit_torque_pu_);
     speed_limit = std::clamp(speed_limit, 0.0, 100.0);
     torque_limit = std::clamp(torque_limit, 0.0, 1.0);
-    posforce_control_one(
-        0, damiao_motor::PosForceParam{gripper_to_motor_position(gripper_position), speed_limit,
-                                       torque_limit});
+    posforce_control_one(0, damiao_motor::PosForceParam{gripper_to_motor_position(gripper_position),
+                                                        speed_limit, torque_limit});
 }
 
 void GripperComponent::set_position_mit(double gripper_position, double kp, double kd) {

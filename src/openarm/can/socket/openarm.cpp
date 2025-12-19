@@ -16,6 +16,7 @@
 #include <linux/can/raw.h>
 
 #include <openarm/can/socket/openarm.hpp>
+
 #include "openarm/damiao_motor/dm_motor_constants.hpp"
 
 namespace openarm::can::socket {
