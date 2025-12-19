@@ -41,14 +41,11 @@ int main() {
         // Switch gripper to torque-position control mode before sending posforce commands.
         openarm.set_callback_mode_all(CallbackMode::PARAM);
         openarm.get_gripper().set_control_mode_all(ControlMode::TORQUE_POS);
-        // Optional: query to confirm mode
-        openarm.query_param_all(static_cast<int>(RID::CTRL_MODE));
-        openarm.recv_all(500);
 
         openarm.enable_all();
         openarm.recv_all(500);
 
-        PosForceParam param{-1, 500, 1000.0};
+        PosForceParam param{-1, 5.0, 0.5};
         openarm.set_callback_mode_all(CallbackMode::STATE);
         openarm.get_gripper().posforce_control_one(0, param);
         openarm.recv_all(500);
@@ -68,9 +65,6 @@ int main() {
         // Switch gripper back to MIT control mode before sending posforce commands.
         openarm.set_callback_mode_all(CallbackMode::PARAM);
         openarm.get_gripper().set_control_mode_all(ControlMode::MIT);
-        // Optional: query to confirm mode
-        openarm.query_param_all(static_cast<int>(RID::CTRL_MODE));
-        openarm.recv_all(500);
 
         openarm.disable_all();
         openarm.recv_all(500);

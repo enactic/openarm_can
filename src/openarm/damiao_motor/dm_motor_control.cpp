@@ -167,13 +167,19 @@ std::vector<uint8_t> CanPacketEncoder::pack_posforce_control_data(
     MotorType motor_type, const PosForceParam& posforce_param) {
     (void)motor_type;  // Currently unused; reserved for per-motor limits if needed.
 
+    // P_des: position command in rad (float).
+    // V_des: speed limit in rad/s, scaled by 100 into uint16 (little-endian), range 0-10000
+    // (values above 10000 clamp to 10000), corresponding to 0-100 rad/s.
+    // I_des: torque current limit per-unit value, scaled by 10000 into uint16 (little-endian),
+    // range 0-10000 (values above 10000 clamp to 10000), corresponding to 0-1.0.
+    // Per-unit current value = actual current / max current (Imax printed on power-up).
     auto pos_bytes = float_to_uint8s(static_cast<float>(posforce_param.q));
 
-    // Clamp to payload size to avoid overflow before casting.
+    double vel_scaled = posforce_param.dq * 100.0;
     uint16_t vel_uint =
-        static_cast<uint16_t>(limit_min_max(posforce_param.dq, 0.0, static_cast<double>(UINT16_MAX)));
-    uint16_t i_uint =
-        static_cast<uint16_t>(limit_min_max(posforce_param.i, 0.0, 10000.0));
+        static_cast<uint16_t>(limit_min_max(vel_scaled, 0.0, 10000.0));
+    double i_scaled = limit_min_max(posforce_param.i, 0.0, 1.0) * 10000.0;
+    uint16_t i_uint = static_cast<uint16_t>(limit_min_max(i_scaled, 0.0, 10000.0));
 
     return {pos_bytes[0],
             pos_bytes[1],

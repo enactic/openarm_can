@@ -64,9 +64,9 @@ struct PosVelParam {
 };
 
 struct PosForceParam {
-    double q;
-    double dq;
-    double i;
+    double q;   // Position command in rad.
+    double dq;  // Absolute speed limit in rad/s, scaled by 100 into uint16 when packed.
+    double i;   // Torque current limit per-unit (0-1), scaled by 10000 into uint16 when packed.
 };
 
 class CanPacketEncoder {
