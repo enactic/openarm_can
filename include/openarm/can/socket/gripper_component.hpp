@@ -44,8 +44,12 @@ public:
     void grasp(double torque_pu, double speed_rad_s = 5.0);
 
     // Pos-force control with optional per-call limit overrides.
+    // if raw_position is true, position is treated as motor radians.
     void set_position(double position, std::optional<double> speed_rad_s = std::nullopt,
-                      std::optional<double> torque_pu = std::nullopt);
+                      std::optional<double> torque_pu = std::nullopt, bool raw_position = false);
+
+    // Set current position as zero
+    void set_zero();
 
     // Legacy MIT control path.
     void set_position_mit(double position, double kp = 50.0, double kd = 1.0);

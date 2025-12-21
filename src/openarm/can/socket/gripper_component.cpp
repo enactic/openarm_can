@@ -57,16 +57,24 @@ void GripperComponent::grasp(double torque_pu, double speed_rad_s) {
     set_position(gripper_grasp_position_, speed_rad_s, torque_pu);
 }
 
-void GripperComponent::set_position(double gripper_position, std::optional<double> speed_rad_s,
-                                    std::optional<double> torque_pu) {
+void GripperComponent::set_position(double position, std::optional<double> speed_rad_s,
+                                    std::optional<double> torque_pu, bool raw_position) {
     if (!motor_device_) return;
 
     double speed_limit = speed_rad_s.value_or(limit_speed_rad_s_);
     double torque_limit = torque_pu.value_or(limit_torque_pu_);
     speed_limit = std::clamp(speed_limit, 0.0, 100.0);
     torque_limit = std::clamp(torque_limit, 0.0, 1.0);
-    posforce_control_one(0, damiao_motor::PosForceParam{gripper_to_motor_position(gripper_position),
-                                                        speed_limit, torque_limit});
+
+    double target_motor_pos = raw_position ? position : gripper_to_motor_position(position);
+
+    posforce_control_one(0,
+                         damiao_motor::PosForceParam{target_motor_pos, speed_limit, torque_limit});
+}
+
+void GripperComponent::set_zero() {
+    if (!motor_device_) return;
+    DMDeviceCollection::set_zero(0);
 }
 
 void GripperComponent::set_position_mit(double gripper_position, double kp, double kd) {

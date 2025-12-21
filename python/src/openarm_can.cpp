@@ -433,10 +433,13 @@ NB_MODULE(openarm_can, m) {
              "speed_rad_s: max closing speed in rad/s.")
         .def("set_position", &GripperComponent::set_position, nb::arg("position"),
              nb::arg("speed_rad_s") = nb::none(), nb::arg("torque_pu") = nb::none(),
+             nb::arg("raw_position") = false,
              "Command gripper position with optional per-call limit overrides.\n"
              "position: gripper target (0=closed, 1=open).\n"
              "speed_rad_s: max closing speed in rad/s.\n"
-             "torque_pu: per-unit current limit [0, 1].")
+             "torque_pu: per-unit current limit [0, 1].\n"
+             "raw_position: treat position as raw motor radians if true.")
+        .def("set_zero", &GripperComponent::set_zero, "Set current position as zero.")
         .def("set_position_mit", &GripperComponent::set_position_mit, nb::arg("position"),
              nb::arg("kp") = 50.0, nb::arg("kd") = 1.0)
         .def("get_motor", &GripperComponent::get_motor, nb::rv_policy::reference_internal);
