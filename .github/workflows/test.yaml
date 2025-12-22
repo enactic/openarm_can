@@ -84,13 +84,16 @@ jobs:
       - name: "Python: Install dependencies"
         run: |
           python3 -m pip install -r python/requirements.txt
-      - name: "Python: Build: pkg-config"
+          if apt show nanobind-dev; then
+            sudo apt install -y -V \
+              nanobind-dev
+          else
+            sudo apt install -y -V \
+              robin-map-dev
+          fi
+      - name: "Python: Build"
         run: |
           python3 -m pip install \
-            -Csetup-args=--pkg-config-path=$PWD/install/lib/pkgconfig \
-            ./python
-      - name: "Python: Build: CMake"
-        run: |
-          python3 -m pip install \
-            -Csetup-args=--cmake-prefix-path=$PWD/install \
+            -Ccmake.define.CMAKE_PREFIX_PATH=$PWD/install \
+            --verbose \
             ./python

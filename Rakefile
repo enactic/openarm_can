@@ -29,6 +29,37 @@ end
 desc "Create #{archive_tar_gz}"
 task :dist => archive_tar_gz
 
+def git_clone_archive(url, tag, archive_path)
+  mkdir_p(File.dirname(archive_path))
+  clone_dir = File.basename(archive_path, ".tar.gz")
+  rm_rf(clone_dir)
+  sh("git", "clone", url, "--branch", tag, "--recursive", clone_dir)
+  sh("tar",
+     "--exclude-vcs",
+     "--exclude-vcs-ignores",
+     "-czf", archive_path,
+     clone_dir)
+  rm_rf(clone_dir)
+end
+
+namespace :vendor do
+  namespace :download do
+    desc "Download nanobind"
+    task :download do
+      cmakelists = File.read(File.join("python", "CMakeLists.txt"))
+      version = cmakelists[/set\(NANOBIND_BUNDLED_VERSION \"(.+)"\)/, 1]
+      git_clone_archive("https://github.com/wjakob/nanobind.git",
+                        "v#{version}",
+                        File.join("python", "vendor", "nanobind-#{version}.tar.gz"))
+    end
+  end
+
+  desc "Download vendored dependencies"
+  task download: [
+    "vendor:download:nanobind"
+  ]
+end
+
 namespace :release do
   namespace :version do
     desc "Update versions for a new release"
@@ -39,8 +70,13 @@ namespace :release do
       end
       new_release_date = ENV["NEW_RELEASE_DATE"] || Date.today.iso8601
       Helper.update_cmake_lists_txt_version(new_version)
-      Helper.update_content("python/meson.build") do |content|
-        content.sub(/^(    version: ').*?('.*)$/) do
+      Helper.update_content("python/CMakeLists.txt") do |content|
+        content.sub(/^(  VERSION ).*?$/) do
+          "#{$1}#{new_version}"
+        end
+      end
+      Helper.update_content("python/openarm_can/__init__.py") do |content|
+        content.sub(/^(__version__ = ").*?(")$/) do
           "#{$1}#{new_version}#{$2}"
         end
       end
@@ -49,14 +85,9 @@ namespace :release do
           "#{$1}#{new_version}#{$2}"
         end
       end
-      Helper.update_content("python/openarm/can/__init__.py") do |content|
-        content.sub(/^(__version__ = ").*?(")$/) do
+      Helper.update_content("python/setup.py") do |content|
+        content.sub(/^(    version=").*?(",)$/) do
           "#{$1}#{new_version}#{$2}"
-        end
-      end
-      Helper.update_content("python/subprojects/openarm-can.wrap") do |content|
-        content.sub(/^(revision = ).*?$/) do
-          "#{$1}#{new_version}"
         end
       end
       ruby("-C",
@@ -70,10 +101,10 @@ namespace :release do
          "CMakeLists.txt",
          "packages/debian/changelog",
          "packages/fedora/openarm-can.spec",
-         "python/meson.build",
+         "python/CMakeList.txt",
+         "python/openarm_can/__init__.py",
          "python/pyproject.toml",
-         "python/openarm/can/__init__.py",
-         "python/subprojects/openarm-can.wrap")
+         "python/setup.py")
       sh("git",
          "commit",
          "-m",
