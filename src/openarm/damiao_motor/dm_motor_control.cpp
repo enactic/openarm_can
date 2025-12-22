@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <array>
 #include <cmath>
 #include <cstring>
+#include <iostream>
 #include <openarm/damiao_motor/dm_motor.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
 #include <openarm/damiao_motor/dm_motor_control.hpp>
-#include <thread>
 
 namespace openarm::damiao_motor {
 
@@ -58,17 +59,8 @@ CANPacket CanPacketEncoder::create_query_param_command(const Motor& motor, int R
 }
 
 CANPacket CanPacketEncoder::create_set_control_mode_command(const Motor& motor, ControlMode mode) {
-    uint8_t send_can_id = motor.get_send_can_id();
-    // Write to RID::CTRL_MODE with mode value (little-endian uint32 per DM protocol).
-    std::vector<uint8_t> data = {static_cast<uint8_t>(send_can_id & 0xFF),
-                                 static_cast<uint8_t>((send_can_id >> 8) & 0xFF),
-                                 0x55,
-                                 static_cast<uint8_t>(RID::CTRL_MODE),
-                                 static_cast<uint8_t>(static_cast<uint8_t>(mode)),
-                                 0x00,
-                                 0x00,
-                                 0x00};
-    return {0x7FF, data};
+    uint32_t send_can_id = motor.get_send_can_id();
+    return {0x7FF, pack_write_param_data(send_can_id, static_cast<int>(RID::CTRL_MODE), mode)};
 }
 
 CANPacket CanPacketEncoder::create_refresh_command(const Motor& motor) {
@@ -151,8 +143,8 @@ std::vector<uint8_t> CanPacketEncoder::pack_mit_control_data(MotorType motor_typ
             static_cast<uint8_t>(tau_uint & 0xFF)};
 }
 
-std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(MotorType motor_type,
-                                                                const PosVelParam& posvel_param) {
+std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(
+    [[maybe_unused]] MotorType motor_type, const PosVelParam& posvel_param) {
     double pos = posvel_param.q;
     double vel = posvel_param.dq;
 

@@ -201,6 +201,7 @@ NB_MODULE(openarm_can, m) {
         .def_rw("q", &PosForceParam::q)
         .def_rw("dq", &PosForceParam::dq)
         .def_rw("i", &PosForceParam::i);
+
     // ============================================================================
     // DAMIAO MOTOR NAMESPACE - MAIN CLASSES
     // ============================================================================
