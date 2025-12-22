@@ -303,7 +303,8 @@ NB_MODULE(openarm_can, m) {
         .def(
             "write_raw_frame",
             [](CANSocket& self, nb::bytes data) {
-                return self.write_raw_frame(data.data(), data.size());
+                // nb::bytes::data() is available since nanobind 2.0.0.
+                return self.write_raw_frame(data.c_str(), data.size());
             },
             nb::arg("data"))
         .def("write_can_frame", &CANSocket::write_can_frame, nb::arg("frame"))
@@ -328,7 +329,8 @@ NB_MODULE(openarm_can, m) {
             [](can_frame& frame, nb::bytes data) {
                 size_t len = std::min(data.size(), sizeof(frame.data));
                 frame.can_dlc = len;
-                std::memcpy(frame.data, data.data(), len);
+                // nb::bytes::data() is available since nanobind 2.0.0.
+                std::memcpy(frame.data, data.c_str(), len);
             });
 
     nb::class_<canfd_frame>(m, "CanFdFrame")
@@ -344,7 +346,8 @@ NB_MODULE(openarm_can, m) {
             [](canfd_frame& frame, nb::bytes data) {
                 size_t len = std::min(data.size(), sizeof(frame.data));
                 frame.len = len;
-                std::memcpy(frame.data, data.data(), len);
+                // nb::bytes::data() is available since nanobind 2.0.0.
+                std::memcpy(frame.data, data.c_str(), len);
             });
 
     // ============================================================================

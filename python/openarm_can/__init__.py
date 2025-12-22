@@ -12,20 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 """
-Core bindings module that imports the C++ extension.
+OpenArm CAN Python bindings for motor control via SocketCAN.
+
+This package provides Python bindings for the OpenArm motor control system,
+allowing you to control DAMIAO motors through SocketCAN.
 """
 
-try:
-    from openarm_can import *
-except ImportError as e:
-    raise ImportError(
-        "Failed to import openarm_can C++ extension. "
-        "Make sure the package is properly installed. "
-        f"Original error: {e}"
-    ) from e
+from .openarm_can import *
 
-# Re-export main classes with better names if needed
+__version__ = "1.1.0"
+__author__ = "Enactic, Inc."
+
+# Direct export of C++ classes - no wrappers
 __all__ = [
     # Enums
     "MotorType",
@@ -40,13 +40,13 @@ __all__ = [
     "CanFdFrame",
     "MITParam",
 
-    # Main classes (1:1 C++ mapping)
+    # Main C++ classes (1:1 mapping)
     "Motor",
     "MotorControl",
-    "CANSocket",
-    "CANDevice",
-    "MotorDeviceCan",
-    "CANDeviceCollection",
+    "CANSocket",           # Low-level socket with file descriptor access
+    "CANDevice",           # Base CAN device class
+    "MotorDeviceCan",      # Motor device management
+    "CANDeviceCollection",  # Device collection management
 
     # Exceptions
     "CANSocketException",

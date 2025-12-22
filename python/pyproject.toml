@@ -13,15 +13,15 @@
 # limitations under the License.
 
 [build-system]
-build-backend = "mesonpy"
-requires = ["meson-python"]
+build-backend = "scikit_build_core.build"
+requires = ["scikit-build-core", "nanobind"]
 
 [project]
 authors = [{name = "Enactic, Inc."}]
 license = "Apache-2.0"
-# license-files = ["../LICENSE.txt"]
+license-files = ["LICENSE.txt"]
 maintainers = [{name = "Enactic, Inc."}]
-name = "openarm_can"
+name = "openarm-can"
 readme = "README.md"
 requires-python = ">= 3.10"
 version = "1.1.0"
