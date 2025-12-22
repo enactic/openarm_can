@@ -12,20 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-/.cache/
-/.vscode
-/build
-/openarm-can-*.tar.gz
-/packages/apt/build.sh
-/packages/apt/build/
-/packages/apt/env.sh
-/packages/apt/repositories/
-/packages/apt/tmp/
-/packages/openarm-can-*.tar.gz
-/packages/yum/build.sh
-/packages/yum/build/
-/packages/yum/env.sh
-/packages/yum/repositories/
-/packages/yum/tmp/
-/python/dist/
-/python/vendor/
+usr/lib/python3*/dist-packages/openarm_can*

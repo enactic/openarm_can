@@ -29,5 +29,8 @@ RUN \
     cmake \
     debhelper \
     devscripts \
-    ninja-build && \
+    dh-python \
+    ninja-build \
+    python3-all-dev \
+    python3-setuptools && \
   apt clean

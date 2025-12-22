@@ -44,6 +44,13 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
   OUTPUT_VARIABLE nanobind_ROOT)
 function(ocp_ensure_nanobind)
+  # We can use FIND_PACKAGE_ARGS in fetchcontent_declare() instead of
+  # explicit find_package() when we require CMake 3.24 or later.
+  find_package(nanobind)
+  if(nanobind_FOUND)
+    return()
+  endif()
+
   set(NANOBIND_BUNDLED_VERSION "2.10.2")
   set(NANOBIND_SOURCE_BASE_NAME "nanobind-${NANOBIND_BUNDLED_VERSION}.tar.gz")
   set(NANOBIND_SOURCE_LOCAL_PATH
@@ -55,8 +62,14 @@ function(ocp_ensure_nanobind)
         GIT_REPOSITORY "https://github.com/wjakob/nanobind.git" GIT_TAG
         "v${NANOBIND_BUNDLED_VERSION}")
   endif()
-  fetchcontent_declare(nanobind ${OCP_FETCH_CONTENT_COMMON_OPTIONS}
-                                ${NANOBIND_SOURCE_ARGS} FIND_PACKAGE_ARGS)
+  fetchcontent_declare(
+    nanobind
+    ${OCP_FETCH_CONTENT_COMMON_OPTIONS}
+    ${NANOBIND_SOURCE_ARGS}
+    # We can use FIND_PACKAGE_ARGS when we require CMake 3.24 or later.
+    #
+    # FIND_PACKAGE_ARGS
+  )
   ocp_prepare_fetchcontent()
   fetchcontent_makeavailable(nanobind)
   if(nanobind_SOURCE_DIR)
@@ -69,17 +82,27 @@ endfunction()
 ocp_ensure_nanobind()
 
 function(ocp_ensure_openarm_can)
+  # We can use FIND_PACKAGE_ARGS in fetchcontent_declare() instead of
+  # explicit find_package() when we require CMake 3.24 or later.
+  find_package(OpenArmCAN)
+  if(OpenArmCAN_FOUND)
+    return()
+  endif()
+
   fetchcontent_declare(
-    OpenArmCAN
+    openarm_can
     ${OCP_FETCH_CONTENT_COMMON_OPTIONS}
     GIT_REPOSITORY "https://github.com/enactic/openarm_can.git"
     GIT_TAG "${openarm_can_python_VERSION}"
-    FIND_PACKAGE_ARGS)
+    # We can use FIND_PACKAGE_ARGS when we require CMake 3.24 or later.
+    #
+    # FIND_PACKAGE_ARGS NAMES OpenArmCAN
+  )
   ocp_prepare_fetchcontent()
-  fetchcontent_makeavailable(OpenArmCAN)
-  if(openarmcan_SOURCE_DIR)
+  fetchcontent_makeavailable(openarm_can)
+  if(openarm_can_SOURCE_DIR)
     if(CMAKE_VERSION VERSION_LESS 3.28)
-      set_property(DIRECTORY "${openarmcan_SOURCE_DIR}"
+      set_property(DIRECTORY "${openarm_can_SOURCE_DIR}"
                    PROPERTY EXCLUDE_FROM_ALL TRUE)
     endif()
     add_library(OpenArmCAN::openarm_can ALIAS openarm_can)

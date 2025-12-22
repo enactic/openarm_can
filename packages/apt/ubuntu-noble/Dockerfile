@@ -29,5 +29,12 @@ RUN \
     cmake \
     debhelper \
     devscripts \
-    ninja-build && \
+    dh-python \
+    nanobind-dev \
+    ninja-build \
+    pybuild-plugin-pyproject \
+    python3-all-dev \
+    python3-pathspec \
+    python3-pyproject-metadata \
+    python3-scikit-build-core && \
   apt clean

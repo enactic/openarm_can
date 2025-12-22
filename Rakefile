@@ -18,17 +18,6 @@ require_relative "helper"
 
 version = ENV["VERSION"] || Helper.detect_version
 
-archive_base_name = "openarm-can-#{version}"
-archive_tar_gz = "#{archive_base_name}.tar.gz"
-file archive_tar_gz do
-  sh("git", "archive", "HEAD",
-     "--prefix", "#{archive_base_name}/",
-     "--output", archive_tar_gz)
-end
-
-desc "Create #{archive_tar_gz}"
-task :dist => archive_tar_gz
-
 def git_clone_archive(url, tag, archive_path)
   mkdir_p(File.dirname(archive_path))
   clone_dir = File.basename(archive_path, ".tar.gz")
@@ -42,23 +31,35 @@ def git_clone_archive(url, tag, archive_path)
   rm_rf(clone_dir)
 end
 
-namespace :vendor do
-  namespace :download do
-    desc "Download nanobind"
-    task :download do
-      cmakelists = File.read(File.join("python", "CMakeLists.txt"))
-      version = cmakelists[/set\(NANOBIND_BUNDLED_VERSION \"(.+)"\)/, 1]
-      git_clone_archive("https://github.com/wjakob/nanobind.git",
-                        "v#{version}",
-                        File.join("python", "vendor", "nanobind-#{version}.tar.gz"))
-    end
-  end
+cmakelists = File.read(File.join("python", "CMakeLists.txt"))
+nanobind_version = cmakelists[/set\(NANOBIND_BUNDLED_VERSION \"(.+)"\)/, 1]
+nanobind_tar_gz = File.join("python", "vendor", "nanobind-#{nanobind_version}.tar.gz")
+file nanobind_tar_gz do
+  git_clone_archive("https://github.com/wjakob/nanobind.git",
+                    "v#{version}",
+                    nanobind_tar_gz)
+end
 
+namespace :vendor do
   desc "Download vendored dependencies"
   task download: [
-    "vendor:download:nanobind"
+    nanobind_tar_gz,
   ]
 end
+
+archive_base_name = "openarm-can-#{version}"
+archive_tar_gz = "#{archive_base_name}.tar.gz"
+file archive_tar_gz => ["vendor:download"] do
+  sh("git", "archive", "HEAD",
+     # This --prefix is for --add-file
+     "--prefix", "#{archive_base_name}/python/vendor/",
+     "--add-file", nanobind_tar_gz,
+     "--prefix", "#{archive_base_name}/",
+     "--output", archive_tar_gz)
+end
+
+desc "Create #{archive_tar_gz}"
+task :dist => archive_tar_gz
 
 namespace :release do
   namespace :version do

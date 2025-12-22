@@ -45,6 +45,12 @@ jobs:
           fi
       - name: Test source archive reproducible
         run: |
+          # We can't download anything in reprotest because it changes
+          # the current time. If current time is changed, TLS
+          # verification will be failed.
+          #
+          # TODO: We should make downloaded archive reproducible.
+          rake vendor:download
           sudo reprotest \
             "rake dist VERSION=${VERSION}" \
             openarm-can-${VERSION}.tar.gz
