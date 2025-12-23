@@ -17,10 +17,24 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --buildsystem=cmake+ninja
+	dh $@ --with python3 --buildsystem=cmake+ninja
 
 override_dh_auto_configure:
 	dh_auto_configure \
 		-- \
 		-DBUILD_SHARED_LIBS=ON \
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
+	dh_auto_configure \
+		--buildsystem=pybuild \
+		--sourcedirectory=python
+
+override_dh_auto_install:
+	dh_auto_install
+	# The Python bindings depend on the C++ implementation.
+	OpenArmCAN_ROOT=$$(pwd)/debian/tmp/usr \
+		dh_auto_build \
+			--buildsystem=pybuild \
+			--sourcedirectory=python
+	dh_auto_install \
+		--buildsystem=pybuild \
+		--sourcedirectory=python

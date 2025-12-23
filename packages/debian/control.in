@@ -20,11 +20,30 @@ Rules-Requires-Root: no
 Build-Depends:
  cmake,
  debhelper-compat (= 13),
+ dh-sequence-python3,
+@HAVE_NANOBIND@ nanobind-dev,
  ninja-build,
+@USE_PYPROJECT@ pybuild-plugin-pyproject,
+ python3-all-dev,
+@USE_PYPROJECT@ python3-pathspec,
+@USE_PYPROJECT@ python3-pyproject-metadata,
+@USE_PYPROJECT@ python3-scikit-build-core,
+@NOT_USE_PYPROJECT@ python3-setuptools,
 Standards-Version: 4.6.0
 Homepage: https://docs.openarm.dev/
 Vcs-Browser: https://github.com/enactic/openarm_can
 Vcs-Git: https://github.com/enactic/openarm_can.git
+
+Package: libopenarm-can1
+Architecture: any
+Multi-Arch: same
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: CAN communication library for OpenArm robotic hardware
+ OpenArm CAN Library is a communication bridge between high-level
+ OpenArm control applications and low-level motor protocols.
+ It abstracts CAN bus communication via SocketCAN interface.
 
 Package: libopenarm-can-dev
 Section: libdevel
@@ -40,16 +59,18 @@ Description: Development files to use OpenArm CAN as a library
  .
  This package provides header files to use OpenArm CAN as a library.
 
-Package: libopenarm-can1
+Package: python3-openarm-can
 Architecture: any
-Multi-Arch: same
 Depends:
  ${misc:Depends},
+ ${python3:Depends},
  ${shlibs:Depends},
-Description: CAN communication library for OpenArm robotic hardware
+Description: OpenArm CAN Python bindings
  OpenArm CAN Library is a communication bridge between high-level
  OpenArm control applications and low-level motor protocols.
- It abstracts CAN bus communication via SocketCAN interface.
+ It abstracts CAN bus communication via Linux SocketCAN interface.
+ .
+ This package provides the Python bindings.
 
 Package: openarm-can-utils
 Architecture: any
@@ -60,6 +81,7 @@ Depends:
  iproute2,
  python3,
  python3-can,
+ python3-openarm-can (= ${binary:Version}),
 Description: Utility tools for OpenArm CAN configuration
  OpenArm CAN Library is a communication bridge between high-level
  OpenArm control applications and low-level motor protocols.

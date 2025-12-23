@@ -56,6 +56,35 @@ class OpenArmCANPackageTask < PackageTask
     end
   end
 
+  def apt_prepare_debian_control_pyproject(control, target)
+    use_pyproject = (not target.start_with?("ubuntu-jammy"))
+    if use_pyproject
+      control
+        .gsub(/@USE_PYPROJECT@/, "")
+        .gsub(/@NOT_USE_PYPROJECT@/, "#")
+    else
+      control
+        .gsub(/@USE_PYPROJECT@/, "#")
+        .gsub(/@NOT_USE_PYPROJECT@/, "")
+    end
+  end
+
+  def apt_prepare_debian_control_nanobind(control, target)
+    have_nanobind = (not target.start_with?("ubuntu-jammy"))
+    if have_nanobind
+      control.gsub(/@HAVE_NANOBIND@/, "")
+    else
+      control.gsub(/@HAVE_NANOBIND@/, "#")
+    end
+  end
+
+  def apt_prepare_debian_control(control_in, target)
+    control = control_in.dup
+    control = apt_prepare_debian_control_pyproject(control, target)
+    control = apt_prepare_debian_control_nanobind(control, target)
+    control
+  end
+
   def enable_yum?
     false
   end

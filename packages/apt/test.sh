@@ -33,3 +33,5 @@ openarm-can-configure-socketcan-4-arms -h
 openarm-can-diagnosis -h
 openarm-can-motor-check -h
 openarm-can-set-zero -h
+
+python3 -c "import openarm_can"
