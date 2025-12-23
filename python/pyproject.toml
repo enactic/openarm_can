@@ -29,10 +29,10 @@ requires-python = ">= 3.10"
 version = "1.1.0"
 
 [project.urls]
-# TODO: changelog = "https://github.com/reazon-research/openarm_socketcan/releases"
-# TODO: documentation = "https://..."
-# TODO: homepage = "https://open-arm.org/"
-# TODO: issues = "https://github.com/reazon-research/openarm_socketcan/issues"
-# TODO: repository = "https://github.com/reazon-research/openarm_socketcan.git"
+changelog = "https://github.com/enactic/openarm_can/releases"
+documentation = "https://docs.openarm.dev/software/can"
+homepage = "https://docs.openarm.dev/software/can"
+issues = "https://github.com/enactic/openarm_can/issues"
+repository = "https://github.com/enactic/openarm_can.git"
 
 [tool.autopep8]
