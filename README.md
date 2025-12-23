@@ -96,6 +96,8 @@ See [dev/README.md](dev/README.md) for how to build.
 
 ### 4. Python (🚧 EXPERIMENTAL - TEMPORARY 🚧)
 
+> [!WARNING]
+>
 > ⚠️ **WARNING: UNSTABLE API** ⚠️
 > Python bindings are currently a direct low level **temporary port**, and will change **DRASTICALLY**.
 > The interface is may break between versions.Use at your own risk! Discussions on the interface are welcomed.
@@ -103,6 +105,7 @@ See [dev/README.md](dev/README.md) for how to build.
 **Build & Install:**
 
 Please ensure that you install the C++ library first, as `1. Install` or [dev/README.md](dev/README.md).
+
 ```bash
 cd python
 
@@ -110,7 +113,7 @@ cd python
 python -m venv venv
 source venv/bin/activate
 
-./build.sh
+pip install .
 ```
 
 **Usage:**
