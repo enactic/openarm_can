@@ -90,11 +90,11 @@ configure_package_config_file(
   OpenArmCANConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/OpenArmCANConfig.cmake
   INSTALL_DESTINATION ${INSTALL_CMAKE_DIR})
 write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/OpenArmCANVersion.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/OpenArmCANConfigVersion.cmake
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY SameMajorVersion)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OpenArmCANConfig.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/OpenArmCANVersion.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/OpenArmCANConfigVersion.cmake
         DESTINATION ${INSTALL_CMAKE_DIR})
 
 # pkg-config package
