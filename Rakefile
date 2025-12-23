@@ -71,6 +71,11 @@ namespace :release do
       end
       new_release_date = ENV["NEW_RELEASE_DATE"] || Date.today.iso8601
       Helper.update_cmake_lists_txt_version(new_version)
+      Helper.update_content("package.xml") do |content|
+        content.sub(/(<version>).*?(<\/version>)/) do
+          "#{$1}#{new_version}#{$2}"
+        end
+      end
       Helper.update_content("python/CMakeLists.txt") do |content|
         content.sub(/^(  VERSION ).*?$/) do
           "#{$1}#{new_version}"
@@ -100,9 +105,10 @@ namespace :release do
       sh("git",
          "add",
          "CMakeLists.txt",
+         "package.xml",
          "packages/debian/changelog",
          "packages/fedora/openarm-can.spec",
-         "python/CMakeList.txt",
+         "python/CMakeLists.txt",
          "python/openarm_can/__init__.py",
          "python/pyproject.toml",
          "python/setup.py")
