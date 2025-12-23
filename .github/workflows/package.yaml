@@ -187,13 +187,15 @@ jobs:
             # Remove SRPMs from non x86_64 artifacts
             rm -rf ${TASK_NAMESPACE}/repositories/*/*/source
           fi
+      - uses: actions/upload-artifact@v6
+        with:
+          name: packages-${{ matrix.id }}
+          path: packages/${{ env.TASK_NAMESPACE }}/repositories/
       - name: Push the built Docker image
         continue-on-error: true
         run: |
           cd packages
           rake docker:push
-
-      # Test
       - name: Test
         run: |
           docker run \
@@ -203,7 +205,6 @@ jobs:
             /host/packages/${TASK_NAMESPACE}/test.sh
   release:
     name: Release
-    if: github.ref_type == 'tag'
     needs:
       - source
       - build
@@ -214,9 +215,33 @@ jobs:
       discussions: write
     steps:
       - uses: actions/download-artifact@v7
-        with:
-          name: source
+      - name: Prepare package artifacts
+        run: |
+          set -x
+          for packages_path in packages-*; do
+            # packages-ubuntu-jammy-amd64 ->
+            # ubuntu-jammy-amd64
+            os_arch=${packages_path#packages-}
+            # ubuntu-jammy-amd64 ->
+            # ubuntu-jammy
+            os=${os_arch%-*}
+
+            mkdir -p release/${os}/
+            # packages-ubuntu-jammy-amd64/ubuntu/pool/jammy/ ->
+            # release/ubuntu-jammy/ubuntu/pool/jammy/
+            rsync -a ${packages_path}/ release/${os}/
+          done
+          for release_os_path in release/*; do
+            # release/ubuntu-jammy ->
+            # ubuntu-jammy
+            os=$(basename ${release_os_path})
+
+            # release/ubuntu-jammy/ubuntu/pool/jammy/ ->
+            # ubuntu-jammy/ubuntu/pool/jammy/
+            tar czf ${os}.tar.gz -C $(dirname ${release_os_path}) ${os}
+          done
       - name: Create GitHub Release
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -227,8 +252,8 @@ jobs:
             --repo ${GITHUB_REPOSITORY} \
             --title "OpenArm CAN ${version}" \
             --verify-tag \
-            openarm-can-${version}.tar.gz* \
-            openarm_can-${version}.tar.gz*
+            *.tar.gz \
+            source/*
   pypi:
     name: PyPI
     if: github.ref_type == 'tag'
