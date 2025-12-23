@@ -147,7 +147,7 @@ namespace :release do
   desc "Release packages for Ubuntu"
   task :ubuntu do
     current_version = Helper.detect_version
-    Helper.wait_github_actions_workflow(current_version, "release.yaml")
+    Helper.wait_github_actions_workflow(current_version, "package.yaml")
     ruby("-C",
          "packages",
          "-S",
