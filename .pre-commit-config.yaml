@@ -34,13 +34,6 @@ repos:
           - "python/pyproject.toml"
           - "--ignore-local-config"
           - "--in-place"
-  - repo: https://github.com/trim21/pre-commit-mirror-meson
-    rev: v1.8.2
-    hooks:
-      - id: meson-fmt
-        alias: python
-        args: ["--inplace"]
-        exclude: ".editorconfig$"
   - repo: https://github.com/koalaman/shellcheck-precommit
     rev: v0.10.0
     hooks:
