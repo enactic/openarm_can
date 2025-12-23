@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# If you can use build and mesonpy, you should use pyproject.toml and
-# meson.build intead of setup.py. setup.py is only for old environment
-# such as deb packages for Ubuntu 22.04.
+# If you can use build, you should use pyproject.toml intead of
+# setup.py. setup.py is only for old environment such as deb packages
+# for Ubuntu 22.04.
 
 import pathlib
 
