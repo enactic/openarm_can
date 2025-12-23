@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License. -->
 <package format="3">
   <name>openarm_can</name>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <description>Low-level SocketCAN library and tools for OpenArm manipulators.</description>
   <maintainer email="openarm_dev@enactic.ai">Enactic, Inc.</maintainer>
   <license>Apache-2.0</license>
