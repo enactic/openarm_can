@@ -23,6 +23,7 @@ def git_clone_archive(url, tag, archive_path)
   clone_dir = File.basename(archive_path, ".tar.gz")
   rm_rf(clone_dir)
   sh("git", "clone", url, "--branch", tag, "--recursive", clone_dir)
+  yield(clone_dir) if block_given?
   sh("tar",
      "--exclude-vcs",
      "--exclude-vcs-ignores",
@@ -37,7 +38,9 @@ nanobind_tar_gz = File.join("python", "vendor", "nanobind-#{nanobind_version}.ta
 file nanobind_tar_gz do
   git_clone_archive("https://github.com/wjakob/nanobind.git",
                     "v#{version}",
-                    nanobind_tar_gz)
+                    nanobind_tar_gz) do |clone_dir|
+    rm_rf(File.join(clone_dir, "docs")) # 1.1MB
+  end
 end
 
 namespace :vendor do
