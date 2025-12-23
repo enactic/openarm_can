@@ -115,7 +115,7 @@ namespace :release do
       sh("git",
          "commit",
          "-m",
-         "Update version info to #{version} (#{new_release_date})")
+         "Update version info to #{new_version} (#{new_release_date})")
       sh("git", "push")
     end
   end
