@@ -23,7 +23,7 @@ authors = [{name = "Enactic, Inc."}]
 # license-files = ["LICENSE.txt"]
 license = {text = "Apache-2.0"}
 maintainers = [{name = "Enactic, Inc."}]
-name = "openarm-can"
+name = "openarm_can"
 readme = "README.md"
 requires-python = ">= 3.10"
 version = "1.1.0"

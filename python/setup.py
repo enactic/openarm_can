@@ -49,7 +49,7 @@ class cmake_build_ext(build_ext):
 
 
 setup(
-    name="openarm-can",
+    name="openarm_can",
     version="1.1.0",
     license="Apache-2.0",
     license_files=["LICENSE.txt"],

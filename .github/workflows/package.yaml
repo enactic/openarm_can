@@ -63,6 +63,24 @@ jobs:
           sha512sum \
             openarm-can-${VERSION}.tar.gz > \
             openarm-can-${VERSION}.tar.gz.sha512
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3
+      - name: Install dependencies for Python source archive
+        run: |
+          pip install build
+      - name: Create Python source archive
+        run: |
+          cd python
+          python -m build --sdist
+          cd dist
+          sha256sum \
+            openarm_can-${VERSION}.tar.gz > \
+            openarm_can-${VERSION}.tar.gz.sha256
+          sha512sum \
+            openarm_can-${VERSION}.tar.gz > \
+            openarm_can-${VERSION}.tar.gz.sha512
+          mv * ../../
       - uses: actions/upload-artifact@v6
         with:
           name: source
@@ -70,6 +88,9 @@ jobs:
             openarm-can-${{ env.VERSION }}.tar.gz
             openarm-can-${{ env.VERSION }}.tar.gz.sha256
             openarm-can-${{ env.VERSION }}.tar.gz.sha512
+            openarm_can-${{ env.VERSION }}.tar.gz
+            openarm_can-${{ env.VERSION }}.tar.gz.sha256
+            openarm_can-${{ env.VERSION }}.tar.gz.sha512
   build:
     name: Build
     needs: source
@@ -192,6 +213,9 @@ jobs:
       contents: write
       discussions: write
     steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: source
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -203,4 +227,24 @@ jobs:
             --repo ${GITHUB_REPOSITORY} \
             --title "OpenArm CAN ${version}" \
             --verify-tag \
-            openarm-can-${version}.tar.gz*
+            openarm-can-${version}.tar.gz* \
+            openarm_can-${version}.tar.gz*
+  pypi:
+    name: PyPI
+    if: github.ref_type == 'tag'
+    needs:
+      - source
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: source
+      - name: Prepare directory structure
+        run: |
+          mkdir -p dist
+          mv openarm_can-*.tar.gz dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
