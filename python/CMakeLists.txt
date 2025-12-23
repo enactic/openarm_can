@@ -84,7 +84,7 @@ ocp_ensure_nanobind()
 function(ocp_ensure_openarm_can)
   # We can use FIND_PACKAGE_ARGS in fetchcontent_declare() instead of
   # explicit find_package() when we require CMake 3.24 or later.
-  find_package(OpenArmCAN)
+  find_package(OpenArmCAN ${openarm_can_python_VERSION})
   if(OpenArmCAN_FOUND)
     return()
   endif()
