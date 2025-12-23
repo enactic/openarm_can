@@ -50,7 +50,7 @@ class cmake_build_ext(build_ext):
 
 setup(
     name="openarm_can",
-    version="1.1.0",
+    version="1.2.0",
     license="Apache-2.0",
     license_files=["LICENSE.txt"],
     ext_modules=[Extension('__dummy__', [])],
