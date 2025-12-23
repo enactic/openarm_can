@@ -37,7 +37,7 @@ nanobind_version = cmakelists[/set\(NANOBIND_BUNDLED_VERSION \"(.+)"\)/, 1]
 nanobind_tar_gz = File.join("python", "vendor", "nanobind-#{nanobind_version}.tar.gz")
 file nanobind_tar_gz do
   git_clone_archive("https://github.com/wjakob/nanobind.git",
-                    "v#{version}",
+                    "v#{nanobind_version}",
                     nanobind_tar_gz) do |clone_dir|
     rm_rf(File.join(clone_dir, "docs")) # 1.1MB
   end
