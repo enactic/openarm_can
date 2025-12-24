@@ -14,7 +14,15 @@
 
 # https://packit.dev/docs/configuration/
 
-specfile_path: packages/fedora/openarm-can.spec
+specfile_path: openarm-can.spec
+
+actions:
+  post-upstream-clone:
+    - rake spec
+
+srpm_build_deps:
+  - rubygem-json
+  - rubygem-rake
 
 notifications:
   pull_request:
