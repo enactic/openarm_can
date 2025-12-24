@@ -46,6 +46,10 @@ public:
     void query_param_one(int i, int RID);
     void query_param_all(int RID);
 
+    // Control mode operations
+    void set_control_mode_one(int i, ControlMode mode);
+    void set_control_mode_all(ControlMode mode);
+
     // MIT control operations
     void mit_control_one(int i, const MITParam& mit_param);
     void mit_control_all(const std::vector<MITParam>& mit_params);
@@ -53,6 +57,10 @@ public:
     // PosVel control operation
     void posvel_control_one(int i, const PosVelParam& posvel_param);
     void posvel_control_all(const std::vector<PosVelParam>& posvel_params);
+
+    // PosForce control operation
+    void posforce_control_one(int i, const PosForceParam& posforce_param);
+    void posforce_control_all(const std::vector<PosForceParam>& posforce_params);
 
     // Device collection access
     std::vector<Motor> get_motors() const;

@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <array>
 #include <cmath>
 #include <cstring>
+#include <iostream>
 #include <openarm/damiao_motor/dm_motor.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
 #include <openarm/damiao_motor/dm_motor_control.hpp>
-#include <thread>
 
 namespace openarm::damiao_motor {
 
@@ -46,8 +47,20 @@ CANPacket CanPacketEncoder::create_posvel_control_command(const Motor& motor,
             pack_posvel_control_data(motor.get_motor_type(), posvel_param)};
 }
 
+CANPacket CanPacketEncoder::create_posforce_control_command(const Motor& motor,
+                                                            const PosForceParam& posforce_param) {
+    // pos force mode needs extra 0x300
+    return {motor.get_send_can_id() + 0x300,
+            pack_posforce_control_data(motor.get_motor_type(), posforce_param)};
+}
+
 CANPacket CanPacketEncoder::create_query_param_command(const Motor& motor, int RID) {
     return {0x7FF, pack_query_param_data(motor.get_send_can_id(), RID)};
+}
+
+CANPacket CanPacketEncoder::create_set_control_mode_command(const Motor& motor, ControlMode mode) {
+    uint32_t send_can_id = motor.get_send_can_id();
+    return {0x7FF, pack_write_param_data(send_can_id, static_cast<int>(RID::CTRL_MODE), mode)};
 }
 
 CANPacket CanPacketEncoder::create_refresh_command(const Motor& motor) {
@@ -130,8 +143,8 @@ std::vector<uint8_t> CanPacketEncoder::pack_mit_control_data(MotorType motor_typ
             static_cast<uint8_t>(tau_uint & 0xFF)};
 }
 
-std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(MotorType motor_type,
-                                                                const PosVelParam& posvel_param) {
+std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(
+    [[maybe_unused]] MotorType motor_type, const PosVelParam& posvel_param) {
     double pos = posvel_param.q;
     double vel = posvel_param.dq;
 
@@ -140,6 +153,33 @@ std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(MotorType motor_
 
     // Pack into 8 bytes: [pos(4)][vel(4)]
     return {pb[0], pb[1], pb[2], pb[3], vb[0], vb[1], vb[2], vb[3]};
+}
+
+std::vector<uint8_t> CanPacketEncoder::pack_posforce_control_data(
+    MotorType motor_type, const PosForceParam& posforce_param) {
+    (void)motor_type;  // Currently unused; reserved for per-motor limits if needed.
+
+    // P_des: position command in rad (float).
+    // V_des: speed limit in rad/s, scaled by 100 into uint16 (little-endian), range 0-10000
+    // (values above 10000 clamp to 10000), corresponding to 0-100 rad/s.
+    // I_des: torque current limit per-unit value, scaled by 10000 into uint16 (little-endian),
+    // range 0-10000 (values above 10000 clamp to 10000), corresponding to 0-1.0.
+    // Per-unit current value = actual current / max current (Imax printed on power-up).
+    auto pos_bytes = float_to_uint8s(static_cast<float>(posforce_param.q));
+
+    double vel_scaled = posforce_param.dq * 100.0;
+    uint16_t vel_uint = static_cast<uint16_t>(limit_min_max(vel_scaled, 0.0, 10000.0));
+    double i_scaled = limit_min_max(posforce_param.i, 0.0, 1.0) * 10000.0;
+    uint16_t i_uint = static_cast<uint16_t>(limit_min_max(i_scaled, 0.0, 10000.0));
+
+    return {pos_bytes[0],
+            pos_bytes[1],
+            pos_bytes[2],
+            pos_bytes[3],
+            static_cast<uint8_t>(vel_uint & 0xFF),
+            static_cast<uint8_t>((vel_uint >> 8) & 0xFF),
+            static_cast<uint8_t>(i_uint & 0xFF),
+            static_cast<uint8_t>((i_uint >> 8) & 0xFF)};
 }
 
 std::vector<uint8_t> CanPacketEncoder::pack_query_param_data(uint32_t send_can_id, int RID) {
