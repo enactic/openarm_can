@@ -58,7 +58,7 @@ Setup and configuration utility scripts.
 %files
 %license LICENSE.txt
 %doc README.md
-%{_libdir}/libopenarm_can.so.1*
+%{_libdir}/libopenarm_can.so.1{,.*}
 
 %files devel
 %{_includedir}/openarm/
@@ -68,7 +68,14 @@ Setup and configuration utility scripts.
 
 %files utils
 %license LICENSE.txt
-%{_bindir}/*
+%{_bindir}/openarm-can-change-baudrate
+%{_bindir}/openarm-can-configure-socketcan
+%{_bindir}/openarm-can-configure-socketcan-4-arms
+%{_bindir}/openarm-can-demo
+%{_bindir}/openarm-can-diagnosis
+%{_bindir}/openarm-can-motor-check
+%{_bindir}/openarm-can-set-zero
+%{_bindir}/openarm-can-zero-position-calibration
 
 %changelog
 %autochangelog
