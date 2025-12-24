@@ -25,8 +25,8 @@ jobs:
 - job: propose_downstream
   trigger: release
   dist_git_branches:
-   - fedora-all
    - epel-all
+   - fedora-all
 
 - job: copr_build
   trigger: pull_request
