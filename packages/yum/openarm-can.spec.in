@@ -68,7 +68,7 @@ Setup and configuration utility scripts.
 
 %files utils
 %license LICENSE.txt
-%{EXECUTABLES}
+@EXECUTABLES@
 
 %changelog
 %autochangelog
