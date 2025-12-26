@@ -13,6 +13,7 @@
 # limitations under the License.
 
 require "date"
+require "fileutils"
 
 require_relative "helper"
 
@@ -110,7 +111,6 @@ namespace :release do
          "CMakeLists.txt",
          "package.xml",
          "packages/debian/changelog",
-         "packages/fedora/openarm-can.spec",
          "python/CMakeLists.txt",
          "python/openarm_can/__init__.py",
          "python/pyproject.toml",
@@ -165,3 +165,27 @@ task release: [
   "release:tag",
   "release:ubuntu",
 ]
+
+desc "Create RPM spec file"
+task :spec do
+  FileUtils.copy_file("packages/fedora/openarm-can.spec.in", "openarm-can.spec")
+  current_version = Helper.detect_version
+  Helper.update_content("openarm-can.spec") do |content|
+      content.sub!("%{VERSION}", current_version)
+  end
+  executable_files = Array.new()
+  File.readlines('CMakeLists.txt', chomp: true).each do |line|
+      if !!(line =~ /install\(TARGETS openarm-can-*.* DESTINATION \${CMAKE_INSTALL_BINDIR}\)/)
+          executable=line.delete_prefix("install(TARGETS ").delete_suffix(" DESTINATION ${CMAKE_INSTALL_BINDIR})")
+          executable_files.append("%{_bindir}/" + executable)
+      end
+      if !!(line =~ /setup\/openarm-can-[a-z0-9\-]/)
+          /(?<rhs>.+)\s*setup\/\s*(?<executable>.+)/ =~ line
+          executable_files.append("%{_bindir}/" + executable)
+      end
+  end
+  executable_files.sort!
+  Helper.update_content("openarm-can.spec") do |content|
+      content.sub!("%{EXECUTABLES}", executable_files.join("\n"))
+  end
+end
