@@ -19,7 +19,8 @@ import openarm_can as oa
 
 def main() -> None:
     arm = oa.OpenArm("can0", True)
-    arm.init_gripper_motor(oa.MotorType.DM4310, 0x8, 0x18)
+    arm.init_gripper_motor(oa.MotorType.DM4310, 0x8,
+                           0x18, oa.ControlMode.POS_FORCE)
 
     arm.set_callback_mode_all(oa.CallbackMode.PARAM)
     arm.enable_all()

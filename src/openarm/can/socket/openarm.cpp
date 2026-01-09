@@ -31,7 +31,8 @@ OpenArm::OpenArm(const std::string& can_interface, bool enable_fd)
 
 void OpenArm::init_arm_motors(const std::vector<damiao_motor::MotorType>& motor_types,
                               const std::vector<uint32_t>& send_can_ids,
-                              const std::vector<uint32_t>& recv_can_ids) {
+                              const std::vector<uint32_t>& recv_can_ids,
+                              const std::vector<damiao_motor::ControlMode>& control_modes) {
     if (motor_types.size() != send_can_ids.size() || motor_types.size() != recv_can_ids.size()) {
         throw std::invalid_argument(
             "Motor types, send CAN IDs, and receive CAN IDs vectors must have the same size, "
@@ -39,7 +40,7 @@ void OpenArm::init_arm_motors(const std::vector<damiao_motor::MotorType>& motor_
             std::to_string(motor_types.size()) + ", " + std::to_string(send_can_ids.size()) + ", " +
             std::to_string(recv_can_ids.size()));
     }
-    arm_->init_motor_devices(motor_types, send_can_ids, recv_can_ids, enable_fd_);
+    arm_->init_motor_devices(motor_types, send_can_ids, recv_can_ids, enable_fd_, control_modes);
     register_dm_device_collection(*arm_);
 }
 

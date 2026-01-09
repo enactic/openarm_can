@@ -27,9 +27,9 @@ public:
     GripperComponent(canbus::CANSocket& can_socket);
     ~GripperComponent() = default;
 
-    void init_motor_device(
-        damiao_motor::MotorType motor_type, uint32_t send_can_id, uint32_t recv_can_id, bool use_fd,
-        damiao_motor::ControlMode control_mode = damiao_motor::ControlMode::POS_FORCE);
+    void init_motor_device(damiao_motor::MotorType motor_type, uint32_t send_can_id,
+                           uint32_t recv_can_id, bool use_fd,
+                           damiao_motor::ControlMode control_mode = damiao_motor::ControlMode::MIT);
 
     // Gripper-specific controls
     // speed_rad_s: max closing speed in rad/s, torque_pu: per-unit current limit [0, 1].

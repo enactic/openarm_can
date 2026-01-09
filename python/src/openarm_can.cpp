@@ -409,7 +409,8 @@ NB_MODULE(openarm_can, m) {
     nb::class_<ArmComponent, DMDeviceCollection>(m, "ArmComponent")
         .def(nb::init<CANSocket&>(), nb::arg("can_socket"))
         .def("init_motor_devices", &ArmComponent::init_motor_devices, nb::arg("motor_types"),
-             nb::arg("send_can_ids"), nb::arg("recv_can_ids"), nb::arg("use_fd"));
+             nb::arg("send_can_ids"), nb::arg("recv_can_ids"), nb::arg("use_fd"),
+             nb::arg("control_modes") = std::vector<ControlMode>{});
 
     // GripperComponent class
     nb::class_<GripperComponent, DMDeviceCollection>(m, "GripperComponent")
@@ -450,7 +451,8 @@ NB_MODULE(openarm_can, m) {
         .def(nb::init<const std::string&, bool>(), nb::arg("can_interface"),
              nb::arg("enable_fd") = false)
         .def("init_arm_motors", &OpenArm::init_arm_motors, nb::arg("motor_types"),
-             nb::arg("send_can_ids"), nb::arg("recv_can_ids"))
+             nb::arg("send_can_ids"), nb::arg("recv_can_ids"),
+             nb::arg("control_modes") = std::vector<ControlMode>{})
         .def("init_gripper_motor", &OpenArm::init_gripper_motor, nb::arg("motor_type"),
              nb::arg("send_can_id"), nb::arg("recv_can_id"),
              nb::arg("control_mode") = ControlMode::POS_FORCE)
