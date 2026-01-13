@@ -34,10 +34,12 @@ public:
     // Component initialization
     void init_arm_motors(const std::vector<damiao_motor::MotorType>& motor_types,
                          const std::vector<uint32_t>& send_can_ids,
-                         const std::vector<uint32_t>& recv_can_ids);
+                         const std::vector<uint32_t>& recv_can_ids,
+                         const std::vector<damiao_motor::ControlMode>& control_modes = {});
 
-    void init_gripper_motor(damiao_motor::MotorType motor_type, uint32_t send_can_id,
-                            uint32_t recv_can_id);
+    void init_gripper_motor(
+        damiao_motor::MotorType motor_type, uint32_t send_can_id, uint32_t recv_can_id,
+        damiao_motor::ControlMode control_mode = damiao_motor::ControlMode::POS_FORCE);
 
     // Component access
     ArmComponent& get_arm() { return *arm_; }

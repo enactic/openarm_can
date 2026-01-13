@@ -39,6 +39,8 @@ public:
     // Getter method to access motor state
     Motor& get_motor() { return motor_; }
     void set_callback_mode(CallbackMode callback_mode) { callback_mode_ = callback_mode; }
+    ControlMode get_control_mode() const { return control_mode_; }
+    void set_control_mode(ControlMode control_mode) { control_mode_ = control_mode; }
 
 private:
     std::vector<uint8_t> get_data_from_frame(const can_frame& frame);
@@ -46,5 +48,6 @@ private:
     Motor& motor_;
     CallbackMode callback_mode_;
     bool use_fd_;  // Track if using CAN-FD
+    ControlMode control_mode_ = ControlMode::MIT;
 };
 }  // namespace openarm::damiao_motor

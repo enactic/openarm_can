@@ -25,7 +25,8 @@ ArmComponent::ArmComponent(canbus::CANSocket& can_socket)
 
 void ArmComponent::init_motor_devices(const std::vector<damiao_motor::MotorType>& motor_types,
                                       const std::vector<canid_t>& send_can_ids,
-                                      const std::vector<canid_t>& recv_can_ids, bool use_fd) {
+                                      const std::vector<canid_t>& recv_can_ids, bool use_fd,
+                                      const std::vector<damiao_motor::ControlMode>& control_modes) {
     // Reserve space to prevent vector reallocation that would invalidate motor
     // references
     motors_.reserve(motor_types.size());
@@ -37,6 +38,20 @@ void ArmComponent::init_motor_devices(const std::vector<damiao_motor::MotorType>
         auto motor_device =
             std::make_shared<damiao_motor::DMCANDevice>(motors_.back(), CAN_SFF_MASK, use_fd);
         get_device_collection().add_device(motor_device);
+    }
+
+    if (!control_modes.empty()) {
+        if (control_modes.size() == 1) {
+            set_control_mode_all(control_modes[0]);
+        } else if (control_modes.size() == motor_types.size()) {
+            for (size_t i = 0; i < motor_types.size(); i++) {
+                set_control_mode_one(i, control_modes[i]);
+            }
+        } else {
+            throw std::invalid_argument(
+                "Control modes vector must have a single element or match the size of motor "
+                "types.");
+        }
     }
 }
 

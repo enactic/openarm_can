@@ -89,6 +89,19 @@ void DMDeviceCollection::query_param_all(int RID) {
     }
 }
 
+void DMDeviceCollection::set_control_mode_one(int i, ControlMode mode) {
+    auto dm_device = get_dm_devices()[i];
+    dm_device->set_control_mode(mode);
+    CANPacket cmd = CanPacketEncoder::create_set_control_mode_command(dm_device->get_motor(), mode);
+    send_command_to_device(dm_device, cmd);
+}
+
+void DMDeviceCollection::set_control_mode_all(ControlMode mode) {
+    for (size_t i = 0; i < get_dm_devices().size(); i++) {
+        set_control_mode_one(static_cast<int>(i), mode);
+    }
+}
+
 void DMDeviceCollection::send_command_to_device(std::shared_ptr<DMCANDevice> dm_device,
                                                 const CANPacket& packet) {
     if (can_socket_.is_canfd_enabled()) {
@@ -101,9 +114,14 @@ void DMDeviceCollection::send_command_to_device(std::shared_ptr<DMCANDevice> dm_
 }
 
 void DMDeviceCollection::mit_control_one(int i, const MITParam& mit_param) {
+    auto dm_device = get_dm_devices()[i];
+    if (dm_device->get_control_mode() != ControlMode::MIT) {
+        std::cerr << "WARNING: MIT control rejected; motor not in MIT mode." << std::endl;
+        return;
+    }
     CANPacket mit_cmd =
-        CanPacketEncoder::create_mit_control_command(get_dm_devices()[i]->get_motor(), mit_param);
-    send_command_to_device(get_dm_devices()[i], mit_cmd);
+        CanPacketEncoder::create_mit_control_command(dm_device->get_motor(), mit_param);
+    send_command_to_device(dm_device, mit_cmd);
 }
 
 void DMDeviceCollection::mit_control_all(const std::vector<MITParam>& mit_params) {
@@ -113,14 +131,37 @@ void DMDeviceCollection::mit_control_all(const std::vector<MITParam>& mit_params
 }
 
 void DMDeviceCollection::posvel_control_one(int i, const PosVelParam& posvel_param) {
-    CANPacket posvel_cmd = CanPacketEncoder::create_posvel_control_command(
-        get_dm_devices()[i]->get_motor(), posvel_param);
-    send_command_to_device(get_dm_devices()[i], posvel_cmd);
+    auto dm_device = get_dm_devices()[i];
+    if (dm_device->get_control_mode() != ControlMode::POS_VEL) {
+        std::cerr << "WARNING: posvel control rejected; motor not in POS_VEL mode." << std::endl;
+        return;
+    }
+    CANPacket posvel_cmd =
+        CanPacketEncoder::create_posvel_control_command(dm_device->get_motor(), posvel_param);
+    send_command_to_device(dm_device, posvel_cmd);
 }
 
 void DMDeviceCollection::posvel_control_all(const std::vector<PosVelParam>& posvel_params) {
     for (size_t i = 0; i < posvel_params.size(); i++) {
         posvel_control_one(i, posvel_params[i]);
+    }
+}
+
+void DMDeviceCollection::posforce_control_one(int i, const PosForceParam& posforce_param) {
+    auto dm_device = get_dm_devices()[i];
+    if (dm_device->get_control_mode() != ControlMode::POS_FORCE) {
+        std::cerr << "WARNING: posforce control rejected; motor not in POS_FORCE mode."
+                  << std::endl;
+        return;
+    }
+    CANPacket posforce_cmd =
+        CanPacketEncoder::create_posforce_control_command(dm_device->get_motor(), posforce_param);
+    send_command_to_device(dm_device, posforce_cmd);
+}
+
+void DMDeviceCollection::posforce_control_all(const std::vector<PosForceParam>& posforce_params) {
+    for (size_t i = 0; i < posforce_params.size(); i++) {
+        posforce_control_one(i, posforce_params[i]);
     }
 }
 

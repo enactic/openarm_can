@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Send CAN ID: " << motor.get_send_can_id() << std::endl;
             std::cout << "Queried Master ID: " << queried_mst_id << std::endl;
             std::cout << "Queried Baudrate (1-9): " << queried_baudrate << std::endl;
-            std::cout << "Queried Control Mode (1: MIT, 2: POS_VEL, 3: VEL, 4: TORQUE_POS): "
+            std::cout << "Queried Control Mode (1: MIT, 2: POS_VEL, 3: VEL, 4: POS_FORCE): "
                       << queried_control_mode << std::endl;
             if (queried_control_mode != static_cast<int>(openarm::damiao_motor::ControlMode::MIT)) {
                 std::cout << "Warning: Queried Control Mode (" << queried_control_mode
