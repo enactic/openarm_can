@@ -15,7 +15,7 @@
 cmake_minimum_required(VERSION 3.22)
 project(
   openarm_can_python
-  VERSION 1.2.3
+  VERSION 1.2.4
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
