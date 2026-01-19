@@ -48,8 +48,10 @@ void DMCANDevice::callback(const can_frame& frame) {
                 // Convert frame data to vector and let Motor handle parsing
                 StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
                 if (frame.can_id == motor_.get_recv_can_id() && result.valid) {
-                    motor_.update_state(result.position, result.velocity, result.torque,
-                                        result.t_mos, result.t_rotor);
+                    motor_.update_state(result.id, result.err, result.raw_position,
+                                        result.raw_velocity, result.raw_torque, result.position,
+                                        result.velocity, result.torque, result.t_mos,
+                                        result.t_rotor);
                 }
             }
             break;
@@ -82,8 +84,9 @@ void DMCANDevice::callback(const canfd_frame& frame) {
     if (callback_mode_ == STATE) {
         StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
         if (result.valid) {
-            motor_.update_state(result.position, result.velocity, result.torque, result.t_mos,
-                                result.t_rotor);
+            motor_.update_state(result.id, result.err, result.raw_position, result.raw_velocity,
+                                result.raw_torque, result.position, result.velocity, result.torque,
+                                result.t_mos, result.t_rotor);
         }
     } else if (callback_mode_ == PARAM) {
         ParamResult result = CanPacketDecoder::parse_motor_param_data(data);

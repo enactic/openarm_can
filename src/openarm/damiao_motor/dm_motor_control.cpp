@@ -61,10 +61,14 @@ StateResult CanPacketDecoder::parse_motor_state_data(const Motor& motor,
                                                      const std::vector<uint8_t>& data) {
     if (data.size() < 8) {
         std::cerr << "Warning: Skipping motor state data less than 8 bytes" << std::endl;
-        return {0, 0, 0, 0, 0, false};
+        return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false};
     }
 
-    // Parse state data
+    // Extract ID and error code from D[0]
+    int id = data[0] & 0x0F;
+    int err = (data[0] >> 4) & 0x0F;
+
+    // Parse raw state data
     uint16_t q_uint = (static_cast<uint16_t>(data[1]) << 8) | data[2];
     uint16_t dq_uint =
         (static_cast<uint16_t>(data[3]) << 4) | (static_cast<uint16_t>(data[4]) >> 4);
@@ -78,7 +82,7 @@ StateResult CanPacketDecoder::parse_motor_state_data(const Motor& motor,
     double recv_dq = CanPacketDecoder::uint_to_double(dq_uint, -limits.vMax, limits.vMax, 12);
     double recv_tau = CanPacketDecoder::uint_to_double(tau_uint, -limits.tMax, limits.tMax, 12);
 
-    return {recv_q, recv_dq, recv_tau, t_mos, t_rotor, true};
+    return {id, err, q_uint, dq_uint, tau_uint, recv_q, recv_dq, recv_tau, t_mos, t_rotor, true};
 }
 
 ParamResult CanPacketDecoder::parse_motor_param_data(const std::vector<uint8_t>& data) {

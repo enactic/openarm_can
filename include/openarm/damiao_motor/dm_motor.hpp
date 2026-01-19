@@ -31,6 +31,11 @@ public:
     Motor(MotorType motor_type, uint32_t send_can_id, uint32_t recv_can_id);
 
     // State getters
+    int get_state_id() const { return state_id_; }
+    int get_state_err() const { return state_err_; }
+    uint16_t get_raw_position() const { return state_raw_q_; }
+    uint16_t get_raw_velocity() const { return state_raw_dq_; }
+    uint16_t get_raw_torque() const { return state_raw_tau_; }
     double get_position() const { return state_q_; }
     double get_velocity() const { return state_dq_; }
     double get_torque() const { return state_tau_; }
@@ -53,7 +58,9 @@ public:
 
 protected:
     // State update methods
-    void update_state(double q, double dq, double tau, int tmos, int trotor);
+    void update_state(int id, int err, uint16_t raw_q, uint16_t raw_dq, uint16_t raw_tau,
+                      double q, double dq, double tau, int tmos, int trotor);
+
     void set_state_tmos(int tmos);
     void set_state_trotor(int trotor);
     void set_enabled(bool enabled);
@@ -68,6 +75,8 @@ protected:
     bool enabled_;
 
     // Current state
+    int state_id_, state_err_;
+    uint16_t state_raw_q_, state_raw_dq_, state_raw_tau_;
     double state_q_, state_dq_, state_tau_;
     int state_tmos_, state_trotor_;
 

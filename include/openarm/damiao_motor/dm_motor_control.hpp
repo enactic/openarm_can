@@ -36,6 +36,11 @@ struct ParamResult {
 };
 
 struct StateResult {
+    int id;
+    int err;
+    uint16_t raw_position;
+    uint16_t raw_velocity;
+    uint16_t raw_torque;
     double position;
     double velocity;
     double torque;
