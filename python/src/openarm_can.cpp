@@ -467,7 +467,7 @@ NB_MODULE(openarm_can, m) {
         .def("disable_all", &OpenArm::disable_all)
         .def("set_zero_all", &OpenArm::set_zero_all)
         .def("refresh_all", &OpenArm::refresh_all)
-        .def("recv_all", &OpenArm::recv_all, nb::arg("timeout_us") = 500)
+        .def("recv_all", &OpenArm::recv_all, nb::arg("first_timeout_us") = 500)
         .def("set_callback_mode_all", &OpenArm::set_callback_mode_all, nb::arg("callback_mode"))
         .def("query_param_all", &OpenArm::query_param_all, nb::arg("rid"));
 }

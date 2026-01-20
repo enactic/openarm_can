@@ -55,9 +55,10 @@ public:
     void refresh_all();
 
     void refresh_one(int i);
-    // The timeout for reading from socket, set to timeout_us.
-    // Tuning this value may improve the performance but should be done with caution.
-    void recv_all(int timeout_us = 500);
+    // The timeout for reading the first response from socket, set to
+    // timeout_us. Tuning this value may improve the performance but
+    // should be done with caution.
+    void recv_all(int first_timeout_us = 500);
     void set_callback_mode_all(damiao_motor::CallbackMode callback_mode);
     void query_param_all(int RID);
 
