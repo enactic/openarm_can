@@ -87,9 +87,14 @@ void OpenArm::disable_all() {
     }
 }
 
-void OpenArm::recv_all(int timeout_us) {
-    // The timeout for select() is set to timeout_us (default: 500 us).
-    // Tuning this value may improve the performance but should be done with caution.
+void OpenArm::recv_all(int first_timeout_us) {
+    // The timeout for select() of the first response is set to
+    // first_timeout_us (default: 500 us). Following responses use 0
+    // us as timeout.
+    //
+    // Tuning this value may improve the performance but should be
+    // done with caution.
+    int timeout_us = first_timeout_us;
 
     // CAN FD
     if (enable_fd_) {
@@ -97,6 +102,7 @@ void OpenArm::recv_all(int timeout_us) {
         while (can_socket_->is_data_available(timeout_us) &&
                can_socket_->read_canfd_frame(response_frame)) {
             master_can_device_collection_->dispatch_frame_callback(response_frame);
+            timeout_us = 0;
         }
     }
     // CAN 2.0
@@ -105,6 +111,7 @@ void OpenArm::recv_all(int timeout_us) {
         while (can_socket_->is_data_available(timeout_us) &&
                can_socket_->read_can_frame(response_frame)) {
             master_can_device_collection_->dispatch_frame_callback(response_frame);
+            timeout_us = 0;
         }
     }
     // }
