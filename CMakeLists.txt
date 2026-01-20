@@ -13,7 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.22)
-project(openarm_can VERSION 1.2.4)
+project(openarm_can VERSION 1.2.5)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)

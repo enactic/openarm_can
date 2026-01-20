@@ -22,7 +22,7 @@ allowing you to control DAMIAO motors through SocketCAN.
 
 from .openarm_can import *
 
-__version__ = "1.2.4"
+__version__ = "1.2.5"
 __author__ = "Enactic, Inc."
 
 # Direct export of C++ classes - no wrappers
