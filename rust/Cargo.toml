@@ -1,0 +1,21 @@
+[package]
+name = "openarm_can"
+version = "1.2.5"
+edition = "2021"
+authors = ["OpenArm Contributors"]
+description = "Pure Rust implementation of OpenArm CAN motor control"
+license = "MIT"
+
+[lib]
+name = "openarm_can"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.23", features = ["extension-module"] }
+socketcan = "3.5"
+libc = "0.2"
+thiserror = "2.0"
+
+[profile.release]
+lto = true
+codegen-units = 1

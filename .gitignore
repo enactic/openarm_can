@@ -29,3 +29,16 @@
 /packages/yum/tmp/
 /python/dist/
 /python/vendor/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+*.egg-info/
+
+# Rust
+target/
+Cargo.lock
