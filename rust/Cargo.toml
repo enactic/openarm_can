@@ -1,16 +1,18 @@
-[package]
-name = "openarm_can"
+[workspace]
+resolver = "2"
+members = [
+    "crates/openarm",
+    "crates/openarm-python",
+]
+
+[workspace.package]
 version = "1.2.5"
 edition = "2021"
 authors = ["OpenArm Contributors"]
-description = "Pure Rust implementation of OpenArm CAN motor control"
 license = "MIT"
 
-[lib]
-name = "openarm_can"
-crate-type = ["cdylib", "rlib"]
-
-[dependencies]
+[workspace.dependencies]
+openarm = { path = "crates/openarm" }
 pyo3 = { version = "0.23", features = ["extension-module"] }
 socketcan = "3.5"
 libc = "0.2"

@@ -1,7 +1,5 @@
 //! CAN packet encoding and decoding for Damiao motor protocol.
 
-use pyo3::prelude::*;
-
 use super::constants::*;
 use super::motor::Motor;
 
@@ -26,19 +24,16 @@ fn uint_to_float(x: u32, x_min: f64, x_max: f64, bits: u32) -> f64 {
 }
 
 /// CAN packet encoder for Damiao motor commands.
-#[pyclass]
 #[derive(Debug, Clone, Default)]
 pub struct CanPacketEncoder;
 
-#[pymethods]
 impl CanPacketEncoder {
-    #[new]
+    /// Create a new encoder.
     pub fn new() -> Self {
         Self
     }
 
     /// Create enable command.
-    #[staticmethod]
     pub fn create_enable_command(motor: &Motor) -> CANPacket {
         CANPacket {
             send_can_id: motor.send_can_id(),
@@ -47,7 +42,6 @@ impl CanPacketEncoder {
     }
 
     /// Create disable command.
-    #[staticmethod]
     pub fn create_disable_command(motor: &Motor) -> CANPacket {
         CANPacket {
             send_can_id: motor.send_can_id(),
@@ -56,7 +50,6 @@ impl CanPacketEncoder {
     }
 
     /// Create set zero command (flash current position as zero).
-    #[staticmethod]
     pub fn create_set_zero_command(motor: &Motor) -> CANPacket {
         CANPacket {
             send_can_id: motor.send_can_id(),
@@ -65,7 +58,6 @@ impl CanPacketEncoder {
     }
 
     /// Create refresh command (request state update).
-    #[staticmethod]
     pub fn create_refresh_command(motor: &Motor) -> CANPacket {
         let can_id = motor.send_can_id();
         CANPacket {
@@ -84,7 +76,6 @@ impl CanPacketEncoder {
     }
 
     /// Create MIT control command.
-    #[staticmethod]
     pub fn create_mit_control_command(motor: &Motor, param: &MITParam) -> CANPacket {
         let limits = motor.motor_type().get_limits();
 
@@ -120,7 +111,6 @@ impl CanPacketEncoder {
     }
 
     /// Create position-velocity control command.
-    #[staticmethod]
     pub fn create_posvel_control_command(motor: &Motor, param: &PosVelParam) -> CANPacket {
         let limits = motor.motor_type().get_limits();
 
@@ -148,7 +138,6 @@ impl CanPacketEncoder {
     }
 
     /// Create position-force control command.
-    #[staticmethod]
     pub fn create_posforce_control_command(motor: &Motor, param: &PosForceParam) -> CANPacket {
         let limits = motor.motor_type().get_limits();
 
@@ -178,7 +167,6 @@ impl CanPacketEncoder {
     }
 
     /// Create set control mode command.
-    #[staticmethod]
     pub fn create_set_control_mode_command(motor: &Motor, mode: ControlMode) -> CANPacket {
         let can_id = motor.send_can_id();
         let mode_val = mode as u8;
@@ -199,7 +187,6 @@ impl CanPacketEncoder {
     }
 
     /// Create query parameter command.
-    #[staticmethod]
     pub fn create_query_param_command(motor: &Motor, rid: MotorVariable) -> CANPacket {
         let can_id = motor.send_can_id();
 
@@ -220,20 +207,17 @@ impl CanPacketEncoder {
 }
 
 /// CAN packet decoder for Damiao motor responses.
-#[pyclass]
 #[derive(Debug, Clone, Default)]
 pub struct CanPacketDecoder;
 
-#[pymethods]
 impl CanPacketDecoder {
-    #[new]
+    /// Create a new decoder.
     pub fn new() -> Self {
         Self
     }
 
     /// Parse motor state data from CAN frame.
-    #[staticmethod]
-    pub fn parse_motor_state_data(motor: &Motor, data: Vec<u8>) -> MotorStateResult {
+    pub fn parse_motor_state_data(motor: &Motor, data: &[u8]) -> MotorStateResult {
         if data.len() < 8 {
             return MotorStateResult {
                 valid: false,
@@ -266,8 +250,7 @@ impl CanPacketDecoder {
     }
 
     /// Parse parameter data from CAN frame.
-    #[staticmethod]
-    pub fn parse_motor_param_data(data: Vec<u8>) -> ParamResult {
+    pub fn parse_motor_param_data(data: &[u8]) -> ParamResult {
         if data.len() < 8 {
             return ParamResult {
                 valid: false,
@@ -297,11 +280,9 @@ impl CanPacketDecoder {
             valid: true,
         }
     }
-}
 
-impl CanPacketDecoder {
-    /// Parse and update motor state (internal use).
-    pub(crate) fn parse_and_update_motor_state(motor: &Motor, data: &[u8]) -> bool {
+    /// Parse and update motor state.
+    pub fn parse_and_update_motor_state(motor: &Motor, data: &[u8]) -> bool {
         if data.len() < 8 {
             return false;
         }
@@ -324,8 +305,8 @@ impl CanPacketDecoder {
         true
     }
 
-    /// Parse and store parameter result (internal use).
-    pub(crate) fn parse_and_store_param(motor: &Motor, data: &[u8]) -> bool {
+    /// Parse and store parameter result.
+    pub fn parse_and_store_param(motor: &Motor, data: &[u8]) -> bool {
         if data.len() < 8 {
             return false;
         }

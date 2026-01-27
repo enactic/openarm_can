@@ -1,0 +1,15 @@
+[package]
+name = "openarm-python"
+description = "Python bindings for OpenArm CAN motor control"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+name = "openarm_can"
+crate-type = ["cdylib"]
+
+[dependencies]
+openarm = { workspace = true }
+pyo3 = { workspace = true }

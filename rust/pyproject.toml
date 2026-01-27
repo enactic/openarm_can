@@ -20,6 +20,6 @@ classifiers = [
 ]
 
 [tool.maturin]
-features = ["pyo3/extension-module"]
+manifest-path = "crates/openarm-python/Cargo.toml"
 python-source = "python"
 module-name = "openarm_can"

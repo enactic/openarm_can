@@ -1,22 +1,36 @@
 //! CAN device collection for managing multiple devices.
 
-use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use super::device::{CANDeviceTrait, MotorDeviceCan};
 use super::socket::CANSocket;
 use crate::damiao_motor::CallbackMode;
+use crate::error::Result;
 
 /// Collection of CAN devices with frame dispatch.
-#[pyclass]
 pub struct CANDeviceCollection {
     devices: Arc<Mutex<HashMap<u32, Arc<Mutex<MotorDeviceCan>>>>>,
     socket: Arc<Mutex<CANSocket>>,
 }
 
-#[pymethods]
 impl CANDeviceCollection {
+    /// Create a new device collection.
+    pub fn new(socket: CANSocket) -> Self {
+        Self {
+            devices: Arc::new(Mutex::new(HashMap::new())),
+            socket: Arc::new(Mutex::new(socket)),
+        }
+    }
+
+    /// Create from existing socket Arc.
+    pub fn from_socket_arc(socket: Arc<Mutex<CANSocket>>) -> Self {
+        Self {
+            devices: Arc::new(Mutex::new(HashMap::new())),
+            socket,
+        }
+    }
+
     /// Register a device with the collection.
     pub fn register_device(&self, device: &MotorDeviceCan) {
         let recv_id = device.recv_can_id();
@@ -25,6 +39,12 @@ impl CANDeviceCollection {
             .lock()
             .unwrap()
             .insert(recv_id, Arc::new(Mutex::new(device_clone)));
+    }
+
+    /// Register device from Arc.
+    pub fn register_device_internal(&self, device: Arc<Mutex<MotorDeviceCan>>) {
+        let recv_id = device.lock().unwrap().recv_can_id();
+        self.devices.lock().unwrap().insert(recv_id, device);
     }
 
     /// Unregister a device from the collection.
@@ -38,9 +58,18 @@ impl CANDeviceCollection {
     }
 
     /// Get the socket interface name.
-    #[getter]
-    pub fn get_interface(&self) -> String {
-        self.socket.lock().unwrap().get_interface().to_string()
+    pub fn interface(&self) -> String {
+        self.socket.lock().unwrap().interface().to_string()
+    }
+
+    /// Get socket reference.
+    pub fn socket(&self) -> Arc<Mutex<CANSocket>> {
+        Arc::clone(&self.socket)
+    }
+
+    /// Get devices map.
+    pub fn devices(&self) -> Arc<Mutex<HashMap<u32, Arc<Mutex<MotorDeviceCan>>>>> {
+        Arc::clone(&self.devices)
     }
 
     /// Set callback mode for all devices.
@@ -62,57 +91,14 @@ impl CANDeviceCollection {
         }
     }
 
-    fn __repr__(&self) -> String {
-        format!(
-            "CANDeviceCollection(devices={})",
-            self.device_count()
-        )
-    }
-}
-
-impl CANDeviceCollection {
-    /// Create a new device collection (internal).
-    pub(crate) fn new(socket: CANSocket) -> Self {
-        Self {
-            devices: Arc::new(Mutex::new(HashMap::new())),
-            socket: Arc::new(Mutex::new(socket)),
-        }
-    }
-
-    /// Get socket reference (internal).
-    pub(crate) fn socket(&self) -> Arc<Mutex<CANSocket>> {
-        Arc::clone(&self.socket)
-    }
-
-    /// Get devices map (internal).
-    pub(crate) fn devices(&self) -> Arc<Mutex<HashMap<u32, Arc<Mutex<MotorDeviceCan>>>>> {
-        Arc::clone(&self.devices)
-    }
-
-    /// Create from existing socket Arc (internal).
-    pub(crate) fn from_socket_arc(socket: Arc<Mutex<CANSocket>>) -> Self {
-        Self {
-            devices: Arc::new(Mutex::new(HashMap::new())),
-            socket,
-        }
-    }
-
-    /// Register device (internal).
-    pub(crate) fn register_device_internal(&self, device: Arc<Mutex<MotorDeviceCan>>) {
-        let recv_id = device.lock().unwrap().recv_can_id();
-        self.devices.lock().unwrap().insert(recv_id, device);
-    }
-
     /// Receive all available frames with timeout for first frame.
-    pub(crate) fn recv_all(&self, first_timeout_us: u64) -> PyResult<usize> {
+    pub fn recv_all(&self, first_timeout_us: u64) -> Result<usize> {
         let socket = self.socket.lock().unwrap();
         let mut count = 0;
 
         // Wait for first frame with specified timeout
         if socket.is_data_available(first_timeout_us)? {
-            if let Some((can_id, data)) = socket.read_raw().map_err(|e| {
-                pyo3::exceptions::PyIOError::new_err(format!("Read error: {}", e))
-            })? {
+            if let Some((can_id, data)) = socket.read_raw()? {
                 drop(socket); // Release lock before dispatch
                 self.dispatch_frame(can_id, data);
                 count += 1;
@@ -123,9 +109,7 @@ impl CANDeviceCollection {
                     if !socket.is_data_available(0)? {
                         break;
                     }
-                    if let Some((can_id, data)) = socket.read_raw().map_err(|e| {
-                        pyo3::exceptions::PyIOError::new_err(format!("Read error: {}", e))
-                    })? {
+                    if let Some((can_id, data)) = socket.read_raw()? {
                         drop(socket);
                         self.dispatch_frame(can_id, data);
                         count += 1;
@@ -140,7 +124,7 @@ impl CANDeviceCollection {
     }
 
     /// Send a CAN packet through the socket.
-    pub(crate) fn send_packet(&self, can_id: u32, data: &[u8]) -> std::io::Result<()> {
+    pub fn send_packet(&self, can_id: u32, data: &[u8]) -> Result<()> {
         let socket = self.socket.lock().unwrap();
         socket.write_raw(can_id, data)
     }

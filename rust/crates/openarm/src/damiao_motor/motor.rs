@@ -1,6 +1,5 @@
 //! Motor state container.
 
-use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -33,7 +32,6 @@ impl Default for MotorState {
 }
 
 /// Motor state container for a single Damiao motor.
-#[pyclass]
 #[derive(Clone, Debug)]
 pub struct Motor {
     motor_type: MotorType,
@@ -43,10 +41,8 @@ pub struct Motor {
     pub(crate) state: Arc<Mutex<MotorState>>,
 }
 
-#[pymethods]
 impl Motor {
-    #[new]
-    #[pyo3(signature = (motor_type, send_can_id, recv_can_id, control_mode=ControlMode::MIT))]
+    /// Create a new motor.
     pub fn new(
         motor_type: MotorType,
         send_can_id: u32,
@@ -63,31 +59,26 @@ impl Motor {
     }
 
     /// Get the motor type.
-    #[getter]
-    pub fn get_motor_type(&self) -> MotorType {
+    pub fn motor_type(&self) -> MotorType {
         self.motor_type
     }
 
     /// Get the send CAN ID.
-    #[getter]
-    pub fn get_send_can_id(&self) -> u32 {
+    pub fn send_can_id(&self) -> u32 {
         self.send_can_id
     }
 
     /// Get the receive CAN ID.
-    #[getter]
-    pub fn get_recv_can_id(&self) -> u32 {
+    pub fn recv_can_id(&self) -> u32 {
         self.recv_can_id
     }
 
     /// Get the control mode.
-    #[getter]
-    pub fn get_control_mode(&self) -> ControlMode {
+    pub fn control_mode(&self) -> ControlMode {
         self.control_mode
     }
 
     /// Set the control mode.
-    #[setter]
     pub fn set_control_mode(&mut self, mode: ControlMode) {
         self.control_mode = mode;
     }
@@ -127,23 +118,8 @@ impl Motor {
         self.state.lock().unwrap().temp_param_dict.get(&rid).copied()
     }
 
-    fn __repr__(&self) -> String {
-        let state = self.state.lock().unwrap();
-        format!(
-            "Motor(type={:?}, send_id=0x{:X}, recv_id=0x{:X}, pos={:.3}, vel={:.3}, tau={:.3})",
-            self.motor_type,
-            self.send_can_id,
-            self.recv_can_id,
-            state.position,
-            state.velocity,
-            state.torque
-        )
-    }
-}
-
-impl Motor {
-    /// Update motor state from decoded CAN response (internal use).
-    pub(crate) fn update_state(
+    /// Update motor state from decoded CAN response.
+    pub fn update_state(
         &self,
         position: f64,
         velocity: f64,
@@ -159,33 +135,13 @@ impl Motor {
         state.t_rotor = t_rotor;
     }
 
-    /// Set enabled state (internal use).
-    pub(crate) fn set_enabled(&self, enabled: bool) {
+    /// Set enabled state.
+    pub fn set_enabled(&self, enabled: bool) {
         self.state.lock().unwrap().enabled = enabled;
     }
 
-    /// Store a temporary parameter value (internal use).
-    pub(crate) fn set_temp_param(&self, rid: i32, value: f64) {
+    /// Store a temporary parameter value.
+    pub fn set_temp_param(&self, rid: i32, value: f64) {
         self.state.lock().unwrap().temp_param_dict.insert(rid, value);
-    }
-
-    /// Get motor type (internal).
-    pub(crate) fn motor_type(&self) -> MotorType {
-        self.motor_type
-    }
-
-    /// Get send CAN ID (internal).
-    pub(crate) fn send_can_id(&self) -> u32 {
-        self.send_can_id
-    }
-
-    /// Get recv CAN ID (internal).
-    pub(crate) fn recv_can_id(&self) -> u32 {
-        self.recv_can_id
-    }
-
-    /// Get control mode (internal).
-    pub(crate) fn control_mode(&self) -> ControlMode {
-        self.control_mode
     }
 }

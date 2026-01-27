@@ -1,37 +1,25 @@
 //! CAN socket implementation using Linux SocketCAN.
 
-use pyo3::exceptions::PyException;
-use pyo3::prelude::*;
+use crate::error::{OpenArmError, Result};
 use socketcan::{CanFdSocket, CanSocket, EmbeddedFrame, Frame, Socket};
 use std::os::unix::io::AsRawFd;
 use std::time::Duration;
 
-// Python exception for CAN socket errors.
-pyo3::create_exception!(openarm_can, CANSocketException, PyException);
-
-/// Standard CAN frame wrapper for Python.
-#[pyclass(get_all)]
+/// Standard CAN frame.
 #[derive(Debug, Clone)]
 pub struct CanFrame {
     pub can_id: u32,
     pub data: Vec<u8>,
 }
 
-#[pymethods]
 impl CanFrame {
-    #[new]
-    #[pyo3(signature = (can_id, data))]
+    /// Create a new CAN frame.
     pub fn new(can_id: u32, data: Vec<u8>) -> Self {
         Self { can_id, data }
     }
-
-    fn __repr__(&self) -> String {
-        format!("CanFrame(can_id=0x{:X}, data={:?})", self.can_id, self.data)
-    }
 }
 
-/// CAN-FD frame wrapper for Python.
-#[pyclass(get_all)]
+/// CAN-FD frame.
 #[derive(Debug, Clone)]
 pub struct CanFdFrame {
     pub can_id: u32,
@@ -39,19 +27,10 @@ pub struct CanFdFrame {
     pub flags: u8,
 }
 
-#[pymethods]
 impl CanFdFrame {
-    #[new]
-    #[pyo3(signature = (can_id, data, flags=0))]
+    /// Create a new CAN-FD frame.
     pub fn new(can_id: u32, data: Vec<u8>, flags: u8) -> Self {
         Self { can_id, data, flags }
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "CanFdFrame(can_id=0x{:X}, data={:?}, flags={})",
-            self.can_id, self.data, self.flags
-        )
     }
 }
 
@@ -62,7 +41,6 @@ enum SocketInner {
 }
 
 /// Low-level CAN socket interface.
-#[pyclass]
 pub struct CANSocket {
     inner: Option<SocketInner>,
     interface: String,
@@ -70,11 +48,9 @@ pub struct CANSocket {
     recv_timeout_us: u64,
 }
 
-#[pymethods]
 impl CANSocket {
-    #[new]
-    #[pyo3(signature = (interface, enable_fd=false, recv_timeout_us=100))]
-    pub fn new(interface: String, enable_fd: bool, recv_timeout_us: u64) -> PyResult<Self> {
+    /// Create a new CAN socket.
+    pub fn new(interface: String, enable_fd: bool, recv_timeout_us: u64) -> Result<Self> {
         let mut socket = Self {
             inner: None,
             interface,
@@ -86,10 +62,10 @@ impl CANSocket {
     }
 
     /// Initialize or reinitialize the CAN socket.
-    pub fn initialize_socket(&mut self) -> PyResult<()> {
+    pub fn initialize_socket(&mut self) -> Result<()> {
         if self.enable_fd {
             let sock = CanFdSocket::open(&self.interface).map_err(|e| {
-                CANSocketException::new_err(format!(
+                OpenArmError::SocketError(format!(
                     "Failed to open CAN-FD socket on {}: {}",
                     self.interface, e
                 ))
@@ -97,13 +73,13 @@ impl CANSocket {
 
             sock.set_read_timeout(Duration::from_micros(self.recv_timeout_us))
                 .map_err(|e| {
-                    CANSocketException::new_err(format!("Failed to set read timeout: {}", e))
+                    OpenArmError::SocketError(format!("Failed to set read timeout: {}", e))
                 })?;
 
             self.inner = Some(SocketInner::CanFd(sock));
         } else {
             let sock = CanSocket::open(&self.interface).map_err(|e| {
-                CANSocketException::new_err(format!(
+                OpenArmError::SocketError(format!(
                     "Failed to open CAN socket on {}: {}",
                     self.interface, e
                 ))
@@ -111,7 +87,7 @@ impl CANSocket {
 
             sock.set_read_timeout(Duration::from_micros(self.recv_timeout_us))
                 .map_err(|e| {
-                    CANSocketException::new_err(format!("Failed to set read timeout: {}", e))
+                    OpenArmError::SocketError(format!("Failed to set read timeout: {}", e))
                 })?;
 
             self.inner = Some(SocketInner::Can(sock));
@@ -130,40 +106,35 @@ impl CANSocket {
     }
 
     /// Get the interface name.
-    #[getter]
-    pub fn get_interface(&self) -> &str {
+    pub fn interface(&self) -> &str {
         &self.interface
     }
 
     /// Check if CAN-FD is enabled.
-    #[getter]
-    pub fn get_enable_fd(&self) -> bool {
+    pub fn enable_fd(&self) -> bool {
         self.enable_fd
     }
 
     /// Write a standard CAN frame.
-    pub fn write_can_frame(&self, frame: &CanFrame) -> PyResult<()> {
-        let inner = self.inner.as_ref().ok_or_else(|| {
-            CANSocketException::new_err("Socket not open")
-        })?;
+    pub fn write_can_frame(&self, frame: &CanFrame) -> Result<()> {
+        let inner = self.inner.as_ref().ok_or(OpenArmError::SocketNotOpen)?;
 
         let can_frame = socketcan::CanFrame::new(
-            socketcan::StandardId::new(frame.can_id as u16).ok_or_else(|| {
-                CANSocketException::new_err(format!("Invalid CAN ID: 0x{:X}", frame.can_id))
-            })?,
+            socketcan::StandardId::new(frame.can_id as u16)
+                .ok_or(OpenArmError::InvalidCanId(frame.can_id))?,
             &frame.data,
         )
-        .ok_or_else(|| CANSocketException::new_err("Failed to create CAN frame"))?;
+        .ok_or_else(|| OpenArmError::SocketError("Failed to create CAN frame".to_string()))?;
 
         match inner {
             SocketInner::Can(sock) => {
                 sock.write_frame(&can_frame).map_err(|e| {
-                    CANSocketException::new_err(format!("Failed to write CAN frame: {}", e))
+                    OpenArmError::SocketError(format!("Failed to write CAN frame: {}", e))
                 })?;
             }
             SocketInner::CanFd(sock) => {
                 sock.write_frame(&can_frame).map_err(|e| {
-                    CANSocketException::new_err(format!("Failed to write CAN frame: {}", e))
+                    OpenArmError::SocketError(format!("Failed to write CAN frame: {}", e))
                 })?;
             }
         }
@@ -171,28 +142,23 @@ impl CANSocket {
     }
 
     /// Write a CAN-FD frame.
-    pub fn write_canfd_frame(&self, frame: &CanFdFrame) -> PyResult<()> {
-        let inner = self.inner.as_ref().ok_or_else(|| {
-            CANSocketException::new_err("Socket not open")
-        })?;
+    pub fn write_canfd_frame(&self, frame: &CanFdFrame) -> Result<()> {
+        let inner = self.inner.as_ref().ok_or(OpenArmError::SocketNotOpen)?;
 
         match inner {
-            SocketInner::Can(_) => {
-                Err(CANSocketException::new_err(
-                    "CAN-FD frames not supported on standard CAN socket",
-                ))
-            }
+            SocketInner::Can(_) => Err(OpenArmError::CanFdNotSupported),
             SocketInner::CanFd(sock) => {
                 let fd_frame = socketcan::CanFdFrame::new(
-                    socketcan::StandardId::new(frame.can_id as u16).ok_or_else(|| {
-                        CANSocketException::new_err(format!("Invalid CAN ID: 0x{:X}", frame.can_id))
-                    })?,
+                    socketcan::StandardId::new(frame.can_id as u16)
+                        .ok_or(OpenArmError::InvalidCanId(frame.can_id))?,
                     &frame.data,
                 )
-                .ok_or_else(|| CANSocketException::new_err("Failed to create CAN-FD frame"))?;
+                .ok_or_else(|| {
+                    OpenArmError::SocketError("Failed to create CAN-FD frame".to_string())
+                })?;
 
                 sock.write_frame(&fd_frame).map_err(|e| {
-                    CANSocketException::new_err(format!("Failed to write CAN-FD frame: {}", e))
+                    OpenArmError::SocketError(format!("Failed to write CAN-FD frame: {}", e))
                 })?;
                 Ok(())
             }
@@ -200,10 +166,8 @@ impl CANSocket {
     }
 
     /// Read a standard CAN frame.
-    pub fn read_can_frame(&self) -> PyResult<Option<CanFrame>> {
-        let inner = self.inner.as_ref().ok_or_else(|| {
-            CANSocketException::new_err("Socket not open")
-        })?;
+    pub fn read_can_frame(&self) -> Result<Option<CanFrame>> {
+        let inner = self.inner.as_ref().ok_or(OpenArmError::SocketNotOpen)?;
 
         match inner {
             SocketInner::Can(sock) => match sock.read_frame() {
@@ -213,10 +177,7 @@ impl CANSocket {
                 })),
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
                 Err(e) if e.kind() == std::io::ErrorKind::TimedOut => Ok(None),
-                Err(e) => Err(CANSocketException::new_err(format!(
-                    "Failed to read CAN frame: {}",
-                    e
-                ))),
+                Err(e) => Err(OpenArmError::IoError(e)),
             },
             SocketInner::CanFd(sock) => match sock.read_frame() {
                 Ok(frame) => Ok(Some(CanFrame {
@@ -225,24 +186,17 @@ impl CANSocket {
                 })),
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
                 Err(e) if e.kind() == std::io::ErrorKind::TimedOut => Ok(None),
-                Err(e) => Err(CANSocketException::new_err(format!(
-                    "Failed to read CAN frame: {}",
-                    e
-                ))),
+                Err(e) => Err(OpenArmError::IoError(e)),
             },
         }
     }
 
     /// Read a CAN-FD frame.
-    pub fn read_canfd_frame(&self) -> PyResult<Option<CanFdFrame>> {
-        let inner = self.inner.as_ref().ok_or_else(|| {
-            CANSocketException::new_err("Socket not open")
-        })?;
+    pub fn read_canfd_frame(&self) -> Result<Option<CanFdFrame>> {
+        let inner = self.inner.as_ref().ok_or(OpenArmError::SocketNotOpen)?;
 
         match inner {
-            SocketInner::Can(_) => Err(CANSocketException::new_err(
-                "CAN-FD frames not supported on standard CAN socket",
-            )),
+            SocketInner::Can(_) => Err(OpenArmError::CanFdNotSupported),
             SocketInner::CanFd(sock) => match sock.read_frame() {
                 Ok(frame) => Ok(Some(CanFdFrame {
                     can_id: frame.raw_id(),
@@ -251,19 +205,14 @@ impl CANSocket {
                 })),
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
                 Err(e) if e.kind() == std::io::ErrorKind::TimedOut => Ok(None),
-                Err(e) => Err(CANSocketException::new_err(format!(
-                    "Failed to read CAN-FD frame: {}",
-                    e
-                ))),
+                Err(e) => Err(OpenArmError::IoError(e)),
             },
         }
     }
 
     /// Check if data is available on the socket with timeout.
-    pub fn is_data_available(&self, timeout_us: u64) -> PyResult<bool> {
-        let inner = self.inner.as_ref().ok_or_else(|| {
-            CANSocketException::new_err("Socket not open")
-        })?;
+    pub fn is_data_available(&self, timeout_us: u64) -> Result<bool> {
+        let inner = self.inner.as_ref().ok_or(OpenArmError::SocketNotOpen)?;
 
         let fd = match inner {
             SocketInner::Can(sock) => sock.as_raw_fd(),
@@ -298,7 +247,7 @@ impl CANSocket {
             if errno.raw_os_error() == Some(libc::EINTR) {
                 Ok(false)
             } else {
-                Err(CANSocketException::new_err(format!("select() failed: {}", errno)))
+                Err(OpenArmError::IoError(errno))
             }
         } else {
             Ok(result > 0)
@@ -306,7 +255,7 @@ impl CANSocket {
     }
 
     /// Set receive timeout.
-    pub fn set_recv_timeout(&mut self, timeout_us: u64) -> PyResult<()> {
+    pub fn set_recv_timeout(&mut self, timeout_us: u64) -> Result<()> {
         self.recv_timeout_us = timeout_us;
 
         if let Some(inner) = &self.inner {
@@ -314,12 +263,12 @@ impl CANSocket {
             match inner {
                 SocketInner::Can(sock) => {
                     sock.set_read_timeout(duration).map_err(|e| {
-                        CANSocketException::new_err(format!("Failed to set timeout: {}", e))
+                        OpenArmError::SocketError(format!("Failed to set timeout: {}", e))
                     })?;
                 }
                 SocketInner::CanFd(sock) => {
                     sock.set_read_timeout(duration).map_err(|e| {
-                        CANSocketException::new_err(format!("Failed to set timeout: {}", e))
+                        OpenArmError::SocketError(format!("Failed to set timeout: {}", e))
                     })?;
                 }
             }
@@ -327,89 +276,67 @@ impl CANSocket {
         Ok(())
     }
 
-    fn __repr__(&self) -> String {
-        format!(
-            "CANSocket(interface='{}', enable_fd={}, open={})",
-            self.interface, self.enable_fd, self.is_open()
-        )
-    }
-}
-
-impl CANSocket {
-    /// Get raw file descriptor (internal use).
-    pub(crate) fn raw_fd(&self) -> Option<i32> {
+    /// Get raw file descriptor.
+    pub fn raw_fd(&self) -> Option<i32> {
         self.inner.as_ref().map(|inner| match inner {
             SocketInner::Can(sock) => sock.as_raw_fd(),
             SocketInner::CanFd(sock) => sock.as_raw_fd(),
         })
     }
 
-    /// Write raw bytes as CAN frame (internal use).
-    pub(crate) fn write_raw(&self, can_id: u32, data: &[u8]) -> std::io::Result<()> {
-        let inner = self.inner.as_ref().ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::NotConnected, "Socket not open")
-        })?;
+    /// Write raw bytes as CAN frame.
+    pub fn write_raw(&self, can_id: u32, data: &[u8]) -> Result<()> {
+        let inner = self.inner.as_ref().ok_or(OpenArmError::SocketNotOpen)?;
 
         let frame = socketcan::CanFrame::new(
-            socketcan::StandardId::new(can_id as u16).ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid CAN ID")
-            })?,
+            socketcan::StandardId::new(can_id as u16)
+                .ok_or(OpenArmError::InvalidCanId(can_id))?,
             data,
         )
-        .ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::InvalidInput, "Failed to create frame")
-        })?;
+        .ok_or_else(|| OpenArmError::SocketError("Failed to create frame".to_string()))?;
 
         match inner {
-            SocketInner::Can(sock) => sock.write_frame(&frame),
-            SocketInner::CanFd(sock) => sock.write_frame(&frame),
+            SocketInner::Can(sock) => sock.write_frame(&frame)?,
+            SocketInner::CanFd(sock) => sock.write_frame(&frame)?,
         }
+        Ok(())
     }
 
-    /// Write raw bytes as CAN-FD frame (internal use).
-    pub(crate) fn write_raw_fd(&self, can_id: u32, data: &[u8]) -> std::io::Result<()> {
-        let inner = self.inner.as_ref().ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::NotConnected, "Socket not open")
-        })?;
+    /// Write raw bytes as CAN-FD frame.
+    pub fn write_raw_fd(&self, can_id: u32, data: &[u8]) -> Result<()> {
+        let inner = self.inner.as_ref().ok_or(OpenArmError::SocketNotOpen)?;
 
         match inner {
-            SocketInner::Can(_) => Err(std::io::Error::new(
-                std::io::ErrorKind::Unsupported,
-                "CAN-FD not supported",
-            )),
+            SocketInner::Can(_) => Err(OpenArmError::CanFdNotSupported),
             SocketInner::CanFd(sock) => {
                 let frame = socketcan::CanFdFrame::new(
-                    socketcan::StandardId::new(can_id as u16).ok_or_else(|| {
-                        std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid CAN ID")
-                    })?,
+                    socketcan::StandardId::new(can_id as u16)
+                        .ok_or(OpenArmError::InvalidCanId(can_id))?,
                     data,
                 )
-                .ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "Failed to create frame")
-                })?;
-                sock.write_frame(&frame)
+                .ok_or_else(|| OpenArmError::SocketError("Failed to create frame".to_string()))?;
+                sock.write_frame(&frame)?;
+                Ok(())
             }
         }
     }
 
-    /// Read raw CAN frame (internal use).
-    pub(crate) fn read_raw(&self) -> std::io::Result<Option<(u32, Vec<u8>)>> {
-        let inner = self.inner.as_ref().ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::NotConnected, "Socket not open")
-        })?;
+    /// Read raw CAN frame.
+    pub fn read_raw(&self) -> Result<Option<(u32, Vec<u8>)>> {
+        let inner = self.inner.as_ref().ok_or(OpenArmError::SocketNotOpen)?;
 
         match inner {
             SocketInner::Can(sock) => match sock.read_frame() {
                 Ok(frame) => Ok(Some((frame.raw_id(), frame.data().to_vec()))),
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
                 Err(e) if e.kind() == std::io::ErrorKind::TimedOut => Ok(None),
-                Err(e) => Err(e),
+                Err(e) => Err(OpenArmError::IoError(e)),
             },
             SocketInner::CanFd(sock) => match sock.read_frame() {
                 Ok(frame) => Ok(Some((frame.raw_id(), frame.data().to_vec()))),
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
                 Err(e) if e.kind() == std::io::ErrorKind::TimedOut => Ok(None),
-                Err(e) => Err(e),
+                Err(e) => Err(OpenArmError::IoError(e)),
             },
         }
     }

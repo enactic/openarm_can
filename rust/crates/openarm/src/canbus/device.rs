@@ -1,11 +1,8 @@
 //! CAN device trait and base implementations.
 
-use pyo3::prelude::*;
 use std::sync::{Arc, Mutex};
 
-use crate::damiao_motor::{
-    CallbackMode, CanPacketDecoder, Motor,
-};
+use crate::damiao_motor::{CallbackMode, CanPacketDecoder, Motor};
 
 /// Trait for CAN-communicating devices.
 pub trait CANDeviceTrait: Send + Sync {
@@ -25,18 +22,15 @@ pub trait CANDeviceTrait: Send + Sync {
     fn set_callback_mode(&self, mode: CallbackMode);
 }
 
-/// Abstract base CAN device for Python.
-#[pyclass(subclass)]
-#[derive(Clone)]
+/// Abstract base CAN device.
+#[derive(Clone, Debug)]
 pub struct CANDevice {
     send_can_id: u32,
     recv_can_id: u32,
 }
 
-#[pymethods]
 impl CANDevice {
-    #[new]
-    #[pyo3(signature = (send_can_id, recv_can_id))]
+    /// Create a new CAN device.
     pub fn new(send_can_id: u32, recv_can_id: u32) -> Self {
         Self {
             send_can_id,
@@ -45,22 +39,13 @@ impl CANDevice {
     }
 
     /// Get the send CAN ID.
-    #[getter]
-    pub fn get_send_can_id(&self) -> u32 {
+    pub fn send_can_id(&self) -> u32 {
         self.send_can_id
     }
 
     /// Get the receive CAN ID.
-    #[getter]
-    pub fn get_recv_can_id(&self) -> u32 {
+    pub fn recv_can_id(&self) -> u32 {
         self.recv_can_id
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "CANDevice(send_id=0x{:X}, recv_id=0x{:X})",
-            self.send_can_id, self.recv_can_id
-        )
     }
 }
 
@@ -70,34 +55,29 @@ struct MotorDeviceState {
 }
 
 /// Damiao motor CAN device implementation.
-#[pyclass(extends=CANDevice)]
 pub struct MotorDeviceCan {
     motor: Motor,
     state: Arc<Mutex<MotorDeviceState>>,
 }
 
-#[pymethods]
 impl MotorDeviceCan {
-    #[new]
-    #[pyo3(signature = (motor))]
-    pub fn new(motor: Motor) -> (Self, CANDevice) {
-        let send_can_id = motor.send_can_id();
-        let recv_can_id = motor.recv_can_id();
-
-        let device = Self {
+    /// Create a new motor device.
+    pub fn new(motor: Motor) -> Self {
+        Self {
             motor,
             state: Arc::new(Mutex::new(MotorDeviceState {
                 callback_mode: CallbackMode::STATE,
             })),
-        };
-
-        let base = CANDevice::new(send_can_id, recv_can_id);
-        (device, base)
+        }
     }
 
     /// Get the motor.
-    #[getter]
-    pub fn get_motor(&self) -> Motor {
+    pub fn motor(&self) -> &Motor {
+        &self.motor
+    }
+
+    /// Get a clone of the motor.
+    pub fn motor_clone(&self) -> Motor {
         self.motor.clone()
     }
 
@@ -112,22 +92,7 @@ impl MotorDeviceCan {
     }
 
     /// Process incoming CAN data.
-    pub fn callback(&self, _can_id: u32, data: Vec<u8>) {
-        self.process_callback(&data);
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "MotorDeviceCan(motor={:?}, mode={:?})",
-            self.motor,
-            self.get_callback_mode()
-        )
-    }
-}
-
-impl MotorDeviceCan {
-    /// Process callback (internal).
-    pub(crate) fn process_callback(&self, data: &[u8]) {
+    pub fn process_callback(&self, data: &[u8]) {
         let mode = self.state.lock().unwrap().callback_mode;
         match mode {
             CallbackMode::STATE => {
@@ -140,13 +105,8 @@ impl MotorDeviceCan {
         }
     }
 
-    /// Get motor reference (internal).
-    pub(crate) fn motor(&self) -> &Motor {
-        &self.motor
-    }
-
     /// Clone for internal use.
-    pub(crate) fn clone_inner(&self) -> Self {
+    pub fn clone_inner(&self) -> Self {
         Self {
             motor: self.motor.clone(),
             state: Arc::clone(&self.state),

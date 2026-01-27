@@ -1,0 +1,12 @@
+[package]
+name = "openarm"
+description = "Pure Rust implementation of OpenArm CAN motor control"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+socketcan = { workspace = true }
+libc = { workspace = true }
+thiserror = { workspace = true }

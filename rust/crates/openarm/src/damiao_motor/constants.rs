@@ -1,9 +1,6 @@
 //! Motor type definitions, control modes, and protocol constants for Damiao motors.
 
-use pyo3::prelude::*;
-
 /// Motor types supported by the Damiao motor family.
-#[pyclass(eq, eq_int)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MotorType {
     DM3507 = 0,
@@ -22,7 +19,6 @@ pub enum MotorType {
 }
 
 /// Control modes for motor operation.
-#[pyclass(eq, eq_int)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[allow(non_camel_case_types)]
 pub enum ControlMode {
@@ -34,7 +30,6 @@ pub enum ControlMode {
 }
 
 /// Callback modes for frame processing.
-#[pyclass(eq, eq_int)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum CallbackMode {
     #[default]
@@ -44,7 +39,6 @@ pub enum CallbackMode {
 }
 
 /// Motor variable (register) IDs for parameter queries.
-#[pyclass(eq, eq_int)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[allow(non_camel_case_types)]
 pub enum MotorVariable {
@@ -107,7 +101,6 @@ pub enum MotorVariable {
 }
 
 /// Motor limit parameters (position, velocity, torque limits).
-#[pyclass(get_all, set_all)]
 #[derive(Debug, Clone, Copy)]
 pub struct LimitParam {
     pub p_max: f64,
@@ -115,19 +108,10 @@ pub struct LimitParam {
     pub t_max: f64,
 }
 
-#[pymethods]
 impl LimitParam {
-    #[new]
-    #[pyo3(signature = (p_max, v_max, t_max))]
-    pub fn new(p_max: f64, v_max: f64, t_max: f64) -> Self {
+    /// Create new limit parameters.
+    pub const fn new(p_max: f64, v_max: f64, t_max: f64) -> Self {
         Self { p_max, v_max, t_max }
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "LimitParam(p_max={}, v_max={}, t_max={})",
-            self.p_max, self.v_max, self.t_max
-        )
     }
 }
 
@@ -156,7 +140,6 @@ impl MotorType {
 }
 
 /// Result of a motor state query.
-#[pyclass(get_all)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MotorStateResult {
     pub position: f64,
@@ -167,10 +150,8 @@ pub struct MotorStateResult {
     pub valid: bool,
 }
 
-#[pymethods]
 impl MotorStateResult {
-    #[new]
-    #[pyo3(signature = (position=0.0, velocity=0.0, torque=0.0, t_mos=0, t_rotor=0, valid=false))]
+    /// Create new motor state result.
     pub fn new(
         position: f64,
         velocity: f64,
@@ -188,17 +169,9 @@ impl MotorStateResult {
             valid,
         }
     }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "MotorStateResult(position={}, velocity={}, torque={}, t_mos={}, t_rotor={}, valid={})",
-            self.position, self.velocity, self.torque, self.t_mos, self.t_rotor, self.valid
-        )
-    }
 }
 
 /// Result of a parameter query.
-#[pyclass(get_all)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ParamResult {
     pub rid: i32,
@@ -206,24 +179,14 @@ pub struct ParamResult {
     pub valid: bool,
 }
 
-#[pymethods]
 impl ParamResult {
-    #[new]
-    #[pyo3(signature = (rid=0, value=0.0, valid=false))]
+    /// Create new parameter result.
     pub fn new(rid: i32, value: f64, valid: bool) -> Self {
         Self { rid, value, valid }
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "ParamResult(rid={}, value={}, valid={})",
-            self.rid, self.value, self.valid
-        )
     }
 }
 
 /// MIT control parameters.
-#[pyclass(get_all, set_all)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MITParam {
     pub kp: f64,
@@ -233,45 +196,28 @@ pub struct MITParam {
     pub tau: f64,
 }
 
-#[pymethods]
 impl MITParam {
-    #[new]
-    #[pyo3(signature = (kp=0.0, kd=0.0, q=0.0, dq=0.0, tau=0.0))]
+    /// Create new MIT parameters.
     pub fn new(kp: f64, kd: f64, q: f64, dq: f64, tau: f64) -> Self {
         Self { kp, kd, q, dq, tau }
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "MITParam(kp={}, kd={}, q={}, dq={}, tau={})",
-            self.kp, self.kd, self.q, self.dq, self.tau
-        )
     }
 }
 
 /// Position-velocity control parameters.
-#[pyclass(get_all, set_all)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PosVelParam {
     pub q: f64,
     pub dq: f64,
 }
 
-#[pymethods]
 impl PosVelParam {
-    #[new]
-    #[pyo3(signature = (q=0.0, dq=0.0))]
+    /// Create new position-velocity parameters.
     pub fn new(q: f64, dq: f64) -> Self {
         Self { q, dq }
-    }
-
-    fn __repr__(&self) -> String {
-        format!("PosVelParam(q={}, dq={})", self.q, self.dq)
     }
 }
 
 /// Position-force control parameters.
-#[pyclass(get_all, set_all)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PosForceParam {
     pub q: f64,
@@ -279,38 +225,23 @@ pub struct PosForceParam {
     pub i: f64,
 }
 
-#[pymethods]
 impl PosForceParam {
-    #[new]
-    #[pyo3(signature = (q=0.0, dq=0.0, i=0.0))]
+    /// Create new position-force parameters.
     pub fn new(q: f64, dq: f64, i: f64) -> Self {
         Self { q, dq, i }
-    }
-
-    fn __repr__(&self) -> String {
-        format!("PosForceParam(q={}, dq={}, i={})", self.q, self.dq, self.i)
     }
 }
 
 /// CAN packet for transmission.
-#[pyclass(get_all)]
 #[derive(Debug, Clone)]
 pub struct CANPacket {
     pub send_can_id: u32,
     pub data: Vec<u8>,
 }
 
-#[pymethods]
 impl CANPacket {
-    #[new]
+    /// Create new CAN packet.
     pub fn new(send_can_id: u32, data: Vec<u8>) -> Self {
         Self { send_can_id, data }
-    }
-
-    fn __repr__(&self) -> String {
-        format!(
-            "CANPacket(send_can_id=0x{:X}, data={:?})",
-            self.send_can_id, self.data
-        )
     }
 }
