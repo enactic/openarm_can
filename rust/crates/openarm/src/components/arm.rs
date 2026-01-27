@@ -169,3 +169,129 @@ impl ArmComponent {
         self.inner.recv_all(first_timeout_us)
     }
 }
+
+/// Arm component wrapper for multiple arm motors (remote version).
+#[cfg(feature = "remote")]
+pub struct AnyArmComponent {
+    inner: crate::damiao_motor::AnyDMDeviceCollection,
+}
+
+#[cfg(feature = "remote")]
+impl AnyArmComponent {
+    /// Create from shared collection.
+    pub fn from_collection(collection: std::sync::Arc<crate::canbus::AnyCANDeviceCollection>) -> Self {
+        Self {
+            inner: crate::damiao_motor::AnyDMDeviceCollection::from_collection(collection),
+        }
+    }
+
+    /// Add a motor device.
+    pub fn add_motor_device(&mut self, motor: Motor, device: Arc<Mutex<MotorDeviceCan>>) {
+        self.inner.add_motor_device(motor, device);
+    }
+
+    /// Get inner collection.
+    pub fn collection(&self) -> &std::sync::Arc<crate::canbus::AnyCANDeviceCollection> {
+        self.inner.collection()
+    }
+
+    /// Get the motors.
+    pub fn get_motors(&self) -> Vec<Motor> {
+        self.inner.get_motors()
+    }
+
+    /// Get a specific motor by index.
+    pub fn get_motor(&self, index: usize) -> Result<Motor> {
+        self.inner.get_motor(index)
+    }
+
+    /// Get the number of motors.
+    pub fn motor_count(&self) -> usize {
+        self.inner.motor_count()
+    }
+
+    /// Enable all motors.
+    pub fn enable_all(&self) -> Result<()> {
+        self.inner.enable_all()
+    }
+
+    /// Disable all motors.
+    pub fn disable_all(&self) -> Result<()> {
+        self.inner.disable_all()
+    }
+
+    /// Set zero position for all motors.
+    pub fn set_zero_all(&self) -> Result<()> {
+        self.inner.set_zero_all()
+    }
+
+    /// Refresh state for all motors.
+    pub fn refresh_all(&self) -> Result<()> {
+        self.inner.refresh_all()
+    }
+
+    /// Refresh state for one motor.
+    pub fn refresh_one(&self, index: usize) -> Result<()> {
+        self.inner.refresh_one(index)
+    }
+
+    /// Query parameter for all motors.
+    pub fn query_param_all(&self, rid: MotorVariable) -> Result<()> {
+        self.inner.query_param_all(rid)
+    }
+
+    /// Query parameter for one motor.
+    pub fn query_param_one(&self, index: usize, rid: MotorVariable) -> Result<()> {
+        self.inner.query_param_one(index, rid)
+    }
+
+    /// MIT control for one motor.
+    pub fn mit_control_one(&self, index: usize, param: &MITParam) -> Result<()> {
+        self.inner.mit_control_one(index, param)
+    }
+
+    /// MIT control for all motors.
+    pub fn mit_control_all(&self, params: &[MITParam]) -> Result<()> {
+        self.inner.mit_control_all(params)
+    }
+
+    /// Position-velocity control for one motor.
+    pub fn posvel_control_one(&self, index: usize, param: &PosVelParam) -> Result<()> {
+        self.inner.posvel_control_one(index, param)
+    }
+
+    /// Position-velocity control for all motors.
+    pub fn posvel_control_all(&self, params: &[PosVelParam]) -> Result<()> {
+        self.inner.posvel_control_all(params)
+    }
+
+    /// Position-force control for one motor.
+    pub fn posforce_control_one(&self, index: usize, param: &PosForceParam) -> Result<()> {
+        self.inner.posforce_control_one(index, param)
+    }
+
+    /// Position-force control for all motors.
+    pub fn posforce_control_all(&self, params: &[PosForceParam]) -> Result<()> {
+        self.inner.posforce_control_all(params)
+    }
+
+    /// Set control mode for one motor.
+    pub fn set_control_mode_one(&self, index: usize, mode: ControlMode) -> Result<()> {
+        self.inner.set_control_mode_one(index, mode)
+    }
+
+    /// Set control mode for all motors.
+    pub fn set_control_mode_all(&self, mode: ControlMode) -> Result<()> {
+        self.inner.set_control_mode_all(mode)
+    }
+
+    /// Set callback mode for all devices.
+    pub fn set_callback_mode_all(&self, mode: CallbackMode) {
+        self.inner.set_callback_mode_all(mode)
+    }
+
+    /// Receive all available frames.
+    pub fn recv_all(&self, first_timeout_us: u64) -> Result<usize> {
+        self.inner.recv_all(first_timeout_us)
+    }
+}

@@ -18,7 +18,13 @@ pub mod error;
 
 // Re-export main types for convenience
 pub use canbus::{CANDevice, CANDeviceCollection, CANDeviceTrait, CANSocket, CanFdFrame, CanFrame, MotorDeviceCan};
+
+#[cfg(feature = "remote")]
+pub use canbus::{AnyCANDeviceCollection, AnyCANSocket};
 pub use components::{ArmComponent, GripperComponent, OpenArm};
+
+#[cfg(feature = "remote")]
+pub use components::{AnyArmComponent, AnyGripperComponent, RemoteOpenArm};
 pub use damiao_motor::{
     CANPacket, CallbackMode, CanPacketDecoder, CanPacketEncoder, ControlMode, DMDeviceCollection,
     LimitParam, MITParam, Motor, MotorState, MotorStateResult, MotorType, MotorVariable, ParamResult,

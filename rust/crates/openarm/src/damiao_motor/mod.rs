@@ -9,5 +9,8 @@ pub mod motor;
 pub use constants::*;
 pub use control::*;
 pub use device::*;
-pub use device_collection::*;
+pub use device_collection::DMDeviceCollection;
 pub use motor::*;
+
+#[cfg(feature = "remote")]
+pub use device_collection::AnyDMDeviceCollection;

@@ -341,3 +341,118 @@ impl CANSocket {
         }
     }
 }
+
+#[cfg(feature = "remote")]
+impl xoq::can::CanBusSocket for CANSocket {
+    fn is_open(&self) -> bool {
+        self.inner.is_some()
+    }
+
+    fn write_raw(&self, can_id: u32, data: &[u8]) -> anyhow::Result<()> {
+        CANSocket::write_raw(self, can_id, data).map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    fn read_raw(&self) -> anyhow::Result<Option<(u32, Vec<u8>)>> {
+        CANSocket::read_raw(self).map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    fn is_data_available(&self, timeout_us: u64) -> anyhow::Result<bool> {
+        CANSocket::is_data_available(self, timeout_us).map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    fn set_recv_timeout(&mut self, timeout_us: u64) -> anyhow::Result<()> {
+        CANSocket::set_recv_timeout(self, timeout_us).map_err(|e| anyhow::anyhow!("{}", e))
+    }
+}
+
+/// Enum that can hold either a local CANSocket or a remote xoq socket.
+///
+/// This allows runtime selection between local and remote CAN access
+/// while keeping the same API surface.
+#[cfg(feature = "remote")]
+pub enum AnyCANSocket {
+    /// Local SocketCAN socket
+    Local(CANSocket),
+    /// Remote CAN socket via xoq P2P
+    Remote(xoq::socketcan::RemoteCanSocket),
+}
+
+#[cfg(feature = "remote")]
+impl AnyCANSocket {
+    /// Check if socket is open/connected.
+    pub fn is_open(&self) -> bool {
+        match self {
+            AnyCANSocket::Local(s) => s.is_open(),
+            AnyCANSocket::Remote(s) => xoq::can::CanBusSocket::is_open(s),
+        }
+    }
+
+    /// Write a raw CAN frame.
+    pub fn write_raw(&self, can_id: u32, data: &[u8]) -> Result<()> {
+        match self {
+            AnyCANSocket::Local(s) => s.write_raw(can_id, data),
+            AnyCANSocket::Remote(s) => xoq::can::CanBusSocket::write_raw(s, can_id, data)
+                .map_err(|e| OpenArmError::SocketError(e.to_string())),
+        }
+    }
+
+    /// Read a raw CAN frame. Returns None on timeout.
+    pub fn read_raw(&self) -> Result<Option<(u32, Vec<u8>)>> {
+        match self {
+            AnyCANSocket::Local(s) => s.read_raw(),
+            AnyCANSocket::Remote(s) => xoq::can::CanBusSocket::read_raw(s)
+                .map_err(|e| OpenArmError::SocketError(e.to_string())),
+        }
+    }
+
+    /// Check if data is available with timeout (microseconds).
+    pub fn is_data_available(&self, timeout_us: u64) -> Result<bool> {
+        match self {
+            AnyCANSocket::Local(s) => s.is_data_available(timeout_us),
+            AnyCANSocket::Remote(s) => xoq::can::CanBusSocket::is_data_available(s, timeout_us)
+                .map_err(|e| OpenArmError::SocketError(e.to_string())),
+        }
+    }
+
+    /// Set receive timeout in microseconds.
+    pub fn set_recv_timeout(&mut self, timeout_us: u64) -> Result<()> {
+        match self {
+            AnyCANSocket::Local(s) => s.set_recv_timeout(timeout_us),
+            AnyCANSocket::Remote(s) => xoq::can::CanBusSocket::set_recv_timeout(s, timeout_us)
+                .map_err(|e| OpenArmError::SocketError(e.to_string())),
+        }
+    }
+
+    /// Check if this is a local socket.
+    pub fn is_local(&self) -> bool {
+        matches!(self, AnyCANSocket::Local(_))
+    }
+
+    /// Check if this is a remote socket.
+    pub fn is_remote(&self) -> bool {
+        matches!(self, AnyCANSocket::Remote(_))
+    }
+}
+
+#[cfg(feature = "remote")]
+impl xoq::can::CanBusSocket for AnyCANSocket {
+    fn is_open(&self) -> bool {
+        AnyCANSocket::is_open(self)
+    }
+
+    fn write_raw(&self, can_id: u32, data: &[u8]) -> anyhow::Result<()> {
+        AnyCANSocket::write_raw(self, can_id, data).map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    fn read_raw(&self) -> anyhow::Result<Option<(u32, Vec<u8>)>> {
+        AnyCANSocket::read_raw(self).map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    fn is_data_available(&self, timeout_us: u64) -> anyhow::Result<bool> {
+        AnyCANSocket::is_data_available(self, timeout_us).map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    fn set_recv_timeout(&mut self, timeout_us: u64) -> anyhow::Result<()> {
+        AnyCANSocket::set_recv_timeout(self, timeout_us).map_err(|e| anyhow::anyhow!("{}", e))
+    }
+}

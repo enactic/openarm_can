@@ -17,6 +17,8 @@ pyo3 = { version = "0.23", features = ["extension-module"] }
 socketcan = "3.5"
 libc = "0.2"
 thiserror = "2.0"
+xoq = { path = "../../../wser", features = ["can", "iroh"] }
+anyhow = "1.0"
 
 [profile.release]
 lto = true
