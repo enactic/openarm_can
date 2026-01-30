@@ -83,11 +83,6 @@ int main() {
                                            openarm::damiao_motor::MITParam{0, 0, 0, 0, 0.1}});
         openarm.recv_all(500);
 
-        // Control gripper
-        std::cout << "Closing gripper..." << std::endl;
-        openarm.get_gripper().close();
-        openarm.recv_all(1000);
-
         for (int i = 0; i < 10; i++) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
