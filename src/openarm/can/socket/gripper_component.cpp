@@ -66,8 +66,7 @@ void GripperComponent::set_position(double position, std::optional<double> speed
     speed_limit = std::clamp(speed_limit, 0.0, 100.0);
     torque_limit = std::clamp(torque_limit, 0.0, 1.0);
 
-    double target_motor_pos = raw_position ? position : gripper_to_motor_position(position);
-
+    double target_motor_pos = position;
     posforce_control_one(0,
                          damiao_motor::PosForceParam{target_motor_pos, speed_limit, torque_limit});
 }
