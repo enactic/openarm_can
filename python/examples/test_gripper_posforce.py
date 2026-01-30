@@ -30,7 +30,6 @@ def main() -> None:
     gripper = arm.get_gripper()
 
     gripper.set_limit(6.0, 0.4)  # speed_rad_s, torque_pu
-    gripper.open()
     time.sleep(0.4)
 
     sequence = [
@@ -51,12 +50,6 @@ def main() -> None:
             for motor in gripper.get_motors():
                 print("gripper position:", motor.get_position())
             time.sleep(0.05)
-
-    gripper.grasp(0.1)  # torque_pu, speed_rad_s (optional)
-    time.sleep(0.5)
-
-    gripper.close()
-    time.sleep(0.4)
 
     arm.disable_all()
     arm.recv_all()

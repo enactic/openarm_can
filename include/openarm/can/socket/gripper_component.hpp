@@ -35,17 +35,10 @@ public:
     // speed_rad_s: max closing speed in rad/s, torque_pu: per-unit current limit [0, 1].
     // position: gripper target (0=closed, 1=open), speed_rad_s: max speed, torque_pu: per-unit
     // limit. torque_pu: per-unit current limit [0, 1], speed_rad_s: max closing speed in rad/s.
-    void open();
-    void open(double kp, double kd);
-    void close();
-    void close(double kp, double kd);
     void set_limit(double speed_rad_s, double torque_pu);
-    void grasp(double torque_pu, double speed_rad_s = 5.0);
 
-    // Pos-force control with optional per-call limit overrides.
-    // if raw_position is true, position is treated as motor radians.
     void set_position(double position, std::optional<double> speed_rad_s = std::nullopt,
-                      std::optional<double> torque_pu = std::nullopt, bool raw_position = false);
+                      std::optional<double> torque_pu = std::nullopt);
 
     // Set current position as zero
     void set_zero();
@@ -59,31 +52,6 @@ private:
     std::shared_ptr<damiao_motor::DMCANDevice> motor_device_;
     double limit_speed_rad_s_ = 5.0;
     double limit_torque_pu_ = 0.5;
-
-    // The actual physical gripper uses a slider cranker-like mechanism, this mapping is an
-    // approximation.
-    double gripper_to_motor_position(double gripper_position) {
-        // Map gripper position (0.0=closed, 1.0=open) to motor position
-        return (gripper_position - gripper_open_position_) /
-                   (gripper_closed_position_ - gripper_open_position_) *
-                   (motor_closed_position_ - motor_open_position_) +
-               motor_open_position_;
-    }
-
-    double motor_to_gripper_position(double motor_position) {
-        // Map motor position back to gripper position (0.0=closed, 1.0=open)
-        return (motor_position - motor_open_position_) /
-                   (motor_closed_position_ - motor_open_position_) *
-                   (gripper_closed_position_ - gripper_open_position_) +
-               gripper_open_position_;
-    }
-
-    // Gripper configuration
-    double gripper_open_position_ = 1.0;
-    double gripper_closed_position_ = 0.0;
-    double gripper_grasp_position_ = -0.1;
-    double motor_open_position_ = -1.0472;  // 60 degrees
-    double motor_closed_position_ = 0.0;
 };
 
 }  // namespace openarm::can::socket
