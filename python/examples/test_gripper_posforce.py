@@ -18,7 +18,9 @@ import openarm_can as oa
 
 
 def main() -> None:
-    arm = oa.OpenArm("can0", True)
+    arm = oa.OpenArm("can1", True)
+    arm.init_arm_motors([oa.MotorType.DM4310], [0x4], [0x14],
+                        [oa.ControlMode.MIT])
     arm.init_gripper_motor(oa.MotorType.DM4310, 0x8,
                            0x18, oa.ControlMode.POS_FORCE)
 
@@ -28,35 +30,30 @@ def main() -> None:
 
     arm.set_callback_mode_all(oa.CallbackMode.STATE)
     gripper = arm.get_gripper()
+    armaa = arm.get_arm()
+    time.sleep(0.2)
 
-    gripper.set_limit(6.0, 0.4)  # speed_rad_s, torque_pu
-    gripper.open()
-    time.sleep(0.4)
-
+    # pos, rad/s limit, torque limit
     sequence = [
-        (0.25, 3.0, 0.2),
-        (0.25, 3.0, 0.6),
-        (0.6, 2.0, 0.3),
-        (0.6, 2.0, 0.8),
-        (0.4, 6.0, 0.25),
-        (0.4, 6.0, 0.7),
+        (3.14/2.0, 25.0, 1.5),
+        (0.0, 25.0, 1.5),
+        (3.14/2.0, 25.0, 1.5),
+        (0.0, 25.0, 1.5),
     ]
 
     for position, speed, torque in sequence:
         print(f"set_position({position}) speed={speed} torque={torque}")
-        gripper.set_position(position, speed_rad_s=speed, torque_pu=torque)
+
+        gripper.set_position(position, speed_rad_s=speed, torque_pu=torque/10)
+        armaa.mit_control_all([oa.MITParam(0, 0, 0, 0, 0)])
         for _ in range(6):
             arm.refresh_all()
             arm.recv_all(500)
             for motor in gripper.get_motors():
                 print("gripper position:", motor.get_position())
+            for motor in arm.get_arm().get_motors():
+                print(f"arm position:", motor.get_position())
             time.sleep(0.05)
-
-    gripper.grasp(0.1)  # torque_pu, speed_rad_s (optional)
-    time.sleep(0.5)
-
-    gripper.close()
-    time.sleep(0.4)
 
     arm.disable_all()
     arm.recv_all()

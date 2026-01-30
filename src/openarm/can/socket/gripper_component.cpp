@@ -36,29 +36,13 @@ void GripperComponent::init_motor_device(damiao_motor::MotorType motor_type, uin
     set_control_mode_one(0, control_mode);
 }
 
-void GripperComponent::open() { set_position(gripper_open_position_); }
-
-void GripperComponent::open(double kp, double kd) {
-    set_position_mit(gripper_open_position_, kp, kd);
-}
-
-void GripperComponent::close() { set_position(gripper_closed_position_); }
-
-void GripperComponent::close(double kp, double kd) {
-    set_position_mit(gripper_closed_position_, kp, kd);
-}
-
 void GripperComponent::set_limit(double speed_rad_s, double torque_pu) {
     limit_speed_rad_s_ = std::clamp(speed_rad_s, 0.0, 100.0);
     limit_torque_pu_ = std::clamp(torque_pu, 0.0, 1.0);
 }
 
-void GripperComponent::grasp(double torque_pu, double speed_rad_s) {
-    set_position(gripper_grasp_position_, speed_rad_s, torque_pu);
-}
-
 void GripperComponent::set_position(double position, std::optional<double> speed_rad_s,
-                                    std::optional<double> torque_pu, bool raw_position) {
+                                    std::optional<double> torque_pu) {
     if (!motor_device_) return;
 
     double speed_limit = speed_rad_s.value_or(limit_speed_rad_s_);
@@ -66,8 +50,7 @@ void GripperComponent::set_position(double position, std::optional<double> speed
     speed_limit = std::clamp(speed_limit, 0.0, 100.0);
     torque_limit = std::clamp(torque_limit, 0.0, 1.0);
 
-    double target_motor_pos = raw_position ? position : gripper_to_motor_position(position);
-
+    double target_motor_pos = position;
     posforce_control_one(0,
                          damiao_motor::PosForceParam{target_motor_pos, speed_limit, torque_limit});
 }
@@ -80,7 +63,6 @@ void GripperComponent::set_zero() {
 void GripperComponent::set_position_mit(double gripper_position, double kp, double kd) {
     if (!motor_device_) return;
 
-    mit_control_one(
-        0, damiao_motor::MITParam{kp, kd, gripper_to_motor_position(gripper_position), 0.0, 0.0});
+    mit_control_one(0, damiao_motor::MITParam{kp, kd, gripper_position, 0.0, 0.0});
 }
 }  // namespace openarm::can::socket

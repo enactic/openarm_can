@@ -22,7 +22,8 @@ arm = oa.OpenArm("can0", True)
 motor_types = [oa.MotorType.DM4310]
 send_ids = [0x0A]
 recv_ids = [0x1A]
-arm.init_arm_motors(motor_types, send_ids, recv_ids)
+control_modes = [oa.ControlMode.POS_VEL]
+arm.init_arm_motors(motor_types, send_ids, recv_ids, control_modes)
 
 # Use high-level operations
 arm.enable_all()
@@ -30,7 +31,7 @@ arm.recv_all()
 
 # return to zero position
 arm.set_callback_mode_all(oa.CallbackMode.STATE)
-arm.get_arm().posvel_control_all([oa.PosVelParam(3.14 * 4, 20)])
+arm.get_arm().posvel_control_all([oa.PosVelParam(3.14 * 0.0, 0.0)])
 
 arm.recv_all()
 
