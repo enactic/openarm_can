@@ -63,7 +63,6 @@ void GripperComponent::set_zero() {
 void GripperComponent::set_position_mit(double gripper_position, double kp, double kd) {
     if (!motor_device_) return;
 
-    mit_control_one(
-        0, damiao_motor::MITParam{kp, kd, gripper_position, 0.0, 0.0});
+    mit_control_one(0, damiao_motor::MITParam{kp, kd, gripper_position, 0.0, 0.0});
 }
 }  // namespace openarm::can::socket
