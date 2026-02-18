@@ -1,4 +1,4 @@
-# Copyright 2025 Enactic, Inc.
+# Copyright 2025-2026 Enactic, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -254,6 +254,40 @@ jobs:
             --verify-tag \
             *.tar.gz \
             source/*
+      - uses: actions/checkout@v6
+        if: github.ref_type == 'tag'
+        with:
+          path: openarm_can
+      - uses: actions/checkout@v6
+        if: github.ref_type == 'tag'
+        with:
+          path: apache-arrow
+          repository: apache/arrow
+      - uses: actions/checkout@v6
+        if: github.ref_type == 'tag'
+        with:
+          path: groonga
+          repository: groonga/groonga
+      - name: Prepare for Launchpad publishing
+        if: github.ref_type == 'tag'
+        run: |
+          cp source/*.tar.gz openarm_can/
+          sudo apt update
+          sudo apt install -y \
+            build-essential \
+            debhelper \
+            devscripts
+      - name: Publish to Launchpad
+        if: github.ref_type == 'tag'
+        env:
+          APACHE_ARROW_REPOSITORY: ${{ github.workspace }}/apache-arrow
+          GROONGA_REPOSITORY: ${{ github.workspace }}/groonga
+          LAUNCHPAD_DEPLOY_KEY: ${{ secrets.LAUNCHPAD_DEPLOY_KEY }}
+          LAUNCHPAD_UPLOADER_PGP_KEY: "0x0D2FCD607041CDB69695F176934C5D4649C7E035"
+        run: |
+          echo "${LAUNCHPAD_DEPLOY_KEY}" | gpg --import
+          echo "trusted-key ${LAUNCHPAD_UPLOADER_PGP_KEY}" > ~/.gnupg/gpg.conf
+          rake -C openarm_can/packages -S ubuntu
   pypi:
     name: PyPI
     if: github.ref_type == 'tag'
