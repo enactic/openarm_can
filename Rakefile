@@ -1,4 +1,4 @@
-# Copyright 2025 Enactic, Inc.
+# Copyright 2025-2026 Enactic, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -146,22 +146,10 @@ namespace :release do
        "OpenArm CAN #{current_version}!!!")
     sh("git", "push", "origin", current_version)
   end
-
-  desc "Release packages for Ubuntu"
-  task :ubuntu do
-    current_version = Helper.detect_version
-    Helper.wait_github_actions_workflow(current_version, "package.yaml")
-    ruby("-C",
-         "packages",
-         "-S",
-         "rake",
-         "ubuntu")
-  end
 end
 
 desc "Release"
 task release: [
   "release:version:update",
   "release:tag",
-  "release:ubuntu",
 ]
