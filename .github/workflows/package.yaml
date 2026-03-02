@@ -81,7 +81,7 @@ jobs:
             openarm_can-${VERSION}.tar.gz > \
             openarm_can-${VERSION}.tar.gz.sha512
           mv * ../../
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: source
           path: |
@@ -187,7 +187,7 @@ jobs:
             # Remove SRPMs from non x86_64 artifacts
             rm -rf ${TASK_NAMESPACE}/repositories/*/*/source
           fi
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.id }}
           path: packages/${{ env.TASK_NAMESPACE }}/repositories/
