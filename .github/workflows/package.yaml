@@ -308,3 +308,32 @@ jobs:
           mkdir -p dist
           mv openarm_can-*.tar.gz dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+  notification:
+    name: Notification
+    if: github.ref_type == 'tag'
+    needs:
+      - pypi
+      - release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+                    --raw-field tag_name="${GITHUB_REF_NAME}" \
+                    --raw-field configuration_file_path=.github/release-notification.yml \
+                    --jq .body |
+                    sed 's/<!--[^>]*-->//g' |
+                    tee content.md
+
+          echo "## Help and Feedback" | tee -a content.md
+          echo "If you have any CAN related problems or improvements, please file them to https://github.com/enactic/openarm_can/issues and/or https://github.com/enactic/openarm_can/pulls !" | tee -a content.md
+
+          curl --request POST "${DISCORD_WEBHOOK_URL}" \
+             --header "Content-Type: application/json" \
+             --data "$(jq --null-input \
+                         --arg thread_name "OpenArm CAN ${VERSION}" \
+                         --arg content "$(cat content.md)" \
+                         '{thread_name: $thread_name, content: $content}')"
