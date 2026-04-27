@@ -1,0 +1,148 @@
+set -eu
+
+# ---------------------------------------------------------
+# Default values (Golden settings optimized for your environment)
+# ---------------------------------------------------------
+BITRATE=1000000         # 1Mbps
+DBITRATE=8000000        # 8Mbps
+FD_MODE=true            # Enable CAN FD by default
+SAMPLE_POINT="0.75"     # Sample point for arbitration phase (1Mbps)
+DSAMPLE_POINT="0.6"     # Sample point for data phase (8Mbps)
+DSJW="3"                # Data Synchronization Jump Width for 8Mbps
+RESTART_MS="100"        # Auto-restart time in milliseconds (100ms)
+TARGET_INTERFACES=()
+
+# Show usage
+usage() {
+    echo "Usage: $0 [can_interface...] [options]"
+    echo ""
+    echo "Options:"
+    echo "  -fd                    Enable CAN FD mode (default: true)"
+    echo "  -b <bitrate>           Set bitrate (default: 1000000)"
+    echo "  -d <dbitrate>          Set CAN FD data bitrate (default: 8000000)"
+    echo "  -sp <sample_point>     Set sample point for arbitration phase (default: 0.75)"
+    echo "  -dsp <dsample_point>   Set sample point for data phase (default: 0.6)"
+    echo "  -dsjw <dsjw>           Set Data Synchronization Jump Width (default: 3)"
+    echo "  -rm <restart_ms>       Set auto-restart time in ms (default: 100)"
+    echo "  -h                     Show help"
+    echo ""
+    echo "Examples:"
+    echo "  $0 can0                        # Start can0 with default settings (Highly recommended)"
+    echo "  $0 can1 -dsp 0.65 -dsjw 4      # Start by overriding specific parameters"
+}
+
+# Parse options
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    -fd)
+        FD_MODE=true
+        shift
+        ;;
+    -b)
+        BITRATE="$2"
+        shift 2
+        ;;
+    -d)
+        DBITRATE="$2"
+        shift 2
+        ;;
+    -sp)
+        SAMPLE_POINT="$2"
+        shift 2
+        ;;
+    -dsp)
+        DSAMPLE_POINT="$2"
+        shift 2
+        ;;
+    -dsjw)
+        DSJW="$2"
+        shift 2
+        ;;
+    -rm)
+        RESTART_MS="$2"
+        shift 2
+        ;;
+    -h)
+        usage
+        exit 0
+        ;;
+    -*)
+        echo "Error: Unknown option '$1'"
+        usage
+        exit 1
+        ;;
+    *)
+        # Capture interface names (e.g., can0)
+        TARGET_INTERFACES+=("$1")
+        shift
+        ;;
+    esac
+done
+
+# If no interfaces specified, fallback to default list
+if [ ${#TARGET_INTERFACES[@]} -eq 0 ]; then
+    CAN_DEVICES=("can0" "can1" "can2" "can3")
+else
+    CAN_DEVICES=("${TARGET_INTERFACES[@]}")
+fi
+
+# Configure each specified device
+for CAN_IF in "${CAN_DEVICES[@]}"; do
+    echo "Configuring $CAN_IF..."
+
+    # Check if interface exists
+    if ! ip link show "$CAN_IF" &>/dev/null; then
+        echo "Error: CAN interface '$CAN_IF' not found"
+        echo "Available interfaces:"
+        ip link show | grep -E "can[0-9]" | cut -d: -f2 | tr -d ' ' || echo "  No CAN interfaces found"
+        exit 1
+    fi
+
+    if ! sudo ip link set "$CAN_IF" down; then
+        echo "Error: Failed to bring down $CAN_IF"
+        exit 1
+    fi
+
+    # ---------------------------------------------------------
+    # Smartly construct the ip link command using an array
+    # ---------------------------------------------------------
+    IP_CMD=("sudo" "ip" "link" "set" "$CAN_IF" "type" "can" "bitrate" "$BITRATE")
+
+    # Add sample point for arbitration phase
+    if [ -n "$SAMPLE_POINT" ]; then
+        IP_CMD+=("sample-point" "$SAMPLE_POINT")
+    fi
+
+    # Add auto-restart (restart-ms) setting
+    if [ -n "$RESTART_MS" ]; then
+        IP_CMD+=("restart-ms" "$RESTART_MS")
+    fi
+
+    # Add CAN FD specific settings (dbitrate, dsample-point, dsjw)
+    if [ "$FD_MODE" = true ]; then
+        IP_CMD+=("dbitrate" "$DBITRATE" "fd" "on")
+
+        if [ -n "$DSAMPLE_POINT" ]; then
+            IP_CMD+=("dsample-point" "$DSAMPLE_POINT")
+        fi
+
+        if [ -n "$DSJW" ]; then
+            IP_CMD+=("dsjw" "$DSJW")
+        fi
+    fi
+
+    # Execute the constructed command
+    echo "  Executing: ${IP_CMD[*]}"
+    if ! "${IP_CMD[@]}"; then
+        echo "Error: Failed to configure CAN parameters on $CAN_IF"
+        exit 1
+    fi
+
+    if ! sudo ip link set "$CAN_IF" up; then
+        echo "Error: Failed to bring up $CAN_IF"
+        exit 1
+    fi
+
+    echo "✓ $CAN_IF is active (FD 1M/8M, SP:$SAMPLE_POINT, DSP:$DSAMPLE_POINT, DSJW:$DSJW, Restart:${RESTART_MS}ms)"
+    echo "--------------------------------"
+done
