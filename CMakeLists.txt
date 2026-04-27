@@ -117,6 +117,11 @@ add_executable(openarm-can-motor-check setup/motor_check.cpp)
 target_link_libraries(openarm-can-motor-check openarm_can)
 install(TARGETS openarm-can-motor-check DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+add_executable(openarm-can-motor-sampling-check setup/motor_sampling_check.cpp)
+target_link_libraries(openarm-can-motor-sampling-check openarm_can)
+install(TARGETS openarm-can-motor-sampling-check
+        DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 add_executable(openarm-can-diagnosis setup/openarm_can_diagnosis.cpp)
 target_link_libraries(openarm-can-diagnosis openarm_can)
 install(TARGETS openarm-can-diagnosis DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -125,6 +130,28 @@ install(TARGETS openarm-can-diagnosis DESTINATION ${CMAKE_INSTALL_BINDIR})
 add_executable(openarm-can-demo examples/demo.cpp)
 target_link_libraries(openarm-can-demo openarm_can)
 install(TARGETS openarm-can-demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# ==============================================================================
+# OpenArm Unified CLI Tool (openarm-can)
+# ==============================================================================
+find_package(CLI11 REQUIRED)
+add_executable(
+  openarm-can-cli
+  setup/cli/openarm_cli.cpp
+  setup/cli/commands/can_configure_commands.cpp
+  setup/cli/commands/motor_statas_commands.cpp
+  setup/cli/commands/change_motor_baudrate_commands.cpp
+  setup/cli/commands/zero_position_commands.cpp
+  setup/cli/commands/motor_read_param_commands.cpp
+  setup/cli/commands/monitor_motor_status_commands.cpp
+  setup/cli/commands/discover_motor_commands.cpp
+  setup/cli/commands/change_motor_id_commands.cpp
+  setup/cli/commands/write_motor_param_commands.cpp
+  setup/cli/commands/clear_error_commands.cpp)
+target_include_directories(
+  openarm-can-cli PRIVATE setup/cli ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(openarm-can-cli PRIVATE openarm_can CLI11::CLI11)
+install(TARGETS openarm-can-cli DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Install scripts
 install(
