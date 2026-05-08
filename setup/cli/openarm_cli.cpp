@@ -39,7 +39,8 @@ int main(int argc, char** argv) {
      ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝    ╚═════╝╚══════╝╚═╝
     )";
 
-    CLI::App app{banner + "\nMulti-Motor High-Speed Monitor & Configuration Tool", "openarm-can"};
+    CLI::App app{banner + "\nMulti-Damiao-Motor High-Speed Monitor & Configuration Tool",
+                 "openarm-can-cli"};
 
     // Require exactly one subcommand; shows help if none provided
     app.require_subcommand(1);
@@ -58,7 +59,7 @@ int main(int argc, char** argv) {
 
     // --- can_configure: Setup SocketCAN parameters (bitrate, sample points, etc.) ---
     auto* can_configure =
-        app.add_subcommand("can_configure", "Setup SocketCAN interface (baudrate, SP, SJW)")
+        app.add_subcommand("can_configure", "Setup SocketCAN interface (default: 1Mbps/5Mbps FD)")
             ->group("[ Network & Hardware ]");
 
     // static int cc_bitrate = 1000000;
@@ -110,8 +111,9 @@ int main(int argc, char** argv) {
     });
 
     // --- discover: Scan for active motors on the bus ---
-    auto* discover = app.add_subcommand("discover", "Scan CAN bus for connected motors")
-                         ->group("[ Network & Hardware ]");
+    auto* discover =
+        app.add_subcommand("discover", "Scan CAN bus for connected motors (default: 1M/5M/8M/10M)")
+            ->group("[ Network & Hardware ]");
 
     static int disc_max_id = 16;
     static bool disc_full_scan = false;
@@ -177,8 +179,10 @@ int main(int argc, char** argv) {
     });
 
     // --- show_param: Read all motor internal parameters (PID, Limits, etc.) ---
-    auto* show_param = app.add_subcommand("show_param", "Read all motor internal parameters")
-                           ->group("[ Motor Setup ]");
+    auto* show_param =
+        app.add_subcommand("show_param",
+                           "Read all motor internal parameters (default: arm IDs 1-8)")
+            ->group("[ Motor Setup ]");
 
     static bool sp_arm = true;
     static std::vector<std::string> sp_ids;
@@ -221,7 +225,8 @@ int main(int argc, char** argv) {
 
     // --- set_zero: Calibrate mechanical zero position ---
     auto* set_zero =
-        app.add_subcommand("set_zero", "Set current position as mechanical zero (0 rad)")
+        app.add_subcommand("set_zero",
+                           "Set current position as mechanical zero (default: arm IDs 1-8)")
             ->group("[ Motor Setup ]");
 
     static bool sz_arm = true;
@@ -245,8 +250,9 @@ int main(int argc, char** argv) {
     // ========================================================================
 
     // --- enable: Enable motor power output ---
-    auto* enable = app.add_subcommand("enable", "Enable motor output (Torque ON)")
-                       ->group("[ Operation & Debug ]");
+    auto* enable =
+        app.add_subcommand("enable", "Enable motor output - Torque ON (default: arm IDs 1-8)")
+            ->group("[ Operation & Debug ]");
 
     static bool en_arm = true;
     static std::vector<std::string> en_ids;
@@ -265,8 +271,9 @@ int main(int argc, char** argv) {
     });
 
     // --- disable: Disable motor power output ---
-    auto* disable = app.add_subcommand("disable", "Disable motor output (Torque OFF)")
-                        ->group("[ Operation & Debug ]");
+    auto* disable =
+        app.add_subcommand("disable", "Disable motor output - Torque OFF (default: arm IDs 1-8)")
+            ->group("[ Operation & Debug ]");
 
     static bool dis_arm = true;
     static std::vector<std::string> dis_ids;
@@ -285,8 +292,9 @@ int main(int argc, char** argv) {
     });
 
     // --- clear_error: Reset motor error flags ---
-    auto* clear_error = app.add_subcommand("clear_error", "Reset motor error state")
-                            ->group("[ Operation & Debug ]");
+    auto* clear_error =
+        app.add_subcommand("clear_error", "Reset motor error state (default: arm IDs 1-8)")
+            ->group("[ Operation & Debug ]");
 
     static bool ce_arm = true;
     static std::vector<std::string> ce_ids;
@@ -308,9 +316,8 @@ int main(int argc, char** argv) {
 
     // --- monitor: Live telemetry dashboard ---
     auto* monitor =
-        app.add_subcommand("monitor", "Live dashboard for position, velocity, torque, temp")
+        app.add_subcommand("monitor", "Live dashboard: pos/vel/torque/temp (default: arm IDs 1-8)")
             ->group("[ Operation & Debug ]");
-
     static bool mon_arm = true;
     static std::vector<std::string> mon_ids;
     static int mon_interval = 100;   // ms
