@@ -46,7 +46,6 @@ std::string rid_to_string(int rid) {
             return "Software Version";
         case RID::SN:
             return "Serial Number";
-
         case RID::NPP:
             return "Number of Pole Pairs";
         case RID::Rs:
@@ -57,7 +56,6 @@ std::string rid_to_string(int rid) {
             return "Rotor Flux";
         case RID::Gr:
             return "Gear Ratio";
-
         case RID::PMAX:
             return "Position Limit (PMAX)";
         case RID::VMAX:
@@ -76,7 +74,6 @@ std::string rid_to_string(int rid) {
             return "Position Loop KI";
         case RID::OV_Value:
             return "Over-Voltage Threshold";
-
         case RID::GREF:
             return "GREF (Gravity Reference)";
         case RID::Deta:
@@ -87,12 +84,10 @@ std::string rid_to_string(int rid) {
             return "Current Loop C1";
         case RID::VL_c1:
             return "Velocity Loop C1";
-
         case RID::can_br:
             return "CAN Baudrate Code";
         case RID::sub_ver:
             return "Sub Version";
-
         case RID::u_off:
             return "I-Phase U Offset";
         case RID::v_off:
@@ -105,25 +100,29 @@ std::string rid_to_string(int rid) {
             return "Mechanical Offset";
         case RID::dir:
             return "Motor Direction";
-
         case RID::p_m:
             return "Position Mode Offset";
         case RID::xout:
             return "XOUT (Internal Status)";
-
         default:
             return "Register " + std::to_string(rid);
     }
 }
 
-/**
- * @brief Reads all internal parameters from specified motors and prints them.
- */
+static void print_no_response_hint(uint32_t sid, uint32_t recv_id) {
+    std::cout << "  [!] NO RESPONSE FROM MOTOR - possible causes:\n";
+    std::cout << "      - CAN cable not connected\n";
+    std::cout << "      - Motor power not on\n";
+    std::cout
+        << "      - Baudrate mismatch (run 'discover' to find correct baudrate 1Mbps is default)\n";
+    std::cout << "      - Wrong motor ID (Send: 0x" << std::hex << sid << ", Recv: 0x" << recv_id
+              << std::dec << ")\n";
+}
+
 int run_read_params(const std::string& interface, bool use_arm_ids,
                     const std::vector<std::string>& custom_ids_str) {
     std::vector<uint32_t> send_ids;
 
-    // 1. Resolve target motor IDs
     if (use_arm_ids) {
         for (uint32_t i = 1; i <= 8; ++i) send_ids.push_back(i);
     }
@@ -142,7 +141,6 @@ int run_read_params(const std::string& interface, bool use_arm_ids,
     }
 
     try {
-        // 2. Initialize CAN communication
         std::cout << ">>> Connecting to " << interface << " (FD Mode)..." << std::endl;
         openarm::can::socket::OpenArm openarm(interface, true);
 
@@ -154,18 +152,15 @@ int run_read_params(const std::string& interface, bool use_arm_ids,
         openarm.init_arm_motors(types, send_ids, recv_ids);
         openarm.set_callback_mode_all(openarm::damiao_motor::CallbackMode::PARAM);
 
-        // 3. Batch query all registers (0 to 81)
         std::cout << ">>> Querying all registers for " << send_ids.size()
                   << " motors. Please wait...\n";
 
         for (int r = 0; r < (int)openarm::damiao_motor::RID::COUNT; ++r) {
             openarm.query_param_all(r);
-            std::this_thread::sleep_for(
-                std::chrono::milliseconds(35));  // Delay to avoid bus saturation
+            std::this_thread::sleep_for(std::chrono::milliseconds(35));
             openarm.recv_all();
         }
 
-        // 4. Formatting and output
         const auto& motors = openarm.get_arm().get_motors();
         for (size_t i = 0; i < motors.size(); ++i) {
             uint32_t sid = send_ids[i];
@@ -174,18 +169,21 @@ int run_read_params(const std::string& interface, bool use_arm_ids,
                       << std::hex << recv_ids[i] << std::dec << ")\n";
             std::cout << "==================================================\n";
 
-            // Connectivity check
-            if (!std::isfinite(motors[i].get_param((int)openarm::damiao_motor::RID::MST_ID))) {
-                std::cout << "  [!] NO RESPONSE FROM MOTOR\n";
+            // Check MST_ID as basic connectivity indicator
+            double mst = motors[i].get_param((int)openarm::damiao_motor::RID::MST_ID);
+            if (!std::isfinite(mst) || mst == -1.0) {
+                print_no_response_hint(sid, recv_ids[i]);
                 continue;
             }
 
-            std::cout << std::left << std::setw(30) << "Parameter Name" << " | " << "Value" << "\n";
+            std::cout << std::left << std::setw(30) << "Parameter Name" << " | " << "Value\n";
             std::cout << "--------------------------------------------------\n";
 
+            int param_count = 0;
             for (int r = 0; r < (int)openarm::damiao_motor::RID::COUNT; ++r) {
                 double val = motors[i].get_param(r);
                 if (std::isfinite(val) && val != -1.0) {
+                    param_count++;
                     std::cout << std::left << std::setw(30) << rid_to_string(r) << " | ";
 
                     using namespace openarm::damiao_motor;
@@ -204,6 +202,11 @@ int run_read_params(const std::string& interface, bool use_arm_ids,
 
                     std::cout << std::defaultfloat << "\n";
                 }
+            }
+
+            // Header was printed but no params returned
+            if (param_count == 0) {
+                print_no_response_hint(sid, recv_ids[i]);
             }
         }
 

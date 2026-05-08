@@ -16,7 +16,7 @@ int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, i
                       bool fd_mode, const std::string& sp, const std::string& dsp,
                       const std::string& dsjw, int restart_ms);
 
-int run_discover(const std::string& interface, int max_id);
+int run_discover(const std::string& interface, int max_id, bool full_scan = false);
 
 int run_change_id(const std::string& interface, int current_id, int new_slave_id, int new_master_id,
                   bool save);
