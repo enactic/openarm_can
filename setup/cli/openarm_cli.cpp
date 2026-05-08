@@ -5,6 +5,7 @@
 #include <chrono>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -12,33 +13,47 @@
 #include "openarm/can/socket/openarm.hpp"
 #include "openarm/damiao_motor/dm_motor_constants.hpp"
 
+// Expand comma-separated or space-separated ID tokens into a flat list.
+// Examples:
+//   "1,2,3"      -> {"1", "2", "3"}
+//   {"1,2", "3"} -> {"1", "2", "3"}
+static std::vector<std::string> expand_ids(const std::vector<std::string>& raw) {
+    std::vector<std::string> result;
+    for (const auto& token : raw) {
+        std::stringstream ss(token);
+        std::string item;
+        while (std::getline(ss, item, ',')) {
+            if (!item.empty()) result.push_back(item);
+        }
+    }
+    return result;
+}
+
 int main(int argc, char** argv) {
-    // Define a cool ASCII banner
-    std::string banner = R"(
+    const std::string banner = R"(
     ██████╗ ██████╗ ███████╗███╗   ██╗ █████╗ ██████╗ ███╗   ███╗     ██████╗██╗     ██╗
     ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔══██╗████╗ ████║    ██╔════╝██║     ██║
     ██║   ██║██████╔╝█████╗  ██╔██╗ ██║███████║██████╔╝██╔████╔██║    ██║     ██║     ██║
     ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔══██║██╔══██╗██║╚██╔╝██║    ██║     ██║     ██║
     ╚██████╔╝██║     ███████╗██║ ╚████║██║  ██║██║  ██║██║ ╚═╝ ██║    ╚██████╗███████╗██║
-    ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝    ╚═════╝╚══════╝╚═╝
+     ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝    ╚═════╝╚══════╝╚═╝
     )";
 
     CLI::App app{banner + "\nMulti-Motor High-Speed Monitor & Configuration Tool", "openarm-can"};
 
-    // Require at least one subcommand (shows help automatically if no arguments are provided)
+    // Require exactly one subcommand; shows help if none provided
     app.require_subcommand(1);
     app.set_help_flag("-h,--help", "Print this help message and exit");
 
     // ========================================================================
-    // Global Options
+    // Global options
     // ========================================================================
-    // Global SocketCAN interface used across all subcommands
     static std::string global_iface = "can0";
     app.add_option("-i,--interface", global_iface, "SocketCAN interface (default: can0)")
         ->default_val("can0");
 
     // ========================================================================
-    // [ Network & Hardware ] - Group for physical interface setup
+    // [ Network & Hardware ]
     // ========================================================================
 
     // --- can_configure: Setup SocketCAN parameters (bitrate, sample points, etc.) ---
@@ -46,7 +61,6 @@ int main(int argc, char** argv) {
         app.add_subcommand("can_configure", "Setup SocketCAN interface (baudrate, SP, SJW)")
             ->group("[ Network & Hardware ]");
 
-    static std::vector<std::string> cc_interfaces;
     static int cc_bitrate = 1000000;
     static int cc_dbitrate = 8000000;
     static bool cc_fd_mode = true;
@@ -55,8 +69,6 @@ int main(int argc, char** argv) {
     static std::string cc_dsjw = "3";
     static int cc_restart_ms = 100;
 
-    can_configure->add_option("interfaces", cc_interfaces,
-                              "Target CAN interfaces (e.g. can0 can1)");
     can_configure->add_option("-b,--bitrate", cc_bitrate, "Set arbitration phase bitrate")
         ->default_val(1000000);
     can_configure->add_option("-d,--dbitrate", cc_dbitrate, "Set CAN FD data phase bitrate")
@@ -72,22 +84,36 @@ int main(int argc, char** argv) {
     can_configure->add_flag("--no-fd,!--fd", cc_fd_mode, "Disable CAN FD mode");
 
     can_configure->callback([&]() {
-        openarm::cli::run_can_configure(cc_interfaces, cc_bitrate, cc_dbitrate, cc_fd_mode,
-                                        cc_sample_point, cc_dsample_point, cc_dsjw, cc_restart_ms);
+        std::vector<std::string> target_ifaces = {global_iface};
+        int result = openarm::cli::run_can_configure(target_ifaces, cc_bitrate, cc_dbitrate,
+                                                     cc_fd_mode, cc_sample_point, cc_dsample_point,
+                                                     cc_dsjw, cc_restart_ms);
+        if (result != 0) {
+            throw CLI::RuntimeError("can_configure failed.", result);
+        }
     });
 
     // --- discover: Scan for active motors on the bus ---
     auto* discover = app.add_subcommand("discover", "Scan CAN bus for connected motors")
                          ->group("[ Network & Hardware ]");
 
-    static int disc_max_id = 64;  // Default scan range: 1 to 64
-    discover->add_option("-m,--max-id", disc_max_id, "Max ID to scan (default: 64)")
-        ->default_val(64);
+    static int disc_max_id = 16;
+    static bool disc_full_scan = false;
 
-    discover->callback([&]() { openarm::cli::run_discover(global_iface, disc_max_id); });
+    discover->add_option("-m,--max-id", disc_max_id, "Max ID to scan (default: 16)")
+        ->default_val(16);
+    discover->add_flag("--full-scan", disc_full_scan,
+                       "Scan all 12 baudrates (default: 1M/5M/8M/10M only)");
+
+    discover->callback([&]() {
+        int result = openarm::cli::run_discover(global_iface, disc_max_id, disc_full_scan);
+        if (result != 0) {
+            throw CLI::RuntimeError("discover failed.", result);
+        }
+    });
 
     // ========================================================================
-    // [ Motor Setup ] - Group for non-realtime motor configuration
+    // [ Motor Setup ]
     // ========================================================================
 
     // --- change_id: Modify motor CAN ID ---
@@ -105,7 +131,7 @@ int main(int argc, char** argv) {
     change_id->add_flag("--save", save_to_flash, "Save configuration to motor Flash memory");
 
     change_id->callback([&]() {
-        std::cout << ">>> Executing change_id..." << std::endl;
+        std::cout << ">>> Executing change_id on " << global_iface << "..." << std::endl;
         int result = openarm::cli::run_change_id(global_iface, current_id, new_slave_id,
                                                  new_master_id, save_to_flash);
         if (result != 0) {
@@ -127,22 +153,36 @@ int main(int argc, char** argv) {
     change_baud->add_option("-c,--canid", cb_id, "Target Motor ID (0-255)")->required();
     change_baud->add_flag("--save", cb_flash, "Save parameters to motor flash memory");
 
-    change_baud->callback(
-        [&]() { openarm::cli::run_change_baud(global_iface, cb_baud, cb_id, cb_flash); });
+    change_baud->callback([&]() {
+        int result = openarm::cli::run_change_baud(global_iface, cb_baud, cb_id, cb_flash);
+        if (result != 0) {
+            throw CLI::RuntimeError("change_baud failed.", result);
+        }
+    });
 
     // --- show_param: Read all motor internal parameters (PID, Limits, etc.) ---
     auto* show_param = app.add_subcommand("show_param", "Read all motor internal parameters")
                            ->group("[ Motor Setup ]");
 
-    static bool sp_arm = false;
+    static bool sp_arm = true;
     static std::vector<std::string> sp_ids;
 
-    show_param->add_flag("--arm", sp_arm, "Read from arm motors (IDs 1-8)");
-    show_param->add_option("--id", sp_ids, "Target motor IDs");
+    show_param->add_flag("-a,--arm,!--no-arm", sp_arm, "Read from arm motors (IDs 1-8) [default]")
+        ->default_val(true);
+    show_param->add_option("--id", sp_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
-    show_param->callback([&]() { openarm::cli::run_read_params(global_iface, sp_arm, sp_ids); });
+    show_param->callback([&]() {
+        auto ids = expand_ids(sp_ids);
+        if (!ids.empty()) sp_arm = false;  // --id overrides --arm
+        int result = openarm::cli::run_read_params(global_iface, sp_arm, ids);
+        if (result != 0) {
+            std::cerr << "[ERROR] Failed to read parameters from one or more motors. "
+                      << "Check wiring, CAN interface, and motor IDs." << std::endl;
+            throw CLI::RuntimeError("show_param failed.", result);
+        }
+    });
 
-    // --- write_param: Update internal registers (Aligned with show_param style) ---
+    // --- write_param: Update internal registers ---
     auto* write_param = app.add_subcommand("write_param", "Write motor internal parameters")
                             ->group("[ Motor Setup ]");
 
@@ -156,89 +196,130 @@ int main(int argc, char** argv) {
     write_param->add_option("-v,--value", wp_val, "Value to write")->required();
     write_param->add_flag("--save", wp_save, "Save to motor Flash (⚠️ Limit: ~10,000 cycles)");
 
-    write_param->callback(
-        [&]() { openarm::cli::run_write_param(global_iface, wp_id, wp_rid, wp_val, wp_save); });
+    write_param->callback([&]() {
+        int result = openarm::cli::run_write_param(global_iface, wp_id, wp_rid, wp_val, wp_save);
+        if (result != 0) {
+            throw CLI::RuntimeError("write_param failed.", result);
+        }
+    });
 
     // --- set_zero: Calibrate mechanical zero position ---
     auto* set_zero =
         app.add_subcommand("set_zero", "Set current position as mechanical zero (0 rad)")
             ->group("[ Motor Setup ]");
 
-    static bool sz_arm = false;
+    static bool sz_arm = true;
     static std::vector<std::string> sz_ids;
 
-    set_zero->add_flag("--arm", sz_arm, "Apply to all arm motors (IDs 1-8)");
-    set_zero->add_option("--id", sz_ids, "Specific target motor IDs");
+    set_zero->add_flag("-a,--arm,!--no-arm", sz_arm, "Apply to all arm motors (IDs 1-8) [default]")
+        ->default_val(true);
+    set_zero->add_option("--id", sz_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
-    set_zero->callback([&]() { openarm::cli::run_set_zero(global_iface, sz_arm, sz_ids); });
+    set_zero->callback([&]() {
+        auto ids = expand_ids(sz_ids);
+        if (!ids.empty()) sz_arm = false;  // --id overrides --arm
+        int result = openarm::cli::run_set_zero(global_iface, sz_arm, ids);
+        if (result != 0) {
+            throw CLI::RuntimeError("set_zero failed.", result);
+        }
+    });
 
     // ========================================================================
-    // [ Operation & Debug ] - Group for realtime control and monitoring
+    // [ Operation & Debug ]
     // ========================================================================
 
     // --- enable: Enable motor power output ---
     auto* enable = app.add_subcommand("enable", "Enable motor output (Torque ON)")
                        ->group("[ Operation & Debug ]");
 
-    static bool en_arm = false;
+    static bool en_arm = true;
     static std::vector<std::string> en_ids;
 
-    enable->add_flag("--arm", en_arm, "Enable all arm motors (IDs 1-8)");
-    enable->add_option("--id", en_ids, "Specific motor IDs to enable");
+    enable->add_flag("-a,--arm,!--no-arm", en_arm, "Enable all arm motors (IDs 1-8) [default]")
+        ->default_val(true);
+    enable->add_option("--id", en_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
-    enable->callback(
-        [&]() { openarm::cli::run_motor_state_control(global_iface, en_arm, en_ids, true); });
+    enable->callback([&]() {
+        auto ids = expand_ids(en_ids);
+        if (!ids.empty()) en_arm = false;  // --id overrides --arm
+        int result = openarm::cli::run_motor_state_control(global_iface, en_arm, ids, true);
+        if (result != 0) {
+            throw CLI::RuntimeError("enable failed.", result);
+        }
+    });
 
     // --- disable: Disable motor power output ---
     auto* disable = app.add_subcommand("disable", "Disable motor output (Torque OFF)")
                         ->group("[ Operation & Debug ]");
 
-    static bool dis_arm = false;
+    static bool dis_arm = true;
     static std::vector<std::string> dis_ids;
 
-    disable->add_flag("--arm", dis_arm, "Disable all arm motors (IDs 1-8)");
-    disable->add_option("--id", dis_ids, "Specific motor IDs to disable");
+    disable->add_flag("-a,--arm,!--no-arm", dis_arm, "Disable all arm motors (IDs 1-8) [default]")
+        ->default_val(true);
+    disable->add_option("--id", dis_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
-    disable->callback(
-        [&]() { openarm::cli::run_motor_state_control(global_iface, dis_arm, dis_ids, false); });
+    disable->callback([&]() {
+        auto ids = expand_ids(dis_ids);
+        if (!ids.empty()) dis_arm = false;  // --id overrides --arm
+        int result = openarm::cli::run_motor_state_control(global_iface, dis_arm, ids, false);
+        if (result != 0) {
+            throw CLI::RuntimeError("disable failed.", result);
+        }
+    });
 
     // --- clear_error: Reset motor error flags ---
     auto* clear_error = app.add_subcommand("clear_error", "Reset motor error state")
                             ->group("[ Operation & Debug ]");
 
-    static bool ce_arm = false;
+    static bool ce_arm = true;
     static std::vector<std::string> ce_ids;
 
-    clear_error->add_flag("--arm", ce_arm, "Clear errors on all arm motors (IDs 1-8)");
-    clear_error->add_option("--id", ce_ids, "Specific motor IDs to clear errors");
+    clear_error
+        ->add_flag("-a,--arm,!--no-arm", ce_arm,
+                   "Clear errors on all arm motors (IDs 1-8) [default]")
+        ->default_val(true);
+    clear_error->add_option("--id", ce_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
-    clear_error->callback([&]() { openarm::cli::run_clear_error(global_iface, ce_arm, ce_ids); });
+    clear_error->callback([&]() {
+        auto ids = expand_ids(ce_ids);
+        if (!ids.empty()) ce_arm = false;  // --id overrides --arm
+        int result = openarm::cli::run_clear_error(global_iface, ce_arm, ids);
+        if (result != 0) {
+            throw CLI::RuntimeError("clear_error failed.", result);
+        }
+    });
 
-    // --- monitor ---
+    // --- monitor: Live telemetry dashboard ---
     auto* monitor =
         app.add_subcommand("monitor", "Live dashboard for position, velocity, torque, temp")
             ->group("[ Operation & Debug ]");
 
-    static bool mon_arm = false;
+    static bool mon_arm = true;
     static std::vector<std::string> mon_ids;
-    static int mon_interval = 100;   // Default: 100ms
-    static int mon_duration = 3000;  // Default: 3000ms (3s)
+    static int mon_interval = 100;   // ms
+    static int mon_duration = 6000;  // ms
 
-    monitor->add_flag("--arm", mon_arm, "Monitor all arm motors (IDs 1-8)");
-    monitor->add_option("--id", mon_ids, "Specific motor IDs to monitor");
-    monitor
-        ->add_option("-t,--tick", mon_interval,
-                     "Update interval in milliseconds")  // Prevent conflict with global -i
+    monitor->add_flag("-a,--arm,!--no-arm", mon_arm, "Monitor all arm motors (IDs 1-8) [default]")
+        ->default_val(true);
+    monitor->add_option("--id", mon_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
+    monitor->add_option("-t,--tick", mon_interval, "Update interval in milliseconds")
         ->default_val(100);
     monitor->add_option("-d,--duration", mon_duration, "Total monitoring duration in milliseconds")
-        ->default_val(3000);
+        ->default_val(6000);
 
     monitor->callback([&]() {
-        openarm::cli::run_monitor(global_iface, mon_arm, mon_ids, mon_interval, mon_duration);
+        auto ids = expand_ids(mon_ids);
+        if (!ids.empty()) mon_arm = false;  // --id overrides --arm
+        int result =
+            openarm::cli::run_monitor(global_iface, mon_arm, ids, mon_interval, mon_duration);
+        if (result != 0) {
+            throw CLI::RuntimeError("monitor failed.", result);
+        }
     });
 
     // ========================================================================
-    // Execution - Parsing and subcommand dispatching
+    // Execution - Parse arguments and dispatch subcommands
     // ========================================================================
     CLI11_PARSE(app, argc, argv);
 
