@@ -61,24 +61,40 @@ int main(int argc, char** argv) {
         app.add_subcommand("can_configure", "Setup SocketCAN interface (baudrate, SP, SJW)")
             ->group("[ Network & Hardware ]");
 
+    // static int cc_bitrate = 1000000;
+    // static int cc_dbitrate = 8000000;
+    // static bool cc_fd_mode = true;
+    // static std::string cc_sample_point = "0.75";
+    // static std::string cc_dsample_point = "0.6";
+    // static std::string cc_dsjw = "3";
+    // static int cc_restart_ms = 100;
+
     static int cc_bitrate = 1000000;
-    static int cc_dbitrate = 8000000;
+    static int cc_dbitrate = 5000000;
     static bool cc_fd_mode = true;
     static std::string cc_sample_point = "0.75";
-    static std::string cc_dsample_point = "0.6";
-    static std::string cc_dsjw = "3";
+    static std::string cc_dsample_point = "0.75";
+    static std::string cc_dsjw = "2";
     static int cc_restart_ms = 100;
 
     can_configure->add_option("-b,--bitrate", cc_bitrate, "Set arbitration phase bitrate")
         ->default_val(1000000);
+
+    // can_configure->add_option("-d,--dbitrate", cc_dbitrate, "Set CAN FD data phase bitrate")
+    //     ->default_val(8000000);
+    // can_configure->add_option("--sp", cc_sample_point, "Sample point for arbitration phase")
+    //     ->default_val("0.75");
+    // can_configure->add_option("--dsp", cc_dsample_point, "Sample point for data phase")
+    //     ->default_val("0.6");
+    // can_configure->add_option("--dsjw", cc_dsjw, "Data Synchronization Jump Width")
+    //     ->default_val("3");
+
     can_configure->add_option("-d,--dbitrate", cc_dbitrate, "Set CAN FD data phase bitrate")
-        ->default_val(8000000);
-    can_configure->add_option("--sp", cc_sample_point, "Sample point for arbitration phase")
-        ->default_val("0.75");
+        ->default_val(5000000);  // 8000000 → 5000000
     can_configure->add_option("--dsp", cc_dsample_point, "Sample point for data phase")
-        ->default_val("0.6");
+        ->default_val("0.75");  // "0.6" → "0.75"
     can_configure->add_option("--dsjw", cc_dsjw, "Data Synchronization Jump Width")
-        ->default_val("3");
+        ->default_val("2");  // "3" → "2"
     can_configure->add_option("--rm", cc_restart_ms, "Auto-restart time in milliseconds")
         ->default_val(100);
     can_configure->add_flag("--no-fd,!--fd", cc_fd_mode, "Disable CAN FD mode");

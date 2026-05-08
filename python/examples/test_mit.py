@@ -21,18 +21,22 @@ arm = oa.OpenArm("can0", True)
 motor_types = [oa.MotorType.DM4310]
 send_ids = [0x0A]
 recv_ids = [0x1A]
-control_modes = [oa.ControlMode.POS_VEL]
+control_modes = [oa.ControlMode.MIT]
 arm.init_arm_motors(motor_types, send_ids, recv_ids, control_modes)
 
 # Enable motors
 arm.enable_all()
 arm.recv_all()
 
-# PosVelParam(q, dq)
-#   q  : target position (rad)
-#   dq : target velocity (rad/s)
+# MIT control
+# MITParam(kp, kd, q, dq, tau)
+#   kp  : position gain
+#   kd  : velocity gain
+#   q   : target position (rad)
+#   dq  : target velocity (rad/s)
+#   tau : feedforward torque (Nm)
 arm.set_callback_mode_all(oa.CallbackMode.STATE)
-arm.get_arm().posvel_control_all([oa.PosVelParam(0.0, 0.0)])
+arm.get_arm().mit_control_all([oa.MITParam(0.0, 0.0, 0.0, 0.0, 0.0)])
 arm.recv_all()
 
 # Read motor position every 0.1s for 30 iterations
@@ -40,8 +44,6 @@ for _ in range(30):
     arm.refresh_all()
     arm.recv_all()
     for motor in arm.get_arm().get_motors():
-        print(motor.get_position())
-    for motor in arm.get_gripper().get_motors():
         print(motor.get_position())
     time.sleep(0.1)
 
