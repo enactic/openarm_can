@@ -150,6 +150,12 @@ install(PROGRAMS setup/openarm-can-configure-socketcan-4-arms
                  setup/openarm-can-zero-position-calibration
         DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+# Install bash completion
+install(
+  FILES setup/openarm-can-cli.bash
+  DESTINATION /etc/bash_completion.d/
+  RENAME openarm-can-cli)
+
 # Add tests
 if(BUILD_TESTING)
   # add_subdirectory(test)
