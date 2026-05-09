@@ -57,7 +57,7 @@ protected:
     void set_state_tmos(int tmos);
     void set_state_trotor(int trotor);
     void set_enabled(bool enabled);
-    void set_temp_param(int RID, int val);
+    void set_temp_param(int RID, double val);
 
     // Motor identifiers
     uint32_t send_can_id_;

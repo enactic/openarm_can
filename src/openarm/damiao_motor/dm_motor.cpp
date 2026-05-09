@@ -42,7 +42,7 @@ double Motor::get_param(int RID) const {
     return (it != temp_param_dict_.end()) ? it->second : -1;
 }
 
-void Motor::set_temp_param(int RID, int val) { temp_param_dict_[RID] = val; }
+void Motor::set_temp_param(int RID, double val) { temp_param_dict_[RID] = val; }
 
 // State update methods
 void Motor::update_state(double q, double dq, double tau, int tmos, int trotor) {
