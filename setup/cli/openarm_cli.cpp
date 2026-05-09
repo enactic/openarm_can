@@ -99,9 +99,14 @@ int main(int argc, char** argv) {
     can_configure->add_option("--rm", cc_restart_ms, "Auto-restart time in milliseconds")
         ->default_val(100);
     can_configure->add_flag("--no-fd,!--fd", cc_fd_mode, "Disable CAN FD mode");
-
     can_configure->callback([&]() {
-        std::vector<std::string> target_ifaces = {global_iface};
+        // Check if -i was explicitly provided by comparing to default value
+        std::vector<std::string> target_ifaces;
+        if (app["--interface"]->count() > 0) {
+            target_ifaces = {global_iface};
+        } else {
+            target_ifaces = {"can0", "can1", "can2", "can3"};
+        }
         int result = openarm::cli::run_can_configure(target_ifaces, cc_bitrate, cc_dbitrate,
                                                      cc_fd_mode, cc_sample_point, cc_dsample_point,
                                                      cc_dsjw, cc_restart_ms);
@@ -109,7 +114,6 @@ int main(int argc, char** argv) {
             throw CLI::RuntimeError("can_configure failed.", result);
         }
     });
-
     // --- discover: Scan for active motors on the bus ---
     auto* discover =
         app.add_subcommand("discover", "Scan CAN bus for connected motors (default: 1M/5M/8M/10M)")
