@@ -48,7 +48,7 @@ int run_motor_state_control(const std::string& interface, bool use_arm_ids,
         std::vector<uint32_t> recv_ids;
         for (auto id : send_ids) recv_ids.push_back(id + 0x10);
 
-        std::cout << ">>> Initializing " << send_ids.size() << " DM4310 motor(s)..." << std::endl;
+        std::cout << ">>> Initializing " << send_ids.size() << " DAMIAO motor(s)..." << std::endl;
         openarm.init_arm_motors(motor_types, send_ids, recv_ids);
 
         // 4. Send enable/disable command (IGNORE mode: skip telemetry parsing during TX)
