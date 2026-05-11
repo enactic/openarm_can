@@ -13,3 +13,4 @@
 # limitations under the License.
 
 usr/bin/
+usr/share/bash-completion/completions/
