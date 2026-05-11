@@ -79,6 +79,13 @@ void display_stats(const std::vector<openarm::damiao_motor::Motor>& motors, doub
 
 int main(int argc, char* argv[]) {
     std::signal(SIGINT, signal_handler);
+    if (argc >= 2) {
+        std::string arg = argv[1];
+        if (arg == "-h" || arg == "--help") {
+            print_usage(argv[0]);
+            return 0;
+        }
+    }
     if (argc < 3) {
         print_usage(argv[0]);
         return 1;
