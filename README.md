@@ -76,7 +76,30 @@ openarm-can-configure-socketcan can0
 openarm-can-configure-socketcan can0 -fd
 ```
 
-### 3. C++ Library
+### 3. CLI Tool
+
+`openarm-can-cli` provides a command-line interface for motor configuration and diagnostics.
+
+```bash
+# Configure CAN interface (default: 1Mbps nominal, 5Mbps data, CAN-FD)
+openarm-can-cli -i can0 can_configure
+
+# Configure with 1Mbps data rate (Classic CAN)
+openarm-can-cli -i can0 can_configure -d 1000000 --no-fd
+
+# Discover motors on the bus
+openarm-can-cli -i can0 discover
+
+# Monitor motor status (arm motors 1-8 by default)
+openarm-can-cli -i can0 monitor
+
+# Monitor specific motors
+openarm-can-cli -i can0 monitor --id 1,2,3
+```
+
+Run `openarm-can-cli -h` for full usage.
+
+### 4. C++ Library
 
 ```cpp
 #include <openarm/can/socket/openarm.hpp>
