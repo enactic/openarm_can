@@ -40,8 +40,7 @@ openarm-can-cli set_zero -h
 openarm-can-cli show_param -h
 openarm-can-cli write_param -h
 openarm-can-configure-socketcan-4-arms -h
+openarm-can-motor-sampling-check -h
 openarm-can-zero-position-calibration -h
-
-openarm-can-motor-sampling-check || true
 
 python3 -c "import openarm_can"
