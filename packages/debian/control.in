@@ -81,6 +81,7 @@ Depends:
  iproute2,
  python3,
  python3-can,
+ python3-numpy,
  python3-openarm-can (= ${binary:Version}),
 Description: Utility tools for OpenArm CAN configuration
  OpenArm CAN Library is a communication bridge between high-level
