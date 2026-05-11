@@ -63,8 +63,8 @@ jobs:
           sudo apt update
           sudo apt install -y -V \
             cmake \
-            ninja-build \
-            libcli11-dev
+            libcli11-dev \
+            ninja-build
       - name: "C++: CMake"
         run: |
           cmake \
