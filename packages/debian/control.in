@@ -21,6 +21,7 @@ Build-Depends:
  cmake,
  debhelper-compat (= 13),
  dh-sequence-python3,
+ libcli11-dev,
 @HAVE_NANOBIND@ nanobind-dev,
  ninja-build,
 @USE_PYPROJECT@ pybuild-plugin-pyproject,
