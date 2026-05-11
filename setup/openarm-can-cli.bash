@@ -1,5 +1,10 @@
-#!/usr/bin/env bash
 # shellcheck shell=bash
+#
+# Disable SC2207: "Prefer mapfile or read -a to split command output (or quote to avoid splitting)."
+# Completion candidates are static option/subcommand names with no spaces or glob characters,
+# so word splitting is safe here.
+# shellcheck disable=SC2207
+
 _openarm_can_cli() {
     local cur prev words
     _init_completion || return
