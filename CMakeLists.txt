@@ -153,7 +153,7 @@ install(PROGRAMS setup/openarm-can-configure-socketcan-4-arms
 # Install bash completion
 install(
   FILES setup/openarm-can-cli.bash
-  DESTINATION /etc/bash_completion.d/
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
   RENAME openarm-can-cli)
 
 # Add tests
