@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
     static int cc_restart_ms = 100;
 
     can_configure->add_option("-b,--bitrate", cc_bitrate, "Set arbitration phase bitrate")
-        ->default_val(1000000);
+        ->default_val("1000000");
 
     // can_configure->add_option("-d,--dbitrate", cc_dbitrate, "Set CAN FD data phase bitrate")
     //     ->default_val(8000000);
@@ -105,13 +105,13 @@ int main(int argc, char** argv) {
     //     ->default_val("3");
 
     can_configure->add_option("-d,--dbitrate", cc_dbitrate, "Set CAN FD data phase bitrate")
-        ->default_val(5000000);  // 8000000 → 5000000
+        ->default_val("5000000");  // 8000000 → 5000000
     can_configure->add_option("--dsp", cc_dsample_point, "Sample point for data phase")
         ->default_val("0.75");  // "0.6" → "0.75"
     can_configure->add_option("--dsjw", cc_dsjw, "Data Synchronization Jump Width")
         ->default_val("2");  // "3" → "2"
     can_configure->add_option("--rm", cc_restart_ms, "Auto-restart time in milliseconds")
-        ->default_val(100);
+        ->default_val("100");
     can_configure->add_flag("--no-fd,!--fd", cc_fd_mode, "Disable CAN FD mode");
     can_configure->callback([&]() {
         // Check if -i was explicitly provided by comparing to default value
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
     static bool disc_full_scan = false;
 
     discover->add_option("-m,--max-id", disc_max_id, "Max ID to scan (default: 16)")
-        ->default_val(16);
+        ->default_val("16");
     discover->add_flag("--full-scan", disc_full_scan,
                        "Scan all 12 baudrates (default: 1M/5M/8M/10M only)");
 
@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 
     change_id->add_option("-c,--current", current_id, "Current Slave ID")->required();
     change_id->add_option("-s,--new-slave", new_slave_id, "New Slave ID")->required();
-    change_id->add_option("-m,--new-master", new_master_id, "New Master ID")->default_val(17);
+    change_id->add_option("-m,--new-master", new_master_id, "New Master ID")->default_val("17");
     change_id->add_flag("--save", save_to_flash, "Save configuration to motor Flash memory");
 
     change_id->callback([&]() {
@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
     static std::vector<std::string> sp_ids;
 
     show_param->add_flag("-a,--arm,!--no-arm", sp_arm, "Read from arm motors (IDs 1-8) [default]")
-        ->default_val(true);
+        ->default_val("true");
     show_param->add_option("--id", sp_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
     show_param->callback([&]() {
@@ -251,7 +251,7 @@ int main(int argc, char** argv) {
     static std::vector<std::string> sz_ids;
 
     set_zero->add_flag("-a,--arm,!--no-arm", sz_arm, "Apply to all arm motors (IDs 1-8) [default]")
-        ->default_val(true);
+        ->default_val("true");
     set_zero->add_option("--id", sz_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
     set_zero->callback([&]() {
@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
     static std::vector<std::string> en_ids;
 
     enable->add_flag("-a,--arm,!--no-arm", en_arm, "Enable all arm motors (IDs 1-8) [default]")
-        ->default_val(true);
+        ->default_val("true");
     enable->add_option("--id", en_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
     enable->callback([&]() {
@@ -297,7 +297,7 @@ int main(int argc, char** argv) {
     static std::vector<std::string> dis_ids;
 
     disable->add_flag("-a,--arm,!--no-arm", dis_arm, "Disable all arm motors (IDs 1-8) [default]")
-        ->default_val(true);
+        ->default_val("true");
     disable->add_option("--id", dis_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
     disable->callback([&]() {
@@ -320,7 +320,7 @@ int main(int argc, char** argv) {
     clear_error
         ->add_flag("-a,--arm,!--no-arm", ce_arm,
                    "Clear errors on all arm motors (IDs 1-8) [default]")
-        ->default_val(true);
+        ->default_val("true");
     clear_error->add_option("--id", ce_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
 
     clear_error->callback([&]() {
@@ -342,12 +342,12 @@ int main(int argc, char** argv) {
     static int mon_duration = 6000;  // ms
 
     monitor->add_flag("-a,--arm,!--no-arm", mon_arm, "Monitor all arm motors (IDs 1-8) [default]")
-        ->default_val(true);
+        ->default_val("true");
     monitor->add_option("--id", mon_ids, "Target motor IDs (e.g. --id 1,2,3  or  --id 1 2 3)");
     monitor->add_option("-t,--tick", mon_interval, "Update interval in milliseconds")
-        ->default_val(100);
+        ->default_val("100");
     monitor->add_option("-d,--duration", mon_duration, "Total monitoring duration in milliseconds")
-        ->default_val(6000);
+        ->default_val("6000");
 
     monitor->callback([&]() {
         auto ids = expand_ids(mon_ids);
