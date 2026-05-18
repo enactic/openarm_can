@@ -108,6 +108,8 @@ int main(int argc, char** argv) {
         ->default_val("5000000");  // 8000000 → 5000000
     can_configure->add_option("--dsp", cc_dsample_point, "Sample point for data phase")
         ->default_val("0.75");  // "0.6" → "0.75"
+    can_configure->add_option("--sp", cc_sample_point, "Sample point for arbitration phase")
+        ->default_val("0.75");
     can_configure->add_option("--dsjw", cc_dsjw, "Data Synchronization Jump Width")
         ->default_val("2");  // "3" → "2"
     can_configure->add_option("--rm", cc_restart_ms, "Auto-restart time in milliseconds")
