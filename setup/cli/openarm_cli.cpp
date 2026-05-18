@@ -108,11 +108,14 @@ int main(int argc, char** argv) {
         ->default_val("5000000");  // 8000000 → 5000000
     can_configure->add_option("--dsp", cc_dsample_point, "Sample point for data phase")
         ->default_val("0.75");  // "0.6" → "0.75"
+    can_configure->add_option("--sp", cc_sample_point, "Sample point for arbitration phase")
+        ->default_val("0.75");
     can_configure->add_option("--dsjw", cc_dsjw, "Data Synchronization Jump Width")
         ->default_val("2");  // "3" → "2"
     can_configure->add_option("--rm", cc_restart_ms, "Auto-restart time in milliseconds")
         ->default_val("100");
-    can_configure->add_flag("--no-fd,!--fd", cc_fd_mode, "Disable CAN FD mode");
+    can_configure->add_flag("!--no-fd,--fd", cc_fd_mode, "Enable CAN FD mode");
+
     can_configure->callback([&]() {
         // Check if -i was explicitly provided by comparing to default value
         std::vector<std::string> target_ifaces;
