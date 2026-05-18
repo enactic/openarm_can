@@ -1,3 +1,9 @@
+openarm-can (1.2.9-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Sutou Kouhei <kou@clear-code.com>  Mon, 18 May 2026 01:21:28 -0000
+
 openarm-can (1.2.8-1) unstable; urgency=low
 
   * New upstream release.
