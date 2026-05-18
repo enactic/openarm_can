@@ -33,6 +33,7 @@ is a part of OpenArm.
 %package devel
 Summary:   Development files for OpenARM CAN control library
 Requires:  %{name}%{?_isa} = %{version}-%{release}
+Requires:  cli11-devel
 
 %description devel
 Header files and development libraries for OpenARM CAN control library.

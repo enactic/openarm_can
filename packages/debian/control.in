@@ -52,6 +52,7 @@ Architecture: any
 Multi-Arch: same
 Depends:
  ${misc:Depends},
+ libcli11-dev,
  libopenarm-can1 (= ${binary:Version}),
 Description: Development files to use OpenArm CAN as a library
  OpenArm CAN Library is a communication bridge between high-level
