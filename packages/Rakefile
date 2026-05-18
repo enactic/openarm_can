@@ -118,6 +118,14 @@ class OpenArmCANPackageTask < PackageTask
     "ghcr.io/#{github_repository.gsub("_", "-")}-package:#{super}"
   end
 
+  def ubuntu_targets_default
+    [
+      ["jammy", "22.04"],
+      ["noble", "24.04"],
+      ["resolute", "26.04"],
+    ]
+  end
+
   def dput_configuration_name
     "openarm-ppa"
   end
