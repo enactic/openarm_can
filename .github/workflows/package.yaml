@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt update
@@ -115,10 +115,10 @@ jobs:
                                               'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           path: apache-arrow
           repository: apache/arrow
@@ -256,16 +256,16 @@ jobs:
             --verify-tag \
             *.tar.gz \
             source/*
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: github.ref_type == 'tag'
         with:
           path: openarm_can
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: github.ref_type == 'tag'
         with:
           path: apache-arrow
           repository: apache/arrow
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: github.ref_type == 'tag'
         with:
           path: groonga
