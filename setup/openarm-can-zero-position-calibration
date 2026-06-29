@@ -150,7 +150,20 @@ def move_to_precise_home(openarm, arm_goal_abs):
 
 
 def _run_right_sequence(openarm, arm, grip, mech_lim):
-    d_grip = bump_to_limit(openarm, grip, JointID.GRIPPER)
+    # Slowly pre-close gripper towards 0° before bump calibration
+    openarm.recv_all()
+    q_grip_now = grip.get_motors()[0].get_position()
+    grip_step = 0.2
+    # right: open=-90° (v2) or -60° (v1), closed=0°; closing is positive direction
+    pre_target = np.deg2rad(-10)
+    pre_delta = pre_target - q_grip_now
+    if pre_delta > np.deg2rad(3):
+        interp_t = max(2.0, abs(np.rad2deg(pre_delta)) / 25.0)
+        interpolate(openarm, grip, JointID.GRIPPER, pre_delta,
+                    kp=10.0, kd=0.9, interp_time=interp_t)
+        time.sleep(0.5)
+    d_grip = bump_to_limit(openarm, grip, JointID.GRIPPER, step_deg=grip_step)
+
     time.sleep(0.5)
     d_j4 = bump_to_limit(openarm, arm,  JointID.J4, step_deg=-0.2)
     time.sleep(0.5)
@@ -160,7 +173,8 @@ def _run_right_sequence(openarm, arm, grip, mech_lim):
     d_j3 = bump_to_limit(openarm, arm,  JointID.J3)
     time.sleep(0.5)
 
-    interpolate(openarm, arm, JointID.J3, -mech_lim[JointID.J3][1], interp_time=1.0)
+    interpolate(openarm, arm, JointID.J3, -
+                mech_lim[JointID.J3][1], interp_time=1.0)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J2, -np.deg2rad(5), interp_time=0.4)
     time.sleep(0.5)
@@ -184,10 +198,12 @@ def _run_right_sequence(openarm, arm, grip, mech_lim):
 
     d_j2 = bump_to_limit(openarm, arm,  JointID.J2, step_deg=-0.2)
     time.sleep(0.5)
-    interpolate(openarm, arm, JointID.J2, np.deg2rad(10), interp_time=0.9, kp=180, kd=2.0)
+    interpolate(openarm, arm, JointID.J2, np.deg2rad(
+        10), interp_time=0.9, kp=180, kd=2.0)
     time.sleep(0.5)
 
-    d_j1 = bump_to_limit(openarm, arm,  JointID.J1, step_deg=-0.2, kp=180, kd=2.1)
+    d_j1 = bump_to_limit(openarm, arm,  JointID.J1,
+                         step_deg=-0.2, kp=180, kd=2.1)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J1, np.deg2rad(80))
     time.sleep(0.5)
@@ -209,7 +225,30 @@ def _run_right_sequence(openarm, arm, grip, mech_lim):
 
 
 def _run_left_sequence(openarm, arm, grip, mech_lim, robot_version='v1'):
-    grip_step = -0.2 if robot_version == 'v2' else 0.2
+    # Slowly pre-close gripper towards 0° before bump calibration
+    openarm.recv_all()
+    q_grip_now = grip.get_motors()[0].get_position()
+    if robot_version == 'v2':
+        grip_step = -0.2
+        # v2 left: open=+90°, closed=0°; closing is negative direction
+        pre_target = np.deg2rad(-10)
+        pre_delta = pre_target - q_grip_now
+        if pre_delta < -np.deg2rad(3):
+            interp_t = max(2.0, abs(np.rad2deg(pre_delta)) / 25.0)
+            interpolate(openarm, grip, JointID.GRIPPER, pre_delta,
+                        kp=10.0, kd=0.9, interp_time=interp_t)
+            time.sleep(0.5)
+    else:
+        grip_step = 0.2
+        # v1 left: open=-60°, closed=0°; closing is positive direction
+        pre_target = np.deg2rad(-10)
+        pre_delta = pre_target - q_grip_now
+        if pre_delta > np.deg2rad(3):
+            interp_t = max(2.0, abs(np.rad2deg(pre_delta)) / 25.0)
+            interpolate(openarm, grip, JointID.GRIPPER, pre_delta,
+                        kp=10.0, kd=0.9, interp_time=interp_t)
+            time.sleep(0.5)
+
     d_grip = bump_to_limit(openarm, grip, JointID.GRIPPER, step_deg=grip_step)
     time.sleep(0.5)
     d_j4 = bump_to_limit(openarm, arm,  JointID.J4, step_deg=-0.2)
@@ -220,7 +259,8 @@ def _run_left_sequence(openarm, arm, grip, mech_lim, robot_version='v1'):
     d_j3 = bump_to_limit(openarm, arm,  JointID.J3)
     time.sleep(0.5)
 
-    interpolate(openarm, arm, JointID.J3, -mech_lim[JointID.J3][1], interp_time=1.0)
+    interpolate(openarm, arm, JointID.J3, -
+                mech_lim[JointID.J3][1], interp_time=1.0)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J2,  np.deg2rad(5),  interp_time=0.4)
     time.sleep(0.5)
@@ -244,7 +284,8 @@ def _run_left_sequence(openarm, arm, grip, mech_lim, robot_version='v1'):
 
     d_j2 = bump_to_limit(openarm, arm,  JointID.J2)
     time.sleep(0.5)
-    interpolate(openarm, arm, JointID.J2, -np.deg2rad(10), interp_time=0.9, kp=180, kd=2.0)
+    interpolate(openarm, arm, JointID.J2, -np.deg2rad(10),
+                interp_time=0.9, kp=180, kd=2.0)
     time.sleep(0.5)
 
     d_j1 = bump_to_limit(openarm, arm,  JointID.J1, kp=180, kd=2.1)
@@ -271,13 +312,17 @@ def _run_left_sequence(openarm, arm, grip, mech_lim, robot_version='v1'):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Zero-pos calibration (compact)')
-    parser.add_argument('--canport',       type=str, default='can0')
+    parser = argparse.ArgumentParser(
+        description='Zero-pos calibration (compact)')
+    parser.add_argument('--canport',       type=str, default=None)
+
     parser.add_argument('--arm-side',      type=str, default='right_arm',
                         choices=['right_arm', 'left_arm'])
     parser.add_argument('--robot-version', type=str, default='v2',
                         choices=['v1', 'v2'])
     args = parser.parse_args()
+    if args.canport is None:
+        args.canport = 'can1' if args.arm_side == 'left_arm' else 'can0'
     print(f"parser arg : {args}")
 
     # Select mech_lim based on version and side
@@ -304,12 +349,12 @@ def main():
 
     # Hold current pose (light PD)
     openarm.recv_all()
-    arm  = openarm.get_arm()
+    arm = openarm.get_arm()
     grip = openarm.get_gripper()
-    am   = arm.get_motors()
-    gm   = grip.get_motors()
+    am = arm.get_motors()
+    gm = grip.get_motors()
 
-    initial_arm_q  = [m.get_position() for m in am]
+    initial_arm_q = [m.get_position() for m in am]
     initial_grip_q = [m.get_position() for m in gm]
 
     arm_params = [oa.MITParam(kp, kd, q, 0.0, 0.0)
@@ -326,7 +371,8 @@ def main():
         if args.arm_side == 'right_arm':
             ideal, deltas = _run_right_sequence(openarm, arm, grip, mech_lim)
         else:
-            ideal, deltas = _run_left_sequence(openarm, arm, grip, mech_lim, args.robot_version)
+            ideal, deltas = _run_left_sequence(
+                openarm, arm, grip, mech_lim, args.robot_version)
 
         # Compute ideal deltas per joint
         joint_order = [JointID.J1, JointID.J2, JointID.J3, JointID.J4,
