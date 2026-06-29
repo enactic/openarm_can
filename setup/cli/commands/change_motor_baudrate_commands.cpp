@@ -64,7 +64,7 @@ int run_change_baud(const std::string& interface, int baudrate, int canid, bool 
         // --- Step 2: Flash Save Operation ---
         if (flash) {
             std::cout << "---------------------------------------------------------" << std::endl;
-            std::cout << "⚠️  WARNING: FLASH WRITE OPERATION" << std::endl;
+            std::cout << "[!]  WARNING: FLASH WRITE OPERATION" << std::endl;
             std::cout << "   - Motor Flash memory has a limit of ~10,000 write cycles."
                       << std::endl;
             std::cout << "   - Do NOT execute this in a frequent loop." << std::endl;
@@ -100,7 +100,7 @@ int run_change_baud(const std::string& interface, int baudrate, int canid, bool 
 
         std::cout << "---------------------------------------------------------" << std::endl;
         std::cout << "✓ Baudrate Change Sequence Completed." << std::endl;
-        std::cout << "⚠️  POWER CYCLE REQUIRED to apply changes permanently." << std::endl;
+        std::cout << "[!]  POWER CYCLE REQUIRED to apply changes permanently." << std::endl;
         std::cout << "---------------------------------------------------------" << std::endl;
 
         return 0;

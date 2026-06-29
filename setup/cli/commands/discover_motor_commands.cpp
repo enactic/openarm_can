@@ -181,13 +181,27 @@ int run_discover(const std::string& interface, int max_id, bool full_scan) {
                       << ")\n";
         }
         std::cout << "=========================================================\n";
-
-        std::cout << "=========================================================\n";
-        std::cout << "⚠️  WARNING: CAN interface is now configured at 10 Mbps (FD).\n";
-        std::cout << "   Run 'can_configure' to restore the baudrate for your motors.\n";
-        std::cout << "   e.g. openarm-can -i " << interface << " can_configure\n";
-        std::cout << "=========================================================\n";
     }
+
+    // Restore interface to can_configure defaults (1 Mbps / 5 Mbps FD)
+    std::cout << "\n=========================================================\n";
+    std::cout << " RESTORING INTERFACE\n";
+    std::cout << "---------------------------------------------------------\n";
+    std::cout << " Restoring "
+              << interface << " to default: 1 Mbps / 5 Mbps FD (SP:0.75 DSP:0.75 DSJW:2)\n";
+    (void)std::system(("sudo ip link set " + interface + " down 2>/dev/null").c_str());
+    std::string cmd_restore = "sudo ip link set " + interface +
+                              " type can bitrate 1000000 sample-point 0.75"
+                              " dbitrate 5000000 fd on dsample-point 0.75 dsjw 2 restart-ms 100";
+    int restore_ret = std::system(cmd_restore.c_str());
+    (void)std::system(("sudo ip link set " + interface + " up 2>/dev/null").c_str());
+    if (restore_ret == 0) {
+        std::cout << "✓ " << interface << " is ready: 1 Mbps / 5 Mbps FD\n";
+    } else {
+        std::cerr << "✗ Failed to restore " << interface << ". Run 'can_configure' manually.\n";
+    }
+    std::cout << "=========================================================\n";
+
     return 0;
 }
 

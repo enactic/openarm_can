@@ -38,6 +38,12 @@ int run_write_param(const std::string& interface, uint32_t can_id, int rid, floa
         // --- 1. Prepare Data based on RID type ---
         uint32_t raw_value = 0;
         using namespace openarm::damiao_motor;
+
+        if (rid < 0 || rid >= static_cast<int>(RID::COUNT)) {
+            std::cerr << "✗ Error: Invalid RID " << rid << " (valid range: 0 to "
+                      << static_cast<int>(RID::COUNT) - 1 << ")\n";
+            return 1;
+        }
         RID reg = static_cast<RID>(rid);
 
         // Check if the RID should be treated as a float
@@ -80,7 +86,7 @@ int run_write_param(const std::string& interface, uint32_t can_id, int rid, floa
         // --- 3. Save to Flash if requested ---
         if (save) {
             std::cout << "---------------------------------------------------------" << std::endl;
-            std::cout << "⚠️  WARNING: FLASH WRITE OPERATION (Limit: ~10,000 cycles)" << std::endl;
+            std::cout << "[!]  WARNING: FLASH WRITE OPERATION (Limit: ~10,000 cycles)" << std::endl;
 
             // A. Disable motor
             struct can_frame dis;
