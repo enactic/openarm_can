@@ -50,7 +50,7 @@ int run_write_param(const std::string& interface, uint32_t can_id, int rid, floa
         // (Gains, Inertia, Limits, etc. are floats in DM motors)
         bool is_float = true;
         if (reg == RID::MST_ID || reg == RID::ESC_ID || reg == RID::can_br ||
-            reg == RID::CTRL_MODE || reg == RID::NPP || reg == RID::dir) {
+            reg == RID::CTRL_MODE || reg == RID::NPP || reg == RID::dir || reg == RID::TIMEOUT) {
             is_float = false;
         }
 
