@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <set>
+#include <chrono>
+#include <algorithm>
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -117,6 +120,34 @@ void OpenArm::recv_all(int first_timeout_us) {
     // }
 }
 
+int OpenArm::flush_rx() {
+    int flushed = 0;
+
+    if (enable_fd_) {
+        canfd_frame frame;
+        while (can_socket_->is_data_available(0) &&
+               can_socket_->read_canfd_frame(frame)) {
+            flushed++;
+        }
+    } else {
+        can_frame frame;
+        while (can_socket_->is_data_available(0) &&
+               can_socket_->read_can_frame(frame)) {
+            flushed++;
+        }
+    }
+
+    return flushed;
+}
+
+int OpenArm::refresh_all_and_recv(int timeout_us) {
+    flush_rx();
+    refresh_all();
+    return recv_expected_responses(
+        timeout_us,
+        static_cast<int>(master_can_device_collection_->get_devices().size()));
+}
+
 void OpenArm::query_param_all(int RID) {
     for (damiao_motor::DMDeviceCollection* device_collection : sub_dm_device_collections_) {
         device_collection->query_param_all(RID);
@@ -127,6 +158,76 @@ void OpenArm::set_callback_mode_all(damiao_motor::CallbackMode callback_mode) {
     for (damiao_motor::DMDeviceCollection* device_collection : sub_dm_device_collections_) {
         device_collection->set_callback_mode_all(callback_mode);
     }
+}
+
+int OpenArm::recv_expected_responses(int timeout_us, int expected_responses) {
+    using clock = std::chrono::steady_clock;
+    using microseconds = std::chrono::microseconds;
+
+    const auto& devices = master_can_device_collection_->get_devices();
+
+    if (devices.empty() || expected_responses <= 0) {
+        return 0;
+    }
+
+    const int target_count =
+        std::min(expected_responses, static_cast<int>(devices.size()));
+
+    std::set<canid_t> responded_ids;
+    const auto deadline = clock::now() + microseconds(timeout_us);
+
+    auto remaining_timeout_us = [&]() -> int {
+        const auto now = clock::now();
+        if (now >= deadline) {
+            return 0;
+        }
+
+        const auto remaining =
+            std::chrono::duration_cast<microseconds>(deadline - now).count();
+
+        if (remaining <= 0) {
+            return 0;
+        }
+
+        return static_cast<int>(remaining);
+    };
+
+    auto mark_response = [&](canid_t can_id) {
+        if (devices.find(can_id) != devices.end()) {
+            responded_ids.insert(can_id);
+        }
+    };
+
+    while (static_cast<int>(responded_ids.size()) < target_count) {
+        const int wait_us = remaining_timeout_us();
+        if (wait_us <= 0) {
+            break;
+        }
+
+        if (!can_socket_->is_data_available(wait_us)) {
+            break;
+        }
+
+        if (enable_fd_) {
+            canfd_frame response_frame;
+            if (!can_socket_->read_canfd_frame(response_frame)) {
+                break;
+            }
+
+            mark_response(response_frame.can_id);
+            master_can_device_collection_->dispatch_frame_callback(response_frame);
+        } else {
+            can_frame response_frame;
+            if (!can_socket_->read_can_frame(response_frame)) {
+                break;
+            }
+
+            mark_response(response_frame.can_id);
+            master_can_device_collection_->dispatch_frame_callback(response_frame);
+        }
+    }
+
+    return static_cast<int>(responded_ids.size());
 }
 
 }  // namespace openarm::can::socket

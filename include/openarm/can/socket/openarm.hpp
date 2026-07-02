@@ -62,6 +62,8 @@ public:
     void set_callback_mode_all(damiao_motor::CallbackMode callback_mode);
     void query_param_all(int RID);
 
+    int flush_rx();
+    int refresh_all_and_recv(int timeout_us = 500);
 private:
     std::string can_interface_;
     bool enable_fd_;
@@ -71,6 +73,7 @@ private:
     std::unique_ptr<canbus::CANDeviceCollection> master_can_device_collection_;
     std::vector<damiao_motor::DMDeviceCollection*> sub_dm_device_collections_;
     void register_dm_device_collection(damiao_motor::DMDeviceCollection& device_collection);
+    int recv_expected_responses(int timeout_us, int expected_responses);
 };
 
 }  // namespace openarm::can::socket
