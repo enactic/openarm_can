@@ -59,6 +59,8 @@ __all__ = [
     "ArmComponent",
     "GripperComponent",
     "OpenArm",
+    "OpenArmGroup",
+    "OpenArmRefreshResult",
 
     # Exceptions
     "CANSocketException",

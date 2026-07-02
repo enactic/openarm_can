@@ -33,6 +33,7 @@ add_library(
   openarm_can
   src/openarm/can/socket/arm_component.cpp
   src/openarm/can/socket/gripper_component.cpp
+  src/openarm/can/socket/openarm_group.cpp
   src/openarm/can/socket/openarm.cpp
   src/openarm/canbus/can_device_collection.cpp
   src/openarm/canbus/can_socket.cpp
@@ -57,6 +58,7 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23)
            FILES
            include/openarm/can/socket/arm_component.hpp
            include/openarm/can/socket/gripper_component.hpp
+           include/openarm/can/socket/openarm_group.hpp
            include/openarm/can/socket/openarm.hpp
            include/openarm/canbus/can_device.hpp
            include/openarm/canbus/can_device_collection.hpp
