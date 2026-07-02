@@ -21,6 +21,11 @@ class OpenArmGroup {
 public:
     OpenArmGroup(const std::vector<std::string>& can_interfaces, bool enable_fd = false);
 
+    OpenArmGroup(const OpenArmGroup&) = delete;
+    OpenArmGroup& operator=(const OpenArmGroup&) = delete;
+    OpenArmGroup(OpenArmGroup&&) noexcept = default;
+    OpenArmGroup& operator=(OpenArmGroup&&) noexcept = default;
+
     size_t size() const noexcept { return arms_.size(); }
 
     OpenArm& get_openarm(size_t index);

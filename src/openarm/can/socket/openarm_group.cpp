@@ -1,4 +1,5 @@
 #include <future>
+#include <set>
 #include <stdexcept>
 
 #include <openarm/can/socket/openarm_group.hpp>
@@ -8,7 +9,14 @@ namespace openarm::can::socket {
 OpenArmGroup::OpenArmGroup(const std::vector<std::string>& can_interfaces, bool enable_fd) {
     arms_.reserve(can_interfaces.size());
 
+    std::set<std::string> seen_interfaces;
+
     for (const auto& can_interface : can_interfaces) {
+        if (!seen_interfaces.insert(can_interface).second) {
+            throw std::invalid_argument(
+                "Duplicate CAN interface in OpenArmGroup: " + can_interface);
+        }
+
         arms_.push_back(std::make_unique<OpenArm>(can_interface, enable_fd));
     }
 }
