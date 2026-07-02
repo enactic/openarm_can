@@ -12,16 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
+#include <csignal>
 #include <iomanip>
 #include <iostream>
 #include <openarm/can/socket/openarm.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
+#include <sstream>
 #include <thread>
 #include <vector>
 
 #include "cli.hpp"
+
+static std::atomic<bool> g_monitor_running{true};
+static void monitor_sigint_handler(int) { g_monitor_running = false; }
 
 namespace openarm::cli {
 
@@ -44,6 +50,32 @@ int run_monitor(const std::string& interface, bool use_arm_ids,
         return 1;
     }
 
+    // Startup summary
+    std::cout << "=========================================================\n";
+    std::cout << " OPENARM MONITOR\n";
+    std::cout << "---------------------------------------------------------\n";
+    std::cout << " Interface : " << interface << "\n";
+    std::cout << " Motors    :";
+    for (auto id : send_ids)
+        std::cout << " 0x" << std::hex << std::setfill('0') << std::setw(2) << id;
+    std::cout << std::dec << std::setfill(' ') << "\n";
+    std::cout << " Interval  : " << interval_ms << " ms\n";
+    std::cout << " Duration  : " << duration_ms << " ms\n";
+    std::cout << " Ctrl+C    : stop early and disarm motors\n";
+    std::cout << "=========================================================\n\n";
+
+    // Format a float; returns "---" padded to width if not finite (motor not responding)
+    auto fmtval = [](double v, int width, int prec) -> std::string {
+        if (!std::isfinite(v)) {
+            std::string s = "---";
+            s.resize(width, ' ');
+            return s;
+        }
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(prec) << std::left << std::setw(width) << v;
+        return ss.str();
+    };
+
     try {
         openarm::can::socket::OpenArm openarm(interface, true);
         std::vector<openarm::damiao_motor::MotorType> types(
@@ -54,15 +86,18 @@ int run_monitor(const std::string& interface, bool use_arm_ids,
         openarm.init_arm_motors(types, send_ids, recv_ids);
 
         // --- STEP 1: Enable motors for monitoring ---
-        std::cout << ">>> Enabling motors and starting monitor..." << std::endl;
+        std::cout << ">>> Enabling motors..." << std::endl;
         openarm.set_callback_mode_all(openarm::damiao_motor::CallbackMode::STATE);
         openarm.enable_all();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Wait for power-on
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         openarm.recv_all();
+
+        g_monitor_running = true;
+        std::signal(SIGINT, monitor_sigint_handler);
 
         auto start_time = std::chrono::steady_clock::now();
 
-        while (true) {
+        while (g_monitor_running) {
             auto now = std::chrono::steady_clock::now();
             auto elapsed =
                 std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
@@ -72,41 +107,43 @@ int run_monitor(const std::string& interface, bool use_arm_ids,
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             openarm.recv_all();
 
-            // Clear Screen
             std::cout << "\033[2J\033[1;1H";
 
-            std::cout << "========================================================================="
-                         "=====\n";
-            std::cout << "  OPENARM HEALTH CHECK | Elapsed: " << (double)elapsed / 1000.0 << "s / "
-                      << (double)duration_ms / 1000.0 << "s\n";
-            std::cout << "  Motors are currently ENABLED. Check values for any anomalies.\n";
-            std::cout << "========================================================================="
-                         "=====\n";
+            std::cout << "==========================================================="
+                         "===========\n";
+            std::cout << "  OPENARM MONITOR | " << interface << " | " << std::fixed
+                      << std::setprecision(1) << (double)elapsed / 1000.0 << "s / "
+                      << (double)duration_ms / 1000.0 << "s  [Ctrl+C to stop]\n";
+            std::cout << "==========================================================="
+                         "===========\n";
             std::cout << std::left << std::setw(8) << "ID" << std::setw(14) << "Pos(rad)"
                       << std::setw(14) << "Vel(rad/s)" << std::setw(14) << "Torque(Nm)"
-                      << std::setw(10) << "T(MOS)"
-                      << "T(Rtr)\n";
-            std::cout << "-------------------------------------------------------------------------"
-                         "-----\n";
+                      << std::setw(10) << "MOS(C)" << "Rtr(C)\n";
+            std::cout << "-----------------------------------------------------------"
+                         "-----------\n";
 
             const auto& motors = openarm.get_arm().get_motors();
             for (size_t i = 0; i < motors.size(); ++i) {
                 const auto& m = motors[i];
-                std::cout << std::left << "0x" << std::hex << send_ids[i] << std::dec
-                          << std::setw(6) << "" << std::fixed << std::setprecision(3)
-                          << std::setw(14) << m.get_position() << std::setw(14) << m.get_velocity()
-                          << std::setw(14) << m.get_torque() << std::setprecision(1)
-                          << std::setw(10) << m.get_state_tmos() << m.get_state_trotor() << "\n";
+                std::ostringstream id_ss;
+                id_ss << "0x" << std::hex << std::setfill('0') << std::setw(2) << send_ids[i];
+                std::cout << std::left << std::setfill(' ') << std::setw(8) << id_ss.str()
+                          << fmtval(m.get_position(), 14, 3) << fmtval(m.get_velocity(), 14, 3)
+                          << fmtval(m.get_torque(), 14, 3) << fmtval(m.get_state_tmos(), 10, 1)
+                          << fmtval(m.get_state_trotor(), 8, 1) << "\n";
             }
-            std::cout << "========================================================================="
-                         "=====\n";
+            std::cout << "==========================================================="
+                         "===========\n";
             std::flush(std::cout);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
+            std::this_thread::sleep_for(std::chrono::milliseconds(std::max(0, interval_ms - 20)));
         }
 
+        std::signal(SIGINT, SIG_DFL);
+
         // --- STEP 2: Disable motors before exiting ---
-        std::cout << "\n>>> Disabling motors and finishing..." << std::endl;
+        std::cout << (g_monitor_running ? "\n>>> Monitoring complete." : "\n>>> Interrupted.")
+                  << " Disabling motors..." << std::endl;
         openarm.disable_all();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         openarm.recv_all();

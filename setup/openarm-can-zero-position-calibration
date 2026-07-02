@@ -199,11 +199,11 @@ def _run_right_sequence(openarm, arm, grip, mech_lim):
     d_j2 = bump_to_limit(openarm, arm,  JointID.J2, step_deg=-0.2)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J2, np.deg2rad(
-        10), interp_time=0.9, kp=180, kd=2.0)
+        10), interp_time=0.9, kp=280, kd=2.0)
     time.sleep(0.5)
 
     d_j1 = bump_to_limit(openarm, arm,  JointID.J1,
-                         step_deg=-0.2, kp=180, kd=2.1)
+                         step_deg=-0.2, kp=280, kd=2.1)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J1, np.deg2rad(80))
     time.sleep(0.5)
@@ -285,10 +285,10 @@ def _run_left_sequence(openarm, arm, grip, mech_lim, robot_version='v1'):
     d_j2 = bump_to_limit(openarm, arm,  JointID.J2)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J2, -np.deg2rad(10),
-                interp_time=0.9, kp=180, kd=2.0)
+                interp_time=0.9, kp=280, kd=2.0)
     time.sleep(0.5)
 
-    d_j1 = bump_to_limit(openarm, arm,  JointID.J1, kp=180, kd=2.1)
+    d_j1 = bump_to_limit(openarm, arm,  JointID.J1, kp=280, kd=2.1)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J1, -np.deg2rad(80))
     time.sleep(0.5)

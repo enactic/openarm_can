@@ -131,7 +131,7 @@ add_executable(
   openarm-can-cli
   setup/cli/openarm_cli.cpp
   setup/cli/commands/can_configure_commands.cpp
-  setup/cli/commands/motor_statas_commands.cpp
+  setup/cli/commands/motor_status_commands.cpp
   setup/cli/commands/change_motor_baudrate_commands.cpp
   setup/cli/commands/zero_position_commands.cpp
   setup/cli/commands/motor_read_param_commands.cpp

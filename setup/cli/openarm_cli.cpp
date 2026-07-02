@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
     write_param->add_option("-c,--id", wp_id, "Target motor ID")->required();
     write_param->add_option("-r,--rid", wp_rid, "Register ID (RID)")->required();
     write_param->add_option("-v,--value", wp_val, "Value to write")->required();
-    write_param->add_flag("--save", wp_save, "Save to motor Flash (⚠️ Limit: ~10,000 cycles)");
+    write_param->add_flag("--save", wp_save, "Save to motor Flash ([!] Limit: ~10,000 cycles)");
 
     write_param->callback([&]() {
         int result = openarm::cli::run_write_param(global_iface, wp_id, wp_rid, wp_val, wp_save);

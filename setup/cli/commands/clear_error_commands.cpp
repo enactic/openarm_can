@@ -34,7 +34,7 @@ int run_clear_error(const std::string& interface, bool use_arm_ids,
             for (int i = 1; i <= 8; ++i) target_ids.push_back(i);
         }
         for (const auto& id_str : custom_ids_str) {
-            target_ids.push_back(std::stoi(id_str));
+            target_ids.push_back(std::stoul(id_str, nullptr, 0));
         }
 
         if (target_ids.empty()) {

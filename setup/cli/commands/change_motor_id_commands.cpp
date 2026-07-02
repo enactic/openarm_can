@@ -69,7 +69,7 @@ int run_change_id(const std::string& interface, int current_id, int new_slave_id
         // --- Step 3: Flash Save Operation ---
         if (save) {
             std::cout << "---------------------------------------------------------" << std::endl;
-            std::cout << "⚠️  WARNING: FLASH WRITE OPERATION" << std::endl;
+            std::cout << "[!]  WARNING: FLASH WRITE OPERATION" << std::endl;
             std::cout << "   - Motor Flash memory has a limit of ~10,000 write cycles."
                       << std::endl;
             std::cout << "   - Do NOT execute this in a frequent loop." << std::endl;
@@ -109,7 +109,7 @@ int run_change_id(const std::string& interface, int current_id, int new_slave_id
         std::cout << "✓ ID Change Sequence Completed." << std::endl;
         std::cout << "  Active Slave ID (RAM): " << format_hex_id(new_slave_id) << std::endl;
         std::cout << "  Active Master ID (RAM): " << format_hex_id(new_master_id) << std::endl;
-        std::cout << "⚠️  POWER CYCLE REQUIRED to apply changes permanently." << std::endl;
+        std::cout << "[!]  POWER CYCLE REQUIRED to apply changes permanently." << std::endl;
         std::cout << "---------------------------------------------------------" << std::endl;
 
         return 0;
