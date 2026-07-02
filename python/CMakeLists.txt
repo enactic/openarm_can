@@ -82,6 +82,33 @@ endfunction()
 ocp_ensure_nanobind()
 
 function(ocp_ensure_openarm_can)
+  # Prefer the local repository source tree when building the Python package
+  # from a full Git checkout with #subdirectory=python. This keeps the Python
+  # bindings and the C++ core in sync when installing from a fork or branch.
+  set(OPENARM_CAN_LOCAL_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
+  if(EXISTS "${OPENARM_CAN_LOCAL_SOURCE_DIR}/include/openarm/can/socket/openarm.hpp"
+     AND EXISTS "${OPENARM_CAN_LOCAL_SOURCE_DIR}/CMakeLists.txt")
+    fetchcontent_declare(
+      openarm_can
+      ${OCP_FETCH_CONTENT_COMMON_OPTIONS}
+      SOURCE_DIR "${OPENARM_CAN_LOCAL_SOURCE_DIR}")
+    ocp_prepare_fetchcontent()
+    fetchcontent_makeavailable(openarm_can)
+
+    if(openarm_can_SOURCE_DIR)
+      if(CMAKE_VERSION VERSION_LESS 3.28)
+        set_property(DIRECTORY "${openarm_can_SOURCE_DIR}"
+                     PROPERTY EXCLUDE_FROM_ALL TRUE)
+      endif()
+
+      if(TARGET openarm_can AND NOT TARGET OpenArmCAN::openarm_can)
+        add_library(OpenArmCAN::openarm_can ALIAS openarm_can)
+      endif()
+    endif()
+
+    return()
+  endif()
+
   # We can use FIND_PACKAGE_ARGS in fetchcontent_declare() instead of
   # explicit find_package() when we require CMake 3.24 or later.
   find_package(OpenArmCAN ${openarm_can_python_VERSION})
@@ -105,7 +132,10 @@ function(ocp_ensure_openarm_can)
       set_property(DIRECTORY "${openarm_can_SOURCE_DIR}"
                    PROPERTY EXCLUDE_FROM_ALL TRUE)
     endif()
-    add_library(OpenArmCAN::openarm_can ALIAS openarm_can)
+
+    if(TARGET openarm_can AND NOT TARGET OpenArmCAN::openarm_can)
+      add_library(OpenArmCAN::openarm_can ALIAS openarm_can)
+    endif()
   endif()
 endfunction()
 ocp_ensure_openarm_can()
