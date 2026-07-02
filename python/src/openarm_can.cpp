@@ -476,7 +476,12 @@ NB_MODULE(openarm_can, m) {
         .def("refresh_all", &OpenArm::refresh_all)
         .def("recv_all", &OpenArm::recv_all, nb::arg("first_timeout_us") = 500)
         .def("flush_rx", &OpenArm::flush_rx)
-        .def("refresh_all_and_recv", &OpenArm::refresh_all_and_recv, nb::arg("timeout_us") = 500)
+        .def(
+             "refresh_all_and_recv",
+             &OpenArm::refresh_all_and_recv,
+             nb::arg("timeout_us") = 500,
+             nb::call_guard<nb::gil_scoped_release>())
+        .def("expected_response_count", &OpenArm::expected_response_count)
         .def("set_callback_mode_all", &OpenArm::set_callback_mode_all, nb::arg("callback_mode"))
         .def("query_param_all", &OpenArm::query_param_all, nb::arg("rid"));
 
