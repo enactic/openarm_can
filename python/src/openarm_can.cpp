@@ -493,27 +493,26 @@ NB_MODULE(openarm_can, m) {
         .def_rw("ok", &OpenArmRefreshResult::ok)
         .def_rw("error", &OpenArmRefreshResult::error);
 
-    nb::class_<OpenArmGroup>(m, "OpenArmGroup")
+        nb::class_<OpenArmGroup>(m, "OpenArmGroup")
         .def(nb::init<const std::vector<std::string>&, bool>(),
-            nb::arg("can_interfaces"),
-            nb::arg("enable_fd") = false)
+             nb::arg("can_interfaces"),
+             nb::arg("enable_fd") = false)
         .def("size", &OpenArmGroup::size)
         .def(
-            "get_openarm",
-            static_cast<OpenArm& (OpenArmGroup::*)(size_t)>(&OpenArmGroup::get_openarm),
-            nb::arg("index"),
-            nb::rv_policy::reference_internal)
+             "get_openarm",
+             static_cast<OpenArm& (OpenArmGroup::*)(std::size_t)>(&OpenArmGroup::get_openarm),
+             nb::arg("index"),
+             nb::rv_policy::reference_internal)
         .def(
-            "get_openarm",
-            static_cast<OpenArm& (OpenArmGroup::*)(const std::string&)>(&OpenArmGroup::get_openarm),
-            nb::arg("can_interface"),
-            nb::rv_policy::reference_internal)
+             "get_openarm",
+             static_cast<OpenArm& (OpenArmGroup::*)(const std::string&)>(&OpenArmGroup::get_openarm),
+             nb::arg("can_interface"),
+             nb::rv_policy::reference_internal)
         .def("enable_all", &OpenArmGroup::enable_all)
         .def("disable_all", &OpenArmGroup::disable_all)
         .def("set_zero_all", &OpenArmGroup::set_zero_all)
         .def(
-            "refresh_all_and_recv",
-            &OpenArmGroup::refresh_all_and_recv,
-            nb::arg("timeout_us") = 500,
-            nb::call_guard<nb::gil_scoped_release>());
+             "refresh_all_and_recv",
+             &OpenArmGroup::refresh_all_and_recv,
+             nb::arg("timeout_us") = 500);
 }

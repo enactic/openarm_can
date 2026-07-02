@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -20,16 +21,17 @@ struct OpenArmRefreshResult {
 class OpenArmGroup {
 public:
     OpenArmGroup(const std::vector<std::string>& can_interfaces, bool enable_fd = false);
+    ~OpenArmGroup();
 
     OpenArmGroup(const OpenArmGroup&) = delete;
     OpenArmGroup& operator=(const OpenArmGroup&) = delete;
-    OpenArmGroup(OpenArmGroup&&) noexcept = default;
-    OpenArmGroup& operator=(OpenArmGroup&&) noexcept = default;
+    OpenArmGroup(OpenArmGroup&&) = delete;
+    OpenArmGroup& operator=(OpenArmGroup&&) = delete;
 
-    size_t size() const noexcept { return arms_.size(); }
+    std::size_t size() const noexcept { return workers_.size(); }
 
-    OpenArm& get_openarm(size_t index);
-    const OpenArm& get_openarm(size_t index) const;
+    OpenArm& get_openarm(std::size_t index);
+    const OpenArm& get_openarm(std::size_t index) const;
 
     OpenArm& get_openarm(const std::string& can_interface);
     const OpenArm& get_openarm(const std::string& can_interface) const;
@@ -41,7 +43,10 @@ public:
     std::vector<OpenArmRefreshResult> refresh_all_and_recv(int timeout_us = 500);
 
 private:
-    std::vector<std::unique_ptr<OpenArm>> arms_;
+    struct Worker;
+
+    std::vector<std::unique_ptr<Worker>> workers_;
+    mutable std::mutex api_mutex_;
 };
 
 }  // namespace openarm::can::socket
