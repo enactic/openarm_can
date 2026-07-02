@@ -270,15 +270,20 @@ class MITParam:
     kp: float
     q: float
     tau: float
+
     @staticmethod
     def __new__(type, *args, **kwargs):
         """
         Create and return a new object.  See help(type) for accurate signature.
         """
+
+    @typing.overload
     def __init__(self) -> None:
-        """
-        __init__(self, kp: float, kd: float, q: float, dq: float, tau: float) -> None
-        """
+        ...
+
+    @typing.overload
+    def __init__(self, kp: float, kd: float, q: float, dq: float, tau: float) -> None:
+        ...
 class Motor:
     @staticmethod
     def __new__(type, *args, **kwargs):
@@ -457,27 +462,37 @@ class PosForceParam:
     dq: float
     i: float
     q: float
+
     @staticmethod
     def __new__(type, *args, **kwargs):
         """
         Create and return a new object.  See help(type) for accurate signature.
         """
+
+    @typing.overload
     def __init__(self) -> None:
-        """
-        __init__(self, q: float, dq: float, i: float) -> None
-        """
+        ...
+
+    @typing.overload
+    def __init__(self, q: float, dq: float, i: float) -> None:
+        ...
 class PosVelParam:
     dq: float
     q: float
+
     @staticmethod
     def __new__(type, *args, **kwargs):
         """
         Create and return a new object.  See help(type) for accurate signature.
         """
+
+    @typing.overload
     def __init__(self) -> None:
-        """
-        __init__(self, q: float, dq: float) -> None
-        """
+        ...
+
+    @typing.overload
+    def __init__(self, q: float, dq: float) -> None:
+        ...
 ACC: MotorVariable  # value = MotorVariable.ACC
 COUNT: MotorVariable  # value = MotorVariable.COUNT
 CTRL_MODE: MotorVariable  # value = MotorVariable.CTRL_MODE
