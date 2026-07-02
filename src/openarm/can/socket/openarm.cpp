@@ -148,6 +148,10 @@ int OpenArm::refresh_all_and_recv(int timeout_us) {
         static_cast<int>(master_can_device_collection_->get_devices().size()));
 }
 
+int OpenArm::expected_response_count() const {
+    return static_cast<int>(master_can_device_collection_->get_devices().size());
+}
+
 void OpenArm::query_param_all(int RID) {
     for (damiao_motor::DMDeviceCollection* device_collection : sub_dm_device_collections_) {
         device_collection->query_param_all(RID);

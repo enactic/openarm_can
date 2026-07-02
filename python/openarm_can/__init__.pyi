@@ -28,6 +28,8 @@ from openarm_can.openarm_can import MotorStateResult
 from openarm_can.openarm_can import MotorType
 from openarm_can.openarm_can import MotorVariable
 from openarm_can.openarm_can import OpenArm
+from openarm_can.openarm_can import OpenArmGroup
+from openarm_can.openarm_can import OpenArmRefreshResult
 from openarm_can.openarm_can import ParamResult
 from openarm_can.openarm_can import PosForceParam
 from openarm_can.openarm_can import PosVelParam
@@ -59,6 +61,8 @@ __all__: list[str] = [
     "ArmComponent",
     "GripperComponent",
     "OpenArm",
+    "OpenArmGroup",
+    "OpenArmRefreshResult",
     "CANSocketException",
 ]
 ACC: MotorVariable  # value = MotorVariable.ACC

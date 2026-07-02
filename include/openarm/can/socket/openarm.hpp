@@ -64,6 +64,8 @@ public:
 
     int flush_rx();
     int refresh_all_and_recv(int timeout_us = 500);
+
+    int expected_response_count() const;
 private:
     std::string can_interface_;
     bool enable_fd_;
