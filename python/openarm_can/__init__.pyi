@@ -31,6 +31,7 @@ from openarm_can.openarm_can import OpenArm
 from openarm_can.openarm_can import ParamResult
 from openarm_can.openarm_can import PosForceParam
 from openarm_can.openarm_can import PosVelParam
+from openarm_can.openarm_can import VelParam
 from . import openarm_can
 __all__: list[str] = [
     "MotorType",
@@ -45,6 +46,7 @@ __all__: list[str] = [
     "CanFdFrame",
     "MITParam",
     "PosVelParam",
+    "VelParam",
     "PosForceParam",
     "CanPacketEncoder",
     "CanPacketDecoder",

@@ -173,6 +173,10 @@ class CanPacketEncoder:
         ...
 
     @staticmethod
+    def create_vel_control_command(motor: Motor, vel_param: VelParam) -> CANPacket:
+        ...
+
+    @staticmethod
     def create_posforce_control_command(motor: Motor, posforce_param: PosForceParam) -> CANPacket:
         ...
 
@@ -211,6 +215,10 @@ class DMDeviceCollection:
     def posvel_control_all(self, posvel_params: collections.abc.Sequence[PosVelParam]) -> None:
         ...
     def posvel_control_one(self, index: int, posvel_param: PosVelParam) -> None:
+        ...
+    def vel_control_one(self, index: int, vel_param: VelParam) -> None:
+        ...
+    def vel_control_all(self, vel_params: collections.abc.Sequence[VelParam]) -> None:
         ...
     def query_param_all(self, rid: int) -> None:
         ...
@@ -496,6 +504,22 @@ class PosVelParam:
 
     @typing.overload
     def __init__(self, q: float, dq: float) -> None:
+        ...
+class VelParam:
+    dq: float
+
+    @staticmethod
+    def __new__(type, *args, **kwargs):
+        """
+        Create and return a new object.  See help(type) for accurate signature.
+        """
+
+    @typing.overload
+    def __init__(self) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, dq: float) -> None:
         ...
 ACC: MotorVariable  # value = MotorVariable.ACC
 COUNT: MotorVariable  # value = MotorVariable.COUNT
