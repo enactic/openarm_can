@@ -189,6 +189,17 @@ NB_MODULE(openarm_can, m) {
         .def_rw("q", &PosVelParam::q)
         .def_rw("dq", &PosVelParam::dq);
 
+    // VelParam struct
+    nb::class_<VelParam>(m, "VelParam")
+        .def(nb::init<>())
+        .def(
+            "__init__",
+            [](VelParam* param, double dq) {
+                new (param) VelParam(VelParam{dq});
+            },
+            nb::arg("dq"))
+        .def_rw("dq", &VelParam::dq);
+
     // PosForceParam struct
     nb::class_<PosForceParam>(m, "PosForceParam")
         .def(nb::init<>())
@@ -237,6 +248,9 @@ NB_MODULE(openarm_can, m) {
         .def_static("create_posvel_control_command",
                     &CanPacketEncoder::create_posvel_control_command, nb::arg("motor"),
                     nb::arg("posvel_param"))
+        .def_static("create_vel_control_command",
+                    &CanPacketEncoder::create_vel_control_command, nb::arg("motor"),
+                    nb::arg("vel_param"))
         .def_static("create_posforce_control_command",
                     &CanPacketEncoder::create_posforce_control_command, nb::arg("motor"),
                     nb::arg("posforce_param"))
@@ -400,6 +414,10 @@ NB_MODULE(openarm_can, m) {
              nb::arg("posvel_param"))
         .def("posvel_control_all", &DMDeviceCollection::posvel_control_all,
              nb::arg("posvel_params"))
+        .def("vel_control_one", &DMDeviceCollection::vel_control_one, nb::arg("index"),
+             nb::arg("vel_param"))
+        .def("vel_control_all", &DMDeviceCollection::vel_control_all,
+             nb::arg("vel_params"))
         .def("posforce_control_one", &DMDeviceCollection::posforce_control_one, nb::arg("index"),
              nb::arg("posforce_param"))
         .def("posforce_control_all", &DMDeviceCollection::posforce_control_all,

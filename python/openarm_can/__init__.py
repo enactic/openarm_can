@@ -42,6 +42,7 @@ __all__ = [
     "CanFdFrame",
     "MITParam",
     "PosVelParam",
+    "VelParam",
     "PosForceParam",
 
     # Helpers
