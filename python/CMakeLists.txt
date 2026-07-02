@@ -144,4 +144,10 @@ nanobind_add_module(openarm_can_python src/openarm_can.cpp)
 set_target_properties(openarm_can_python PROPERTIES OUTPUT_NAME "openarm_can")
 target_link_libraries(openarm_can_python PRIVATE OpenArmCAN::openarm_can)
 install(TARGETS openarm_can_python LIBRARY DESTINATION "openarm_can")
-install(FILES openarm_can/__init__.py DESTINATION "openarm_can")
+install(
+  FILES
+    openarm_can/__init__.py
+    openarm_can/__init__.pyi
+    openarm_can/openarm_can.pyi
+    openarm_can/py.typed
+  DESTINATION "openarm_can")

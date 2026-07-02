@@ -31,22 +31,33 @@ __all__ = [
     "MotorType",
     "MotorVariable",
     "CallbackMode",
+    "ControlMode",
 
     # Data structures
     "LimitParam",
     "ParamResult",
     "MotorStateResult",
+    "CANPacket",
     "CanFrame",
     "CanFdFrame",
     "MITParam",
+    "PosVelParam",
+    "PosForceParam",
 
-    # Main C++ classes (1:1 mapping)
+    # Helpers
+    "CanPacketEncoder",
+    "CanPacketDecoder",
+
+    # Main C++ classes
     "Motor",
-    "MotorControl",
-    "CANSocket",           # Low-level socket with file descriptor access
-    "CANDevice",           # Base CAN device class
-    "MotorDeviceCan",      # Motor device management
-    "CANDeviceCollection",  # Device collection management
+    "CANSocket",
+    "CANDevice",
+    "MotorDeviceCan",
+    "CANDeviceCollection",
+    "DMDeviceCollection",
+    "ArmComponent",
+    "GripperComponent",
+    "OpenArm",
 
     # Exceptions
     "CANSocketException",
