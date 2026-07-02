@@ -14,7 +14,7 @@ class ArmComponent(DMDeviceCollection):
         """
     def __init__(self, can_socket: CANSocket) -> None:
         ...
-    def init_motor_devices(self, motor_types: collections.abc.Sequence[MotorType], send_can_ids: collections.abc.Sequence[int], recv_can_ids: collections.abc.Sequence[int], use_fd: bool, control_modes: collections.abc.Sequence[ControlMode] = []) -> None:
+    def init_motor_devices(self, motor_types: collections.abc.Sequence[MotorType], send_can_ids: collections.abc.Sequence[int], recv_can_ids: collections.abc.Sequence[int], use_fd: bool, control_modes: collections.abc.Sequence[ControlMode] = ...) -> None:
         ...
 class CANDevice:
     @staticmethod
@@ -38,15 +38,17 @@ class CANDeviceCollection:
         """
     def __init__(self, can_socket: CANSocket) -> None:
         ...
-    def add_device(self, device: ...) -> None:
+    def add_device(self, device: CANDevice) -> None:
         ...
+    @typing.overload
     def dispatch_frame_callback(self, frame: CanFrame) -> None:
-        """
-        dispatch_frame_callback(self, frame: openarm_can.openarm_can.CanFdFrame) -> None
-        """
-    def get_devices(self) -> ...:
         ...
-    def remove_device(self, device: ...) -> None:
+    @typing.overload
+    def dispatch_frame_callback(self, frame: CanFdFrame) -> None:
+        ...
+    def get_devices(self) -> collections.abc.Mapping[int, CANDevice]:
+        ...
+    def remove_device(self, device: CANDevice) -> None:
         ...
 class CANPacket:
     send_can_id: int
@@ -94,9 +96,9 @@ class CANSocket:
 class CANSocketException(Exception):
     pass
 class CallbackMode(enum.Enum):
-    IGNORE: typing.ClassVar[CallbackMode]  # value = CallbackMode.IGNORE
-    PARAM: typing.ClassVar[CallbackMode]  # value = CallbackMode.PARAM
-    STATE: typing.ClassVar[CallbackMode]  # value = CallbackMode.STATE
+    IGNORE = ...
+    PARAM = ...
+    STATE = ...
 class CanFdFrame:
     can_id: int
     data: bytes
@@ -178,10 +180,10 @@ class CanPacketEncoder:
     def create_query_param_command(motor: Motor, rid: int) -> CANPacket:
         ...
 class ControlMode(enum.Enum):
-    MIT: typing.ClassVar[ControlMode]  # value = ControlMode.MIT
-    POS_FORCE: typing.ClassVar[ControlMode]  # value = ControlMode.POS_FORCE
-    POS_VEL: typing.ClassVar[ControlMode]  # value = ControlMode.POS_VEL
-    VEL: typing.ClassVar[ControlMode]  # value = ControlMode.VEL
+    MIT = ...
+    POS_FORCE = ...
+    POS_VEL = ...
+    VEL = ...
 class DMDeviceCollection:
     @staticmethod
     def __new__(type, *args, **kwargs):
@@ -323,10 +325,12 @@ class MotorDeviceCan(CANDevice):
         """
     def __init__(self, motor: Motor, recv_can_mask: int, use_fd: bool) -> None:
         ...
+    @typing.overload
     def callback(self, frame: CanFrame) -> None:
-        """
-        callback(self, frame: openarm_can.openarm_can.CanFdFrame) -> None
-        """
+        ...
+    @typing.overload
+    def callback(self, frame: CanFdFrame) -> None:
+        ...
     def create_can_frame(self, send_can_id: int, data: collections.abc.Sequence[int]) -> CanFrame:
         ...
     def create_canfd_frame(self, send_can_id: int, data: collections.abc.Sequence[int]) -> CanFdFrame:
@@ -431,7 +435,7 @@ class OpenArm:
         ...
     def get_master_can_device_collection(self) -> CANDeviceCollection:
         ...
-    def init_arm_motors(self, motor_types: collections.abc.Sequence[MotorType], send_can_ids: collections.abc.Sequence[int], recv_can_ids: collections.abc.Sequence[int], control_modes: collections.abc.Sequence[ControlMode] = []) -> None:
+    def init_arm_motors(self, motor_types: collections.abc.Sequence[MotorType], send_can_ids: collections.abc.Sequence[int], recv_can_ids: collections.abc.Sequence[int], control_modes: collections.abc.Sequence[ControlMode] = ...) -> None:
         ...
     def init_gripper_motor(self, motor_type: MotorType, send_can_id: int, recv_can_id: int, control_mode: ControlMode = ...) -> None:
         ...
