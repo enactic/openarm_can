@@ -1,176 +1,193 @@
-# OpenArm CAN Library
+# OpenArm CAN Python Fork
 
-A C++ library for CAN communication with OpenArm robotic hardware, supporting Damiao motors over CAN/CAN-FD interfaces.
-This library is a part of [OpenArm](https://github.com/enactic/openarm/). See detailed setup guide and docs [here](https://docs.openarm.dev/software/can).
+> [!NOTE]
+> This repository is a Python-focused fork of [`enactic/openarm_can`](https://github.com/enactic/openarm_can).
+>
+> The intended usage of this fork is to install and use the Python package directly from this Git repository.
+>
+> No separate `openarm-can` / `libopenarm-can-dev` system package is required when installing this fork from Git. During a Git-based Python install, the extension module is built against the C++ source tree included in this repository, so the Python bindings and the C++ core stay in sync.
 
+This fork keeps the original OpenArm CAN / SocketCAN C++ structure, while adding Python-focused improvements for experimentation with OpenArm / DaMiao motors.
 
-## Quick Start
+## What This Fork Adds
 
-### Prerequisites
+- Python package installation from the `python/` subdirectory through Git URLs.
+- Python type stubs (`.pyi`) and `py.typed` for IDE completion and static analysis.
+- Improved package-level Python exports such as `OpenArm`, `ArmComponent`, `GripperComponent`, and `DMDeviceCollection`.
+- `flush_rx()` and `refresh_all_and_recv()` helpers for more reliable state refresh from Python.
+- Pure velocity control support through `ControlMode.VEL`, `VelParam`, and `vel_control_one/all`.
+- Additional Python examples for low-level motor-control usage.
+
+---
+
+## Requirements
+
+This package is intended for Linux systems with SocketCAN support.
+
+You need:
 
 - Linux with SocketCAN support
-- CAN interface hardware
+- A working CAN or CAN-FD adapter
+- Python 3.10+
+- A C++17-capable compiler
+- CMake / Ninja or an equivalent build backend
 
-### 1. Install
-
-#### Ubuntu
-
-* 22.04 Jammy Jellyfish
-* 24.04 Noble Numbat
+On Ubuntu, a typical setup is:
 
 ```bash
-sudo apt install -y software-properties-common
-sudo add-apt-repository -y ppa:openarm/main
 sudo apt update
 sudo apt install -y \
-  libopenarm-can-dev \
-  openarm-can-utils
+  build-essential \
+  cmake \
+  ninja-build \
+  python3-dev \
+  python3-venv \
+  can-utils
 ```
 
-#### AlmaLinux, CentOS, Fedora, RHEL, and Rocky Linux
+`can-utils` is optional but useful for debugging with tools such as `candump`, `cansend`, and `ip link`.
 
-1. Enable [EPEL](https://docs.fedoraproject.org/en-US/epel/). (Not required for [Fedora](https://fedoraproject.org/))
-   * AlmaLinux 8 / Rocky Linux 8
-     ```bash
-     sudo dnf install -y epel-release
-     sudo dnf config-manager --set-enabled powertools
-     ```
-   * AlmaLinux 9 & 10 / Rocky Linux 9 & 10
-     ```bash
-     sudo dnf install -y epel-release
-     sudo crb enable
-     ```
-   * CentOS Stream 9
-     ```bash
-     sudo dnf config-manager --set-enabled crb
-     sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel{,-next}-release-latest-9.noarch.rpm
-     ```
-   * CentOS Stream 10
-     ```bash
-     sudo dnf config-manager --set-enabled crb
-     sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
-     ```
-   * RHEL 8 & 9 & 10
-     ```bash
-     releasever="$(. /etc/os-release && echo $VERSION_ID | grep -oE '^[0-9]+')"
-     sudo subscription-manager repos --enable codeready-builder-for-rhel-$releasever-$(arch)-rpms
-     sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$releasever.noarch.rpm
-     ```
-2. Install the package.
-   ```bash
-   sudo dnf update
-   sudo dnf install -y \
-     openarm-can-devel \
-     openarm-can-utils
-   ```
+---
 
-### 2. Setup CAN Interface
+## Install
 
-Configure your CAN interface using the provided script:
+### Install with pip
 
 ```bash
-# CAN 2.0 (default)
-openarm-can-configure-socketcan can0
-
-# CAN-FD with 5Mbps data rate
-openarm-can-configure-socketcan can0 -fd
+pip install "git+https://github.com/umeow0716/openarm_can.git@main#subdirectory=python"
 ```
 
-### 3. CLI Tool
-
-`openarm-can-cli` provides a command-line interface for motor configuration and diagnostics.
+### Install with uv
 
 ```bash
-# Configure CAN interface (default: 1Mbps nominal, 5Mbps data, CAN-FD)
-openarm-can-cli -i can0 can_configure
-
-# Configure with 1Mbps data rate (Classic CAN)
-openarm-can-cli -i can0 can_configure -d 1000000 --no-fd
-
-# Discover motors on the bus
-openarm-can-cli -i can0 discover
-
-# Monitor motor status (arm motors 1-8 by default)
-openarm-can-cli -i can0 monitor
-
-# Monitor specific motors
-openarm-can-cli -i can0 monitor --id 1,2,3
+uv add "git+https://github.com/umeow0716/openarm_can.git@main#subdirectory=python"
 ```
 
-Run `openarm-can-cli -h` for full usage.
+### Local editable install
 
-### 4. C++ Library
-
-```cpp
-#include <openarm/can/socket/openarm.hpp>
-#include <openarm/damiao_motor/dm_motor_constants.hpp>
-
-openarm::can::socket::OpenArm arm("can0", true);  // CAN-FD enabled
-std::vector<openarm::damiao_motor::MotorType> motor_types = {
-    openarm::damiao_motor::MotorType::DM4310, openarm::damiao_motor::MotorType::DM4310};
-std::vector<uint32_t> send_can_ids = {0x01, 0x02};
-std::vector<uint32_t> recv_can_ids = {0x11, 0x12};
-
-openarm.init_arm_motors(motor_types, send_can_ids, recv_can_ids);
-openarm.enable_all();
+```bash
+git clone https://github.com/umeow0716/openarm_can.git
+cd openarm_can/python
+pip install -e .
 ```
 
-See [dev/README.md](dev/README.md) for how to build.
+Or with `uv`:
 
-### 4. Python (🚧 EXPERIMENTAL - TEMPORARY 🚧)
+```bash
+git clone https://github.com/umeow0716/openarm_can.git
+cd openarm_can/python
+uv pip install -e .
+```
 
-> [!WARNING]
->
-> ⚠️ **WARNING: UNSTABLE API** ⚠️
-> Python bindings are currently a direct low level **temporary port**, and will change **DRASTICALLY**.
-> The interface may break between versions. Use at your own risk! Discussions on the interface are welcome.
+The Python package builds a native extension module. When installed from this repository, the build uses the C++ source tree included in this repo.
 
-**Build & Install:**
+---
 
-Please ensure that you install the C++ library first, as `1. Install` or [dev/README.md](dev/README.md).
+## Setup SocketCAN
+
+### Classic CAN
+
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 type can bitrate 1000000
+sudo ip link set can0 up
+```
+
+### CAN-FD
+
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 type can bitrate 1000000 dbitrate 5000000 fd on
+sudo ip link set can0 up
+```
+
+Check the interface:
+
+```bash
+ip -details link show can0
+```
+
+Monitor frames:
+
+```bash
+candump can0
+```
+
+---
+
+## Basic Python Usage
+
+```python
+import openarm_can as oa
+
+arm = oa.OpenArm("can0", True)  # True = CAN-FD enabled
+
+arm.init_arm_motors(
+    [oa.MotorType.DM4310],
+    [0x01],  # send CAN ID
+    [0x11],  # receive CAN ID
+    [oa.ControlMode.MIT],
+)
+
+arm.enable_all()
+
+received = arm.refresh_all_and_recv()
+print("received frames:", received)
+
+for motor in arm.get_arm().get_motors():
+    print("position:", motor.get_position())
+    print("velocity:", motor.get_velocity())
+    print("torque:", motor.get_torque())
+
+arm.disable_all()
+```
+
+---
+
+## Development
+
+Clone the repository:
+
+```bash
+git clone https://github.com/umeow0716/openarm_can.git
+cd openarm_can
+```
+
+Install the Python package locally:
 
 ```bash
 cd python
-
-# Create and activate virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate
-
-pip install .
+pip install -e .
 ```
 
-**Usage:**
+For C++ development, see:
 
-```python
-# WARNING: This API is unstable and will change!
-import openarm_can as oa
-
-arm = oa.OpenArm("can0", True)  # CAN-FD enabled
-arm.init_arm_motors([oa.MotorType.DM4310], [0x01], [0x11])
-arm.enable_all()
+```text
+dev/README.md
 ```
 
-### Examples
+---
 
-- **C++**: `examples/demo.cpp` - Complete arm control demo
-- **Python**: `python/examples/example.py` - Basic Python usage
+## Relationship to Upstream
 
-## For developers
+This repository is based on:
 
-See [dev/README.md](dev/README.md).
+```text
+enactic/openarm_can
+```
 
-## Related links
+Original project:
 
-- 📚 Read the [documentation](https://docs.openarm.dev/software/can/)
-- 💬 Join the community on [Discord](https://discord.gg/FsZaZ4z3We)
-- 📬 Contact us through <openarm@enactic.ai>
+- Repository: <https://github.com/enactic/openarm_can>
+- OpenArm main repository: <https://github.com/enactic/openarm>
+- Documentation: <https://docs.openarm.dev/software/can>
+
+This fork is not intended to replace the upstream project. It is mainly a Python-first fork for experimenting with OpenArm / DaMiao motor control from Python.
+
+---
 
 ## License
 
 Licensed under the Apache License 2.0. See `LICENSE.txt` for details.
 
 Copyright 2025 Enactic, Inc.
-
-## Code of Conduct
-
-All participation in the OpenArm project is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
