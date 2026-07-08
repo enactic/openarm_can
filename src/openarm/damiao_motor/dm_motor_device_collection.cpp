@@ -147,6 +147,23 @@ void DMDeviceCollection::posvel_control_all(const std::vector<PosVelParam>& posv
     }
 }
 
+void DMDeviceCollection::vel_control_one(int i, const VelParam& vel_param) {
+    auto dm_device = get_dm_devices()[i];
+    if (dm_device->get_control_mode() != ControlMode::VEL) {
+        std::cerr << "WARNING: vel control rejected; motor not in VEL mode." << std::endl;
+        return;
+    }
+    CANPacket vel_cmd =
+        CanPacketEncoder::create_vel_control_command(dm_device->get_motor(), vel_param);
+    send_command_to_device(dm_device, vel_cmd);
+}
+
+void DMDeviceCollection::vel_control_all(const std::vector<VelParam>& vel_params) {
+    for (size_t i = 0; i < vel_params.size(); i++) {
+        vel_control_one(i, vel_params[i]);
+    }
+}
+
 void DMDeviceCollection::posforce_control_one(int i, const PosForceParam& posforce_param) {
     auto dm_device = get_dm_devices()[i];
     if (dm_device->get_control_mode() != ControlMode::POS_FORCE) {

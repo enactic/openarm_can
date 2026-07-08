@@ -61,6 +61,10 @@ struct PosVelParam {
     double dq;
 };
 
+struct VelParam {
+    double dq;  // Target velocity in rad/s.
+};
+
 struct PosForceParam {
     double q;   // Position command in rad.
     double dq;  // Absolute speed limit in rad/s, scaled by 100 into uint16 when packed.
@@ -75,6 +79,7 @@ public:
     static CANPacket create_mit_control_command(const Motor& motor, const MITParam& mit_param);
     static CANPacket create_posvel_control_command(const Motor& motor,
                                                    const PosVelParam& posvel_param);
+    static CANPacket create_vel_control_command(const Motor& motor, const VelParam& vel_param);
     static CANPacket create_posforce_control_command(const Motor& motor,
                                                      const PosForceParam& posforce_param);
     static CANPacket create_set_control_mode_command(const Motor& motor, ControlMode mode);
@@ -86,6 +91,8 @@ private:
                                                       const MITParam& mit_param);
     static std::vector<uint8_t> pack_posvel_control_data(MotorType motor_type,
                                                          const PosVelParam& posvel_param);
+    static std::vector<uint8_t> pack_vel_control_data(MotorType motor_type,
+                                                      const VelParam& vel_param);
     static std::vector<uint8_t> pack_posforce_control_data(MotorType motor_type,
                                                            const PosForceParam& posforce_param);
 
