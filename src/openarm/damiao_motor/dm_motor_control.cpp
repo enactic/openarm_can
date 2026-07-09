@@ -50,7 +50,8 @@ CANPacket CanPacketEncoder::create_posvel_control_command(const Motor& motor,
 CANPacket CanPacketEncoder::create_vel_control_command(const Motor& motor,
                                                        const VelParam& vel_param) {
     // velocity mode needs extra 0x200.
-    // See also: https://damiao.enactic.ai/en/products/hardware/dm-j4340p-2ec-v1.0/#speed-mode-control-frame
+    // See also:
+    // https://damiao.enactic.ai/en/products/hardware/dm-j4340p-2ec-v1.0/#speed-mode-control-frame
     return {motor.get_send_can_id() + 0x200,
             pack_vel_control_data(motor.get_motor_type(), vel_param)};
 }
@@ -166,7 +167,8 @@ std::vector<uint8_t> CanPacketEncoder::pack_posvel_control_data(
 std::vector<uint8_t> CanPacketEncoder::pack_vel_control_data([[maybe_unused]] MotorType motor_type,
                                                              const VelParam& vel_param) {
     // Velocity mode frame: D[0:3] = v_des as a little-endian float (4 bytes).
-    // See also: https://damiao.enactic.ai/en/products/hardware/dm-j4340p-2ec-v1.0/#speed-mode-control-frame
+    // See also:
+    // https://damiao.enactic.ai/en/products/hardware/dm-j4340p-2ec-v1.0/#speed-mode-control-frame
     auto vb = float_to_uint8s(static_cast<float>(vel_param.dq));
     return {vb[0], vb[1], vb[2], vb[3]};
 }
