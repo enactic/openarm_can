@@ -58,6 +58,10 @@ public:
     void posvel_control_one(int i, const PosVelParam& posvel_param);
     void posvel_control_all(const std::vector<PosVelParam>& posvel_params);
 
+    // Vel control operation
+    void vel_control_one(int i, const VelParam& vel_param);
+    void vel_control_all(const std::vector<VelParam>& vel_params);
+
     // PosForce control operation
     void posforce_control_one(int i, const PosForceParam& posforce_param);
     void posforce_control_all(const std::vector<PosForceParam>& posforce_params);
