@@ -99,7 +99,7 @@ inline constexpr std::array<LimitParam, static_cast<std::size_t>(MotorType::COUN
         {12.5, 50, 5},    // DM3507
         {12.5, 30, 10},   // DM4310
         {12.5, 50, 10},   // DM4310_48V
-        {12.5, 8, 28},    // DM4340
+        {12.5, 10, 28},   // DM4340
         {12.5, 10, 28},   // DM4340_48V
         {12.5, 45, 20},   // DM6006
         {12.5, 45, 40},   // DM8006
