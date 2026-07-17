@@ -1,0 +1,6 @@
+[submodule "dev/groonga"]
+	path = dev/groonga
+	url = https://github.com/groonga/groonga.git
+[submodule "dev/arrow"]
+	path = dev/arrow
+	url = https://github.com/apache/arrow.git
