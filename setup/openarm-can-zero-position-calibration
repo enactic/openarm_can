@@ -311,28 +311,16 @@ def _run_left_sequence(openarm, arm, grip, mech_lim, robot_version='v1'):
 # ---------- Main ----------
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description='Zero-pos calibration (compact)')
-    parser.add_argument('--canport',       type=str, default=None)
-
-    parser.add_argument('--arm-side',      type=str, default='right_arm',
-                        choices=['right_arm', 'left_arm'])
-    parser.add_argument('--robot-version', type=str, default='v2',
-                        choices=['v1', 'v2'])
-    args = parser.parse_args()
-    if args.canport is None:
-        args.canport = 'can1' if args.arm_side == 'left_arm' else 'can0'
-    print(f"parser arg : {args}")
-
+def run_calibration(canport: str, arm_side: str, robot_version: str):
+    """Run the whole zero-position calibration sequence on one arm."""
     # Select mech_lim based on version and side
-    if args.robot_version == 'v2':
-        mech_lim = MECH_LIM_V2_RIGHT if args.arm_side == 'right_arm' else MECH_LIM_V2_LEFT
+    if robot_version == 'v2':
+        mech_lim = MECH_LIM_V2_RIGHT if arm_side == 'right_arm' else MECH_LIM_V2_LEFT
     else:
         mech_lim = MECH_LIM_V1
 
     # Init
-    openarm = oa.OpenArm(args.canport, True)
+    openarm = oa.OpenArm(canport, True)
     openarm.init_arm_motors(
         [oa.MotorType.DM8009, oa.MotorType.DM8009, oa.MotorType.DM4340, oa.MotorType.DM4340,
          oa.MotorType.DM4310, oa.MotorType.DM4310, oa.MotorType.DM4310],
@@ -368,11 +356,11 @@ def main():
 
     try:
         # Run side-specific calibration sequence
-        if args.arm_side == 'right_arm':
+        if arm_side == 'right_arm':
             ideal, deltas = _run_right_sequence(openarm, arm, grip, mech_lim)
         else:
             ideal, deltas = _run_left_sequence(
-                openarm, arm, grip, mech_lim, args.robot_version)
+                openarm, arm, grip, mech_lim, robot_version)
 
         # Compute ideal deltas per joint
         joint_order = [JointID.J1, JointID.J2, JointID.J3, JointID.J4,
@@ -407,6 +395,23 @@ def main():
     finally:
         openarm.disable_all()
         print("[INFO] Motors disabled, exiting safely.")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Zero-pos calibration (compact)')
+    parser.add_argument('--canport',       type=str, default=None)
+
+    parser.add_argument('--arm-side',      type=str, default='right_arm',
+                        choices=['right_arm', 'left_arm'])
+    parser.add_argument('--robot-version', type=str, default='v2',
+                        choices=['v1', 'v2'])
+    args = parser.parse_args()
+    if args.canport is None:
+        args.canport = 'can1' if args.arm_side == 'left_arm' else 'can0'
+    print(f"parser arg : {args}")
+
+    run_calibration(args.canport, args.arm_side, args.robot_version)
 
 
 if __name__ == "__main__":
