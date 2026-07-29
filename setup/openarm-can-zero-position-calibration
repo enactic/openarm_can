@@ -68,6 +68,11 @@ MECH_LIM_V2_LEFT = {
     JointID.GRIPPER: [0.0,               np.pi / 2.0],
 }
 
+# J1 is driven into its stop with the arm folded, so it stays compact and
+# carries less inertia. J4 sits at +90 deg from its near stop by then, and this
+# margin keeps the extra flexion just short of the far stop.
+J4_FOLD_MARGIN = np.deg2rad(5)
+
 # Per-joint sign convention used in ideal-zero delta computation
 JOINT_SIGN = {
     JointID.J1: -1.0, JointID.J2: -1.0, JointID.J3: +1.0, JointID.J4: +1.0,
@@ -146,6 +151,11 @@ def move_to_precise_home(openarm, arm_goal_abs):
     """TODO: PI torque-only refine to arm_goal_abs (absolute)."""
     pass
 
+
+def j4_fold_delta(mech_lim):
+    """Delta taking J4 from +90 deg to just short of its far mechanical stop."""
+    return mech_lim[JointID.J4][1] - np.pi / 2.0 - J4_FOLD_MARGIN
+
 # ---------- One function per arm-side to keep intentions explicit ----------
 
 
@@ -202,10 +212,20 @@ def _run_right_sequence(openarm, arm, grip, mech_lim):
         10), interp_time=0.9, kp=280, kd=2.0)
     time.sleep(0.5)
 
+    # Fold J4 towards its far stop to keep the arm compact during the J1 stop.
+    j4_fold = j4_fold_delta(mech_lim)
+    interpolate(openarm, arm, JointID.J4, j4_fold)
+    time.sleep(0.5)
+
     d_j1 = bump_to_limit(openarm, arm,  JointID.J1,
                          step_deg=-0.2, kp=280, kd=2.1)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J1, np.deg2rad(80))
+    time.sleep(0.5)
+
+    # Undo the fold: the home move below is relative, so J4 must be back at
+    # +90 deg before it runs.
+    interpolate(openarm, arm, JointID.J4, -j4_fold)
     time.sleep(0.5)
 
     interpolate(openarm, arm, JointID.J4, -np.pi / 2.0)
@@ -288,9 +308,19 @@ def _run_left_sequence(openarm, arm, grip, mech_lim, robot_version='v1'):
                 interp_time=0.9, kp=280, kd=2.0)
     time.sleep(0.5)
 
+    # Fold J4 towards its far stop to keep the arm compact during the J1 stop.
+    j4_fold = j4_fold_delta(mech_lim)
+    interpolate(openarm, arm, JointID.J4, j4_fold)
+    time.sleep(0.5)
+
     d_j1 = bump_to_limit(openarm, arm,  JointID.J1, kp=280, kd=2.1)
     time.sleep(0.5)
     interpolate(openarm, arm, JointID.J1, -np.deg2rad(80))
+    time.sleep(0.5)
+
+    # Undo the fold: the home move below is relative, so J4 must be back at
+    # +90 deg before it runs.
+    interpolate(openarm, arm, JointID.J4, -j4_fold)
     time.sleep(0.5)
 
     interpolate(openarm, arm, JointID.J4, -np.pi / 2.0)
