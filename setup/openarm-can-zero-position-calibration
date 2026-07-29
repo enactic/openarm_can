@@ -366,7 +366,9 @@ def run_calibration(canport: str, arm_side: str, robot_version: str):
     print("Enabled...")
 
     # Hold current pose (light PD)
-    openarm.recv_all()
+    openarm.refresh_all()
+    time.sleep(0.01)
+    openarm.recv_all(2000)
     arm = openarm.get_arm()
     grip = openarm.get_gripper()
     am = arm.get_motors()
