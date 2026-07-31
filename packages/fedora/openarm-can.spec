@@ -69,6 +69,7 @@ Setup and configuration utility scripts.
 
 %files utils
 %license LICENSE.txt
+%{_bindir}/openarm-can-calibration-in-cell
 %{_bindir}/openarm-can-cli
 %{_bindir}/openarm-can-configure-socketcan-4-arms
 %{_bindir}/openarm-can-demo

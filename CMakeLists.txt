@@ -146,9 +146,11 @@ target_link_libraries(openarm-can-cli PRIVATE openarm_can CLI11::CLI11)
 install(TARGETS openarm-can-cli DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Install scripts
-install(PROGRAMS setup/openarm-can-configure-socketcan-4-arms
-                 setup/openarm-can-zero-position-calibration
-        DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(
+  PROGRAMS setup/openarm-can-calibration-in-cell
+           setup/openarm-can-configure-socketcan-4-arms
+           setup/openarm-can-zero-position-calibration
+  DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Install bash completion
 install(

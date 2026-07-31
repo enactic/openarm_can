@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright 2026 Enactic, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Zero-position calibration for an arm mounted in an OpenArm cell.
+
+The arm can only run its calibration sequence when the cell lifter is at the
+top of its stroke, so this script:
+
+  1. raises the lifter until it hits its top mechanical stop,
+  2. asks the operator to confirm the lifter is fully raised,
+  3. runs the very same sequence as openarm-can-zero-position-calibration.
+
+The lifter parameters and the torque-based end-stop detection follow
+https://github.com/enactic/dora-openarm-cell-lifter .
+"""
+
+import openarm_can as oa
+import argparse
+import importlib.machinery
+import importlib.util
+import math
+import os
+import sys
+import time
+
+# ---------- Lifter setup / limits ----------
+
+LIFTER_MOTOR_TYPE = oa.MotorType.DM4310
+LIFTER_SEND_ID = 0x0A
+LIFTER_RECV_ID = 0x1A
+
+VEL_MAX = 30.0
+SEEK_VEL = VEL_MAX / 5.0   # [rad/s] while seeking the end stop
+HOLD_VEL = 1.0             # [rad/s] while holding position against gravity
+STOP_TORQUE = 0.7          # [Nm] above this the lifter sits on its end stop
+TOP_SEEK_POS = 1000.0      # [rad] unreachable target used to drive upwards
+SETTLE_TIME = 0.5          # [s] torque is ignored right after motion starts
+STOP_SAMPLES = 3           # consecutive over-torque samples to accept a stop
+CONTROL_DT = 0.01          # [s] lifter control period
+
+ZERO_POSITION_CALIBRATION = 'openarm-can-zero-position-calibration'
+
+
+class PositionUnwrapper:
+    """Handle wrap-around of multi-turn motor encoders (-4pi to 4pi)."""
+
+    def __init__(self, wrap_range=8.0 * math.pi, wrap_threshold=4.0 * math.pi):
+        self._wrap_range = wrap_range
+        self._wrap_threshold = wrap_threshold
+        self._prev_raw = None
+        self._continuous_pos = 0.0
+
+    def update(self, current_raw):
+        """Update the continuous position estimate from the raw encoder value."""
+        if self._prev_raw is None:
+            self._prev_raw = current_raw
+            self._continuous_pos = current_raw
+            return self._continuous_pos
+
+        diff = current_raw - self._prev_raw
+        if diff > self._wrap_threshold:
+            diff -= self._wrap_range
+        elif diff < -self._wrap_threshold:
+            diff += self._wrap_range
+
+        self._continuous_pos += diff
+        self._prev_raw = current_raw
+        return self._continuous_pos
+
+
+# ---------- Calibration script loading ----------
+
+
+def load_zero_position_calibration():
+    """Import the sibling zero-position calibration script as a module."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        ZERO_POSITION_CALIBRATION)
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"{ZERO_POSITION_CALIBRATION} not found: {path}")
+
+    # The script has no .py suffix, so the loader must be given explicitly.
+    name = ZERO_POSITION_CALIBRATION.replace('-', '_')
+    loader = importlib.machinery.SourceFileLoader(name, path)
+    spec = importlib.util.spec_from_file_location(name, path, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    loader.exec_module(module)
+    return module
+
+
+# ---------- Lifter motion ----------
+
+
+def read_lifter(lifter, unwrapper):
+    """Receive one state update. Return (unwrapped position [rad], torque [Nm])."""
+    lifter.recv_all()
+    position, torque = 0.0, 0.0
+    for motor in lifter.get_arm().get_motors():
+        position = unwrapper.update(motor.get_position())
+        torque = motor.get_torque()
+    return position, torque
+
+
+def hold_lifter(lifter, position):
+    """Keep the lifter at an already reached position."""
+    lifter.get_arm().posvel_control_all([oa.PosVelParam(position, HOLD_VEL)])
+
+
+def raise_lifter_to_top(lifter, unwrapper, timeout):
+    """Drive the lifter up until its top mechanical stop.
+
+    Return (position [rad], travelled distance [rad], torque at the stop [Nm]).
+    """
+    start_position, _ = read_lifter(lifter, unwrapper)
+    print(f"[INFO] raising lifter from {start_position:.4f} rad "
+          f"(stop torque {STOP_TORQUE} Nm, timeout {timeout:.0f} s)")
+
+    start_time = time.time()
+    over_torque = 0
+    while True:
+        lifter.get_arm().posvel_control_all(
+            [oa.PosVelParam(TOP_SEEK_POS, SEEK_VEL)])
+        position, torque = read_lifter(lifter, unwrapper)
+
+        elapsed = time.time() - start_time
+        # Ignore the torque transient while the lifter accelerates.
+        if elapsed >= SETTLE_TIME and abs(torque) > STOP_TORQUE:
+            over_torque += 1
+            if over_torque >= STOP_SAMPLES:
+                hold_lifter(lifter, position)
+                read_lifter(lifter, unwrapper)
+                print(f"[INFO] lifter top stop: {position:.4f} rad "
+                      f"/ {torque:.4f} Nm after {elapsed:.1f} s")
+                return position, position - start_position, torque
+        else:
+            over_torque = 0
+
+        if elapsed > timeout:
+            hold_lifter(lifter, position)
+            raise TimeoutError(
+                f"lifter did not reach its top stop within {timeout:.0f} s "
+                f"(position {position:.4f} rad, torque {torque:.4f} Nm)")
+
+        time.sleep(CONTROL_DT)
+
+
+# ---------- Operator confirmation ----------
+
+
+def confirm_lifter_is_up(lifter, unwrapper, travel_rad, stop_torque,
+                         lead_length):
+    """Ask the operator whether the lifter is fully raised. Return True to go on."""
+    position, torque = read_lifter(lifter, unwrapper)
+    travel_mm = travel_rad / (2.0 * math.pi) * lead_length
+    print("")
+    print("[CHECK] lifter state before calibration:")
+    print(f"[CHECK]   position    : {position:.4f} rad")
+    print(f"[CHECK]   travelled   : {travel_rad:.4f} rad / {travel_mm:.1f} mm")
+    print(f"[CHECK]   stop torque : {stop_torque:.4f} Nm "
+          f"(threshold {STOP_TORQUE} Nm)")
+    print(f"[CHECK]   hold torque : {torque:.4f} Nm")
+    print("[CHECK] Look at the cell: the lifter must be at the top of its "
+          "stroke and the arm must be free to move.")
+    try:
+        answer = input("[CHECK] Start the calibration? [y/N]: ")
+    except EOFError:
+        return False
+    return answer.strip().lower() in ('y', 'yes')
+
+
+# ---------- Main ----------
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Zero-pos calibration for an arm in a cell '
+                    '(raises the lifter first)')
+    parser.add_argument('--canport',        type=str, default=None,
+                        help='CAN port of the arm '
+                             '(default: can0 / can1 by --arm-side)')
+    parser.add_argument('--arm-side',       type=str, default='right_arm',
+                        choices=['right_arm', 'left_arm'])
+    parser.add_argument('--robot-version',  type=str, default='v2',
+                        choices=['v1', 'v2'])
+    parser.add_argument('--lifter-canport', type=str,
+                        default=os.getenv('CAN_INTERFACE', 'can2'),
+                        help='CAN port of the cell lifter (default: can2)')
+    parser.add_argument('--lifter-timeout', type=float, default=120.0,
+                        help='give up if the top stop is not reached in this '
+                             'many seconds (default: 120)')
+    parser.add_argument('--lead-length',    type=float,
+                        default=float(os.getenv('LEAD_LENGTH', 5.0)),
+                        help='lead screw lead length in mm/rev, used to report '
+                             'the travelled distance (default: 5.0)')
+    parser.add_argument('-y', '--yes',      action='store_true',
+                        help='skip the confirmation prompt')
+    args = parser.parse_args()
+    if args.canport is None:
+        args.canport = 'can1' if args.arm_side == 'left_arm' else 'can0'
+    print(f"parser arg : {args}")
+
+    if not args.yes and not sys.stdin.isatty():
+        print("[ERROR] no terminal to confirm the lifter position on. "
+              "Re-run interactively or pass --yes.")
+        return 1
+
+    calibration = load_zero_position_calibration()
+
+    # Init lifter
+    lifter = oa.OpenArm(args.lifter_canport, True)
+    lifter.init_arm_motors([LIFTER_MOTOR_TYPE], [LIFTER_SEND_ID],
+                           [LIFTER_RECV_ID], [oa.ControlMode.POS_VEL])
+    lifter.set_callback_mode_all(oa.CallbackMode.STATE)
+
+    print("Enabling lifter...")
+    lifter.enable_all()
+    lifter.recv_all()
+    print("Lifter enabled...")
+
+    unwrapper = PositionUnwrapper()
+    at_top = False
+    try:
+        # 1. Raise the lifter to the top of its stroke.
+        top_position, travel_rad, stop_torque = raise_lifter_to_top(
+            lifter, unwrapper, args.lifter_timeout)
+        at_top = True
+
+        # 2. Let the operator confirm that it really is at the top.
+        if args.yes:
+            print("[INFO] confirmation skipped (--yes)")
+        elif not confirm_lifter_is_up(lifter, unwrapper, travel_rad,
+                                      stop_torque, args.lead_length):
+            print("[INFO] calibration cancelled.")
+            return 1
+
+        # 3. Run the same calibration as openarm-can-zero-position-calibration.
+        hold_lifter(lifter, top_position)
+        lifter.recv_all()
+        calibration.run_calibration(args.canport, args.arm_side,
+                                    args.robot_version)
+    except TimeoutError as error:
+        print(f"[ERROR] {error}")
+        return 1
+    except KeyboardInterrupt:
+        print("\n[INFO] Ctrl+C pressed → stopping safely")
+        return 1
+    finally:
+        # The lead screw is self-locking, so the lifter keeps its height once
+        # the motor is disabled.
+        lifter.disable_all()
+        lifter.recv_all()
+        where = "at the top of its stroke" if at_top else "where it stopped"
+        print(f"[INFO] Lifter disabled, it is left {where}.")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
