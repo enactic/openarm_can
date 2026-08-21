@@ -303,7 +303,7 @@ jobs:
         run: |
           echo "${LAUNCHPAD_DEPLOY_KEY}" | gpg --import
           echo "trusted-key ${LAUNCHPAD_UPLOADER_PGP_KEY}" > ~/.gnupg/gpg.conf
-          rake -C openarm_can/packages ubuntu:${{ matrix.code-name }}
+          rake -C openarm_can/packages ubuntu:upload:${{ matrix.code-name }}
   pypi:
     name: PyPI
     if: github.ref_type == 'tag'
