@@ -256,22 +256,36 @@ jobs:
             --verify-tag \
             *.tar.gz \
             source/*
+  launchpad:
+    name: Launchpad
+    if: github.ref_type == 'tag'
+    needs:
+      - source
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        code-name:
+          - jammy
+          - noble
+          - resolute
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: source
       - uses: actions/checkout@v7
-        if: github.ref_type == 'tag'
         with:
           path: openarm_can
       - uses: actions/checkout@v7
-        if: github.ref_type == 'tag'
         with:
           path: apache-arrow
           repository: apache/arrow
       - uses: actions/checkout@v7
-        if: github.ref_type == 'tag'
         with:
           path: groonga
           repository: groonga/groonga
-      - name: Prepare for Launchpad publishing
-        if: github.ref_type == 'tag'
+      - name: Prepare
         run: |
           cp source/*.tar.gz openarm_can/
           sudo apt update
@@ -280,8 +294,7 @@ jobs:
             debhelper \
             devscripts \
             dh-python
-      - name: Publish to Launchpad
-        if: github.ref_type == 'tag'
+      - name: Publish
         env:
           APACHE_ARROW_REPOSITORY: ${{ github.workspace }}/apache-arrow
           GROONGA_REPOSITORY: ${{ github.workspace }}/groonga
@@ -290,7 +303,7 @@ jobs:
         run: |
           echo "${LAUNCHPAD_DEPLOY_KEY}" | gpg --import
           echo "trusted-key ${LAUNCHPAD_UPLOADER_PGP_KEY}" > ~/.gnupg/gpg.conf
-          rake -C openarm_can/packages ubuntu
+          rake -C openarm_can/packages ubuntu:${{ matrix.code-name }}
   pypi:
     name: PyPI
     if: github.ref_type == 'tag'
