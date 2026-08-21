@@ -211,7 +211,6 @@ jobs:
       - source
       - build
     runs-on: ubuntu-latest
-    environment: release
     permissions:
       contents: write
       discussions: write
@@ -262,6 +261,7 @@ jobs:
     needs:
       - source
     runs-on: ubuntu-latest
+    environment: launchpad
     timeout-minutes: 10
     strategy:
       fail-fast: false
