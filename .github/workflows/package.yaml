@@ -287,7 +287,7 @@ jobs:
           repository: groonga/groonga
       - name: Prepare
         run: |
-          cp source/*.tar.gz openarm_can/
+          mv openarm-can-*.tar.gz openarm_can/
           sudo apt update
           sudo apt install -y \
             build-essential \
