@@ -17,6 +17,7 @@ This library is a part of [OpenArm](https://github.com/enactic/openarm/). See de
 
 * 22.04 Jammy Jellyfish
 * 24.04 Noble Numbat
+* 26.04 Resolute Raccoon
 
 ```bash
 sudo apt install -y software-properties-common
@@ -169,7 +170,7 @@ See [dev/README.md](dev/README.md).
 
 Licensed under the Apache License 2.0. See `LICENSE.txt` for details.
 
-Copyright 2025 Enactic, Inc.
+Copyright 2025-2026 Enactic, Inc.
 
 ## Code of Conduct
 
