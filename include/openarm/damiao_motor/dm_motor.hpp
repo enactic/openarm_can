@@ -45,6 +45,12 @@ public:
     // Enable status getters
     bool is_enabled() const { return enabled_; }
 
+    // Status/error code reported by the motor in D[0] of every state frame.
+    // Raw nibble rather than MotorError, because 0x2-0x7 and 0xF are unassigned
+    // and casting an unknown code to the enum would lose it.
+    uint8_t get_error_code() const { return error_code_; }
+    bool has_error() const { return error_code_ >= MOTOR_ERROR_THRESHOLD; }
+
     // Parameter methods
     double get_param(int RID) const;
 
@@ -57,6 +63,7 @@ protected:
     void set_state_tmos(int tmos);
     void set_state_trotor(int trotor);
     void set_enabled(bool enabled);
+    void set_error_code(uint8_t code);
     void set_temp_param(int RID, double val);
 
     // Motor identifiers
@@ -66,6 +73,10 @@ protected:
 
     // Enable status
     bool enabled_;
+
+    // Latest status/error code from D[0]. Placed here so it occupies existing
+    // padding, keeping sizeof(Motor) and every other member offset unchanged.
+    uint8_t error_code_;
 
     // Current state
     double state_q_, state_dq_, state_tau_;

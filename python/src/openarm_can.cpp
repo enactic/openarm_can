@@ -27,6 +27,9 @@
 #include <openarm/canbus/can_device.hpp>
 #include <openarm/canbus/can_device_collection.hpp>
 #include <openarm/canbus/can_socket.hpp>
+
+#include <chrono>
+#include <limits>
 #include <openarm/damiao_motor/dm_motor.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
 #include <openarm/damiao_motor/dm_motor_control.hpp>
@@ -114,6 +117,85 @@ NB_MODULE(openarm_can, m) {
         .value("COUNT", RID::COUNT)
         .export_values();
 
+    // ============================================================================
+    // DIAGNOSTICS
+    // ============================================================================
+
+    // How often one kind of fault happened and when it last did. Counters latch:
+    // a bus-off that the driver auto-restarts from can be over in milliseconds,
+    // so polling for the current state would miss it entirely.
+    nb::class_<ErrorCounter>(m, "ErrorCounter")
+        .def(nb::init<>())
+        .def_ro("count", &ErrorCounter::count)
+        .def(
+            "seconds_ago",
+            [](const ErrorCounter& c) {
+                // steady_clock::time_point has no useful Python equivalent, so
+                // report the age instead. Infinity when it never happened.
+                if (c.count == 0) return std::numeric_limits<double>::infinity();
+                return std::chrono::duration<double>(std::chrono::steady_clock::now() - c.last)
+                    .count();
+            },
+            "Seconds since this last happened; inf if it never did.")
+        .def("__bool__", [](const ErrorCounter& c) { return c.count > 0; })
+        .def("__repr__", [](const ErrorCounter& c) {
+            return "<ErrorCounter count=" + std::to_string(c.count) + ">";
+        });
+
+    // State of the CAN interface, as opposed to any one motor. A bus-off is a
+    // property of the whole bus and cannot be attributed to an axis.
+    nb::class_<BusStatus>(m, "BusStatus")
+        .def(nb::init<>())
+        .def_ro("bus_off", &BusStatus::bus_off)
+        .def_ro("error_passive", &BusStatus::error_passive)
+        .def_ro("error_warning", &BusStatus::error_warning)
+        .def_ro("tx_overflow", &BusStatus::tx_overflow)
+        .def_ro("rx_overflow", &BusStatus::rx_overflow)
+        .def_ro("ack_error", &BusStatus::ack_error)
+        .def_ro("tx_timeout", &BusStatus::tx_timeout)
+        .def_ro("restarted", &BusStatus::restarted)
+        .def_ro("tec", &BusStatus::tec)
+        .def_ro("rec", &BusStatus::rec)
+        .def_ro("write_net_down", &BusStatus::write_net_down)
+        .def_ro("write_no_buffer", &BusStatus::write_no_buffer)
+        .def_ro("write_other", &BusStatus::write_other)
+        .def_ro("writes_ok", &BusStatus::writes_ok)
+        .def_ro("error_frames", &BusStatus::error_frames)
+        .def("healthy", &BusStatus::healthy)
+        .def("clear", &BusStatus::clear);
+
+    // Delivery counts for one axis. CAN acknowledges a frame if any node hears
+    // it, so unplugging one motor raises no bus error at all; counting what came
+    // back is the only way to see that an axis went quiet.
+    nb::class_<MotorLinkStats>(m, "MotorLinkStats")
+        .def(nb::init<>())
+        .def_ro("commands_sent", &MotorLinkStats::commands_sent)
+        .def_ro("responses", &MotorLinkStats::responses)
+        .def("ever_responded", &MotorLinkStats::ever_responded)
+        .def("miss_rate", &MotorLinkStats::miss_rate)
+        .def(
+            "seconds_since_response",
+            [](const MotorLinkStats& s) {
+                if (s.responses == 0) return std::numeric_limits<double>::infinity();
+                return std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                                     s.last_response)
+                    .count();
+            },
+            "Seconds since this axis last answered; inf if it never has.")
+        .def(
+            "is_stale",
+            [](const MotorLinkStats& s, double timeout_s) {
+                return s.is_stale(std::chrono::microseconds(
+                    static_cast<int64_t>(timeout_s * 1e6)));
+            },
+            nb::arg("timeout_s"),
+            "Whether the axis has been silent longer than timeout_s. The "
+            "threshold is the caller's to choose; the library only reports.")
+        .def("__repr__", [](const MotorLinkStats& s) {
+            return "<MotorLinkStats sent=" + std::to_string(s.commands_sent) +
+                   " recv=" + std::to_string(s.responses) + ">";
+        });
+
     // Callback Mode enum
     nb::enum_<CallbackMode>(m, "CallbackMode")
         .value("STATE", CallbackMode::STATE)
@@ -127,6 +209,22 @@ NB_MODULE(openarm_can, m) {
         .value("VEL", ControlMode::VEL)
         .value("POS_FORCE", ControlMode::POS_FORCE)
         .export_values();
+
+    // Status/error code reported by the motor in D[0] of every state frame.
+    nb::enum_<MotorError>(m, "MotorError")
+        .value("DISABLED", MotorError::DISABLED)
+        .value("ENABLED", MotorError::ENABLED)
+        .value("OVERVOLTAGE", MotorError::OVERVOLTAGE)
+        .value("UNDERVOLTAGE", MotorError::UNDERVOLTAGE)
+        .value("OVERCURRENT", MotorError::OVERCURRENT)
+        .value("MOS_OVERHEAT", MotorError::MOS_OVERHEAT)
+        .value("COIL_OVERHEAT", MotorError::COIL_OVERHEAT)
+        .value("COMMUNICATION_LOST", MotorError::COMMUNICATION_LOST)
+        .value("OVERLOAD", MotorError::OVERLOAD)
+        .export_values();
+
+    m.def("motor_error_to_string", &motor_error_to_string, nb::arg("code"),
+          "Name of a raw D[0] status/error code; \"UNKNOWN\" for unassigned codes.");
 
     // ============================================================================
     // DAMIAO MOTOR NAMESPACE - STRUCTS
@@ -227,6 +325,8 @@ NB_MODULE(openarm_can, m) {
         .def("get_recv_can_id", &Motor::get_recv_can_id)
         .def("get_motor_type", &Motor::get_motor_type)
         .def("is_enabled", &Motor::is_enabled)
+        .def("get_error_code", &Motor::get_error_code)
+        .def("has_error", &Motor::has_error)
         .def("get_param", &Motor::get_param, nb::arg("rid"))
         .def_static("get_limit_param", &Motor::get_limit_param, nb::arg("motor_type"));
 
@@ -400,6 +500,9 @@ NB_MODULE(openarm_can, m) {
         .def("set_callback_mode_all", &DMDeviceCollection::set_callback_mode_all,
              nb::arg("callback_mode"))
         .def("query_param_all", &DMDeviceCollection::query_param_all, nb::arg("rid"))
+        // Live view, unlike get_motors() which returns copies.
+        .def("get_link_stats", &DMDeviceCollection::get_link_stats, nb::arg("index"),
+             nb::rv_policy::reference_internal)
         .def("set_control_mode_one", &DMDeviceCollection::set_control_mode_one, nb::arg("index"),
              nb::arg("mode"))
         .def("set_control_mode_all", &DMDeviceCollection::set_control_mode_all, nb::arg("mode"))
@@ -470,5 +573,12 @@ NB_MODULE(openarm_can, m) {
         .def("refresh_all", &OpenArm::refresh_all)
         .def("recv_all", &OpenArm::recv_all, nb::arg("first_timeout_us") = 500)
         .def("set_callback_mode_all", &OpenArm::set_callback_mode_all, nb::arg("callback_mode"))
-        .def("query_param_all", &OpenArm::query_param_all, nb::arg("rid"));
+        .def("query_param_all", &OpenArm::query_param_all, nb::arg("rid"))
+        .def("get_bus_status", &OpenArm::get_bus_status, nb::rv_policy::reference_internal)
+        .def("is_bus_healthy", &OpenArm::is_bus_healthy)
+        .def("is_link_running", &OpenArm::is_link_running,
+             "Whether the interface has carrier. A bus-off keeps IFF_UP set and "
+             "only drops IFF_RUNNING, so write() still succeeds while nothing is "
+             "transmitted; this is the only way to see that from the socket.")
+        .def("clear_bus_status", &OpenArm::clear_bus_status);
 }

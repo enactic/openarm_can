@@ -104,6 +104,7 @@ void DMDeviceCollection::set_control_mode_all(ControlMode mode) {
 
 void DMDeviceCollection::send_command_to_device(std::shared_ptr<DMCANDevice> dm_device,
                                                 const CANPacket& packet) {
+    dm_device->record_command_sent();
     if (can_socket_.is_canfd_enabled()) {
         canfd_frame frame = dm_device->create_canfd_frame(packet.send_can_id, packet.data);
         can_socket_.write_canfd_frame(frame);
@@ -191,6 +192,10 @@ std::vector<Motor> DMDeviceCollection::get_motors() const {
 }
 
 Motor DMDeviceCollection::get_motor(int i) const { return get_dm_devices().at(i)->get_motor(); }
+
+const MotorLinkStats& DMDeviceCollection::get_link_stats(int i) const {
+    return get_dm_devices().at(i)->get_link_stats();
+}
 
 std::vector<std::shared_ptr<DMCANDevice>> DMDeviceCollection::get_dm_devices() const {
     std::vector<std::shared_ptr<DMCANDevice>> dm_devices;

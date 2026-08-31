@@ -25,6 +25,7 @@ Motor::Motor(MotorType motor_type, uint32_t send_can_id, uint32_t recv_can_id)
       recv_can_id_(recv_can_id),
       motor_type_(motor_type),
       enabled_(false),
+      error_code_(0),
       state_q_(0.0),
       state_dq_(0.0),
       state_tau_(0.0),
@@ -33,6 +34,14 @@ Motor::Motor(MotorType motor_type, uint32_t send_can_id, uint32_t recv_can_id)
 
 // Enable methods
 void Motor::set_enabled(bool enable) { this->enabled_ = enable; }
+
+void Motor::set_error_code(uint8_t code) {
+    error_code_ = code;
+    // D[0] doubles as the enable state: the motor reports ENABLED while it is
+    // armed and DISABLED otherwise. This is what makes is_enabled() reflect the
+    // motor rather than a value nothing ever wrote.
+    enabled_ = (code == static_cast<uint8_t>(MotorError::ENABLED));
+}
 
 // Parameter methods
 // TODO: storing temp params in motor object might not be a good idea

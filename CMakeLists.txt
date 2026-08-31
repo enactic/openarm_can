@@ -123,6 +123,19 @@ add_executable(openarm-can-demo examples/demo.cpp)
 target_link_libraries(openarm-can-demo openarm_can)
 install(TARGETS openarm-can-demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+# Read-only health/diagnostics example
+add_executable(openarm-can-health examples/health.cpp)
+target_link_libraries(openarm-can-health openarm_can)
+install(TARGETS openarm-can-health DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# C++ counterparts of python/examples
+foreach(OCP_EXAMPLE mit posvel vel posforce gripper_posforce)
+  add_executable(openarm-can-example-${OCP_EXAMPLE} examples/${OCP_EXAMPLE}.cpp)
+  target_link_libraries(openarm-can-example-${OCP_EXAMPLE} openarm_can)
+  install(TARGETS openarm-can-example-${OCP_EXAMPLE}
+          DESTINATION ${CMAKE_INSTALL_BINDIR})
+endforeach()
+
 # ==============================================================================
 # OpenArm Unified CLI Tool (openarm-can)
 # ==============================================================================
@@ -139,7 +152,8 @@ add_executable(
   setup/cli/commands/discover_motor_commands.cpp
   setup/cli/commands/change_motor_id_commands.cpp
   setup/cli/commands/write_motor_param_commands.cpp
-  setup/cli/commands/clear_error_commands.cpp)
+  setup/cli/commands/clear_error_commands.cpp
+  setup/cli/commands/diagnose_commands.cpp)
 target_include_directories(
   openarm-can-cli PRIVATE setup/cli ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(openarm-can-cli PRIVATE openarm_can CLI11::CLI11)

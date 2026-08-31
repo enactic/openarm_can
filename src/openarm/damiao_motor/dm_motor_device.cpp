@@ -40,6 +40,12 @@ void DMCANDevice::callback(const can_frame& frame) {
         return;
     }
 
+    // The frame was routed here by can_id, so reaching this point is proof the
+    // motor answered. Recorded before any mode handling, because even a frame
+    // that is about to be discarded is evidence of life.
+    link_stats_.responses++;
+    link_stats_.last_response = std::chrono::steady_clock::now();
+
     std::vector<uint8_t> data = get_data_from_frame(frame);
 
     switch (callback_mode_) {
@@ -48,6 +54,7 @@ void DMCANDevice::callback(const can_frame& frame) {
                 // Convert frame data to vector and let Motor handle parsing
                 StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
                 if (frame.can_id == motor_.get_recv_can_id() && result.valid) {
+                    motor_.set_error_code(result.error_code);
                     motor_.update_state(result.position, result.velocity, result.torque,
                                         result.t_mos, result.t_rotor);
                 }
@@ -78,10 +85,14 @@ void DMCANDevice::callback(const canfd_frame& frame) {
         return;
     }
 
+    link_stats_.responses++;
+    link_stats_.last_response = std::chrono::steady_clock::now();
+
     std::vector<uint8_t> data = get_data_from_frame(frame);
     if (callback_mode_ == STATE) {
         StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
         if (result.valid) {
+            motor_.set_error_code(result.error_code);
             motor_.update_state(result.position, result.velocity, result.torque, result.t_mos,
                                 result.t_rotor);
         }

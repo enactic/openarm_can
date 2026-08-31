@@ -96,25 +96,42 @@ void OpenArm::recv_all(int first_timeout_us) {
     // done with caution.
     int timeout_us = first_timeout_us;
 
+    // Cap on frames handled per call. A fault can put frames in the queue faster
+    // than a single cycle should spend draining it; whatever is left is simply
+    // read next cycle, and BusStatus latches so nothing is lost by stopping here.
+    constexpr int max_frames_per_call = 64;
+    int frames = 0;
+
     // CAN FD
     if (enable_fd_) {
         canfd_frame response_frame;
-        while (can_socket_->is_data_available(timeout_us) &&
+        while (frames++ < max_frames_per_call && can_socket_->is_data_available(timeout_us) &&
                can_socket_->read_canfd_frame(response_frame)) {
-            master_can_device_collection_->dispatch_frame_callback(response_frame);
             timeout_us = 0;
+            // Error frames carry bus state, not motor state, and match no
+            // device id. Dispatching them would silently drop them.
+            if (response_frame.can_id & CAN_ERR_FLAG) {
+                can_socket_->get_bus_status().record_error_frame(
+                    response_frame.can_id, response_frame.data, response_frame.len);
+                continue;
+            }
+            master_can_device_collection_->dispatch_frame_callback(response_frame);
         }
     }
     // CAN 2.0
     else {
         can_frame response_frame;
-        while (can_socket_->is_data_available(timeout_us) &&
+        while (frames++ < max_frames_per_call && can_socket_->is_data_available(timeout_us) &&
                can_socket_->read_can_frame(response_frame)) {
-            master_can_device_collection_->dispatch_frame_callback(response_frame);
             timeout_us = 0;
+            if (response_frame.can_id & CAN_ERR_FLAG) {
+                can_socket_->get_bus_status().record_error_frame(
+                    response_frame.can_id, response_frame.data, response_frame.can_dlc);
+                continue;
+            }
+            master_can_device_collection_->dispatch_frame_callback(response_frame);
         }
     }
-    // }
 }
 
 void OpenArm::query_param_all(int RID) {

@@ -362,6 +362,37 @@ int main(int argc, char** argv) {
         }
     });
 
+    // --- diagnose: Collect motor status/error codes and measurement ranges ---
+    auto* diagnose =
+        app.add_subcommand("diagnose",
+                           "Report motor status/error codes and temp/torque ranges "
+                           "(default: arm IDs 1-8)")
+            ->group("[ Operation & Debug ]");
+    static bool diag_arm = true;
+    static std::vector<std::string> diag_ids;
+    static int diag_duration = 10000;  // ms
+    static int diag_interval = 10;     // ms
+
+    diagnose->add_flag("-a,--arm,!--no-arm", diag_arm, "Diagnose all arm motors (IDs 1-8) [default]")
+        ->default_val("true");
+    diagnose->add_option("--id", diag_ids,
+                         "Target motor IDs (e.g. --id 1,2,3). A single id isolates that "
+                         "axis on the bus, which separates axis faults from bus-wide ones");
+    diagnose->add_option("-d,--duration", diag_duration, "Total sampling duration in milliseconds")
+        ->default_val("10000");
+    diagnose->add_option("-t,--tick", diag_interval, "Sampling interval in milliseconds")
+        ->default_val("10");
+
+    diagnose->callback([&]() {
+        auto ids = expand_ids(diag_ids);
+        if (!ids.empty()) diag_arm = false;  // --id overrides --arm
+        int result = openarm::cli::run_diagnose(global_iface, diag_arm, ids, diag_duration,
+                                                diag_interval);
+        if (result != 0) {
+            throw CLI::RuntimeError("diagnose failed.", result);
+        }
+    });
+
     // ========================================================================
     // Execution - Parse arguments and dispatch subcommands
     // ========================================================================
