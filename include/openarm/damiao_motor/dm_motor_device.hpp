@@ -37,6 +37,13 @@ struct MotorLinkStats {
     uint64_t responses = 0;
     std::chrono::steady_clock::time_point last_response{};
 
+    // Conditions the library used to print to stderr from inside the control
+    // loop. Counting them instead keeps the loop free of I/O -- at 1 kHz a
+    // mismatched control mode wrote a line every cycle -- and makes them
+    // answerable rather than scrolling past.
+    uint32_t rejected_commands = 0;  // command dropped: motor is in another mode
+    uint32_t malformed_frames = 0;   // frame arrived but could not be parsed
+
     bool ever_responded() const { return responses > 0; }
 
     // Derived on demand rather than tracked per cycle, so the receive path
@@ -81,6 +88,7 @@ public:
     const MotorLinkStats& get_link_stats() const { return link_stats_; }
     // Called by the collection for every command addressed to this device.
     void record_command_sent() { link_stats_.commands_sent++; }
+    void record_rejected_command() { link_stats_.rejected_commands++; }
     ControlMode get_control_mode() const { return control_mode_; }
     void set_control_mode(ControlMode control_mode) { control_mode_ = control_mode; }
 

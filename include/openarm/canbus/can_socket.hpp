@@ -76,6 +76,10 @@ struct BusStatus {
     ErrorCounter write_net_down;   // ENETDOWN / ENODEV: interface is not up
     ErrorCounter write_no_buffer;  // ENOBUFS / EAGAIN: transmit queue full
     ErrorCounter write_other;
+    // errno of the most recent failed write. Bucketing alone loses too much:
+    // an interface that goes down reports ENETDOWN once and then EINVAL for
+    // every write after it, so "other" is where most of a real fault lands.
+    int last_write_errno = 0;
     uint64_t writes_ok = 0;
 
     uint64_t error_frames = 0;

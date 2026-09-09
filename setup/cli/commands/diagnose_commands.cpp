@@ -116,8 +116,149 @@ std::string codes_str(const AxisReport& a) {
 
 }  // namespace
 
+// Turns the counters into the sentence someone actually wants: not "recv 0/2400"
+// but "the bitrate probably does not match". Every rule here is a heuristic, so
+// each one says what it was inferred from and how to confirm it.
+//
+// The interpretation lives here rather than in the library because it is a
+// judgement about a particular robot, not a fact about a CAN socket.
+void explain(const std::string& interface, const openarm::canbus::BusStatus& bus,
+             bool link_running, const std::vector<AxisReport>& report,
+             openarm::can::socket::OpenArm& openarm) {
+    std::cout << "\n--- Explanation ---------------------------------------\n";
+
+    uint64_t total_sent = 0, total_recv = 0;
+    size_t silent = 0, first_silent = report.size(), last_answering = 0;
+    for (size_t i = 0; i < report.size(); ++i) {
+        const auto& st = openarm.get_arm().get_link_stats(static_cast<int>(i));
+        total_sent += st.commands_sent;
+        total_recv += st.responses;
+        if (!st.ever_responded()) {
+            silent++;
+            first_silent = std::min(first_silent, i);
+        } else {
+            last_answering = i;
+        }
+    }
+
+    if (!link_running) {
+        if (bus.write_net_down) {
+            std::cout << " The interface is administratively down.\n"
+                         "   write() returned ENETDOWN, which only happens when IFF_UP is clear.\n"
+                         "   Fix: sudo ip link set " << interface << " up\n";
+        } else {
+            std::cout << " The bus is off, or the adapter is unplugged.\n"
+                         "   IFF_UP is set but there is no carrier, and no write was refused.\n"
+                         "   With restart-ms 0 a bus-off stays until the link is cycled.\n"
+                         "   Fix: check wiring and termination, then\n"
+                         "        sudo ip link set " << interface << " down && sudo ip link set "
+                      << interface << " up\n";
+        }
+        return;
+    }
+
+    const auto& unmatched = openarm.get_unmatched_frames();
+    if (!unmatched.empty()) {
+        std::cout << " Something is replying on ids nothing is listening for:\n";
+        for (const auto& [id, count] : unmatched)
+            std::cout << "     " << hex_id(id) << " x" << count << "\n";
+        std::cout << "   A correctly configured bus never produces these, so the motors are\n"
+                     "   alive and answering on the wrong id rather than not answering at all.\n"
+                     "   The master id (RID 7) defaults to 0, so a motor that was never given\n"
+                     "   one replies on 0x00. This is a configuration fault, not a wiring one.\n"
+                     "   Check: openarm-can-cli -i " << interface
+                  << " show_param --arm   (RID 7 MST_ID, RID 8 ESC_ID)\n";
+        if (total_recv > 0) std::cout << "\n";
+    }
+
+    if (total_recv == 0 && total_sent > 0) {
+        if (bus.bus_off || bus.ack_error || bus.error_passive) {
+            std::cout << " The bus is unusable as configured: nothing acknowledges anything.\n"
+                         "   Not one frame came back out of " << total_sent << " sent.\n";
+            if (bus.restarted && bus.bus_off.count > 1)
+                std::cout << "   The controller went bus-off " << bus.bus_off.count
+                          << " times and was restarted " << bus.restarted.count << " times, so\n"
+                             "   the fault is continuous rather than a one-off disturbance.\n";
+            // Every candidate below produces exactly this: no ACK, TEC climbs,
+            // bus-off. The counters cannot tell them apart, so do not pretend
+            // to. Termination in particular was once assumed to leave some
+            // frames getting through, which is not true at a high data rate.
+            std::cout << "   Any of these look identical from here:\n"
+                         "     - termination: missing, or only one end of the bus\n"
+                         "     - bitrate or dbitrate does not match the motors\n"
+                         "     - the bus is unpowered, or nothing is connected\n"
+                         "   To separate them:\n"
+                         "     - measure CAN_H to CAN_L with the power off; 60 ohm is correct,\n"
+                         "       120 means one terminator, 40 means three\n"
+                         "     - lower dbitrate and retry. Recovering at a lower rate means the\n"
+                         "       wiring is marginal; recovering at exactly one rate means the\n"
+                         "       bitrate was simply wrong\n"
+                         "     - ip -details link show " << interface << "\n";
+        } else {
+            std::cout << " Frames go out cleanly but nothing answers.\n"
+                         "   No bus error at all, so the wiring and bitrate are fine and the\n"
+                         "   motors simply are not replying to these ids. The master id (RID 7)\n"
+                         "   defaults to 0, so a motor that was never configured answers on an\n"
+                         "   id nothing is listening for.\n"
+                         "   Check: openarm-can-cli -i " << interface
+                      << " show_param --arm   (RID 7 MST_ID, RID 8 ESC_ID)\n";
+        }
+        return;
+    }
+
+    if (silent > 0 && silent < report.size()) {
+        std::cout << " " << silent << " of " << report.size() << " axes never answered while the"
+                  << " rest did.\n"
+                     "   A missing motor raises no bus error: CAN acknowledges a frame if any\n"
+                     "   node hears it, so this is only visible as the gap above.\n";
+        if (first_silent > 0 && first_silent > last_answering) {
+            std::cout << "   Everything up to " << hex_id(report[first_silent - 1].send_id)
+                      << " answers and " << hex_id(report[first_silent].send_id)
+                      << " onward does not. The joints are daisy-chained, so a break silences\n"
+                         "   everything past it: look at the link between those two.\n";
+        } else {
+            std::cout << "   The silent axes are not contiguous, so this looks like individual\n"
+                         "   connectors or motors rather than one break in the chain.\n";
+        }
+        return;
+    }
+
+    if (!bus.healthy()) {
+        std::cout << " Traffic is getting through, but the bus is reporting errors.\n"
+                     "   Partial success rules out a bitrate mismatch. This is the signature of\n"
+                     "   a physical layer that is marginal rather than broken: missing or extra\n"
+                     "   termination, a stub that is too long, or noise.\n"
+                     "   Confirm: lower dbitrate and re-run. Reflection scales with the data\n"
+                     "   phase rate, so errors that vanish at a lower dbitrate are physical.\n";
+        if (bus.tec > 0 && bus.rec == 0)
+            std::cout << "   TEC is " << static_cast<int>(bus.tec)
+                      << " with REC at 0: this node's own frames are going unacknowledged.\n";
+        return;
+    }
+
+    double worst = 0;
+    size_t worst_i = 0;
+    for (size_t i = 0; i < report.size(); ++i) {
+        double m = openarm.get_arm().get_link_stats(static_cast<int>(i)).miss_rate();
+        if (m > worst) { worst = m; worst_i = i; }
+    }
+    if (worst > 0.01) {
+        std::cout << " Every axis answers, but " << hex_id(report[worst_i].send_id) << " dropped "
+                  << pct(worst) << " of its replies with no bus error.\n"
+                     "   Losses on one axis and not the others point at that connector or its\n"
+                     "   cable rather than the bus. This is what a link looks like before it\n"
+                     "   fails outright.\n"
+                     "   Isolate it: openarm-can-cli -i " << interface << " diagnose --id "
+                  << report[worst_i].send_id << "\n";
+        return;
+    }
+
+    std::cout << " Nothing to report: every axis answered, no bus faults, no motor faults.\n";
+}
+
 int run_diagnose(const std::string& interface, bool use_arm_ids,
-                 const std::vector<std::string>& custom_ids_str, int duration_ms, int interval_ms) {
+                 const std::vector<std::string>& custom_ids_str, int duration_ms, int interval_ms,
+                 bool want_explain) {
     std::vector<uint32_t> send_ids;
     if (use_arm_ids)
         for (uint32_t i = 1; i <= 8; ++i) send_ids.push_back(i);
@@ -257,7 +398,7 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
         std::cout << "\n--- (2b) Per-axis link -----------------------------------\n";
         std::cout << std::left << std::setw(9) << " ID" << std::setw(9) << "sent"
                   << std::setw(9) << "recv" << std::setw(9) << "miss" << std::setw(9) << "miss%"
-                  << "last seen\n";
+                  << std::setw(12) << "last seen" << std::setw(10) << "rejected" << "malformed\n";
 
         int boundary = -1;  // first silent axis that follows a healthy one
         bool seen_healthy = false;
@@ -266,8 +407,9 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
             uint64_t miss = st.commands_sent > st.responses ? st.commands_sent - st.responses : 0;
             std::cout << " " << std::left << std::setw(8) << hex_id(report[i].send_id)
                       << std::setw(9) << st.commands_sent << std::setw(9) << st.responses
-                      << std::setw(9) << miss << std::setw(9) << pct(st.miss_rate()) << ago(st)
-                      << "\n";
+                      << std::setw(9) << miss << std::setw(9) << pct(st.miss_rate())
+                      << std::setw(12) << ago(st) << std::setw(10) << st.rejected_commands
+                      << st.malformed_frames << "\n";
 
             if (st.miss_rate() < 0.01)
                 seen_healthy = true;
@@ -320,7 +462,14 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
                 std::cout << "   -> TX errors only: this node's frames are not being"
                              " acknowledged (suspect termination / reflection)\n";
         }
-        if (bus.healthy() && link_running) std::cout << "   no bus faults recorded\n";
+        const auto& unmatched = openarm.get_unmatched_frames();
+        if (!unmatched.empty()) {
+            std::cout << " Unmatched : replies for ids no motor is registered for\n";
+            for (const auto& [id, count] : unmatched)
+                std::cout << "   " << hex_id(id) << " x" << count << "\n";
+        }
+        if (bus.healthy() && link_running && unmatched.empty())
+            std::cout << "   no bus faults recorded\n";
         if (bus.error_frames == 0 && !link_running)
             std::cout << "   note: error frames are edge-triggered, so a fault that happened"
                          " before this run\n"
@@ -333,6 +482,8 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
         if (!bus.healthy() || !link_running)
             std::cout << " [!] Bus faults were recorded. These affect every axis at once and"
                          " are not attributable to one motor.\n";
+        if (want_explain) explain(interface, bus, link_running, report, openarm);
+
         std::cout << "=========================================================\n";
 
     } catch (const std::exception& e) {

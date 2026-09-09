@@ -159,6 +159,7 @@ NB_MODULE(openarm_can, m) {
         .def_ro("write_net_down", &BusStatus::write_net_down)
         .def_ro("write_no_buffer", &BusStatus::write_no_buffer)
         .def_ro("write_other", &BusStatus::write_other)
+        .def_ro("last_write_errno", &BusStatus::last_write_errno)
         .def_ro("writes_ok", &BusStatus::writes_ok)
         .def_ro("error_frames", &BusStatus::error_frames)
         .def("healthy", &BusStatus::healthy)
@@ -171,6 +172,8 @@ NB_MODULE(openarm_can, m) {
         .def(nb::init<>())
         .def_ro("commands_sent", &MotorLinkStats::commands_sent)
         .def_ro("responses", &MotorLinkStats::responses)
+        .def_ro("rejected_commands", &MotorLinkStats::rejected_commands)
+        .def_ro("malformed_frames", &MotorLinkStats::malformed_frames)
         .def("ever_responded", &MotorLinkStats::ever_responded)
         .def("miss_rate", &MotorLinkStats::miss_rate)
         .def(
@@ -580,5 +583,9 @@ NB_MODULE(openarm_can, m) {
              "Whether the interface has carrier. A bus-off keeps IFF_UP set and "
              "only drops IFF_RUNNING, so write() still succeeds while nothing is "
              "transmitted; this is the only way to see that from the socket.")
-        .def("clear_bus_status", &OpenArm::clear_bus_status);
+        .def("clear_bus_status", &OpenArm::clear_bus_status)
+        .def("get_unmatched_frames", &OpenArm::get_unmatched_frames,
+             "Replies received for ids no motor is registered for, keyed by id. "
+             "Always empty on a correctly configured bus; a motor whose master id "
+             "(RID 7) was left at 0 shows up here instead of as a silent axis.");
 }

@@ -15,7 +15,6 @@
 #include <array>
 #include <cmath>
 #include <cstring>
-#include <iostream>
 #include <openarm/damiao_motor/dm_motor.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
 #include <openarm/damiao_motor/dm_motor_control.hpp>
@@ -88,8 +87,9 @@ CANPacket CanPacketEncoder::create_refresh_command(const Motor& motor) {
 // Data interpretation methods (use recv_can_id for received data)
 StateResult CanPacketDecoder::parse_motor_state_data(const Motor& motor,
                                                      const std::vector<uint8_t>& data) {
+    // Reported through the invalid result rather than printed: the decoder has
+    // no idea which axis this is, and the caller counts it per device.
     if (data.size() < 8) {
-        std::cerr << "Warning: Skipping motor state data less than 8 bytes" << std::endl;
         return {0, 0, 0, 0, 0, false, 0};
     }
 
@@ -128,7 +128,6 @@ ParamResult CanPacketDecoder::parse_motor_param_data(const std::vector<uint8_t>&
         }
         return {RID, num, true};
     } else {
-        std::cerr << "WARNING: INVALID PARAM DATA" << std::endl;
         return {0, NAN, false};
     }
 }

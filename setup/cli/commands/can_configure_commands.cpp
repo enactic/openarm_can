@@ -23,7 +23,8 @@ namespace openarm::cli {
 
 int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, int dbitrate,
                       bool fd_mode, const std::string& sample_point,
-                      const std::string& dsample_point, const std::string& dsjw, int restart_ms) {
+                      const std::string& dsample_point, const std::string& dsjw, int restart_ms,
+                      int txqueuelen) {
     std::vector<std::string> target_interfaces = interfaces;
     if (target_interfaces.empty()) {
         target_interfaces = {"can0", "can1", "can2", "can3"};
@@ -43,6 +44,9 @@ int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, i
                   << ", DSJW: " << dsjw << ")\n";
     }
     std::cout << " Restart   : " << restart_ms << " ms\n";
+    std::cout << " TX queue  : "
+              << (txqueuelen > 0 ? std::to_string(txqueuelen) + " frames" : "kernel default")
+              << "\n";
     std::cout << "=========================================================\n\n";
 
     int failed = 0;
@@ -67,6 +71,19 @@ int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, i
             std::cerr << "✗ [" << iface << "] Failed to apply CAN parameters." << std::endl;
             ++failed;
             continue;
+        }
+
+        // Only touched when asked for. The CAN default of 10 frames is short on
+        // purpose: a deep queue delivers stale commands, and for a control loop
+        // a dropped frame beats one that arrives late. Raising it by a cycle or
+        // two absorbs jitter, raising it far does not.
+        if (txqueuelen > 0) {
+            std::string cmd_q =
+                "sudo ip link set " + iface + " txqueuelen " + std::to_string(txqueuelen);
+            std::cout << "    " << cmd_q << std::endl;
+            if (std::system(cmd_q.c_str()) != 0)
+                std::cerr << "! [" << iface << "] Failed to set txqueuelen; continuing."
+                          << std::endl;
         }
 
         std::string cmd_up = "sudo ip link set " + iface + " up";

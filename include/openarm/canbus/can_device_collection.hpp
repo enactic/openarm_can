@@ -36,8 +36,18 @@ public:
     canbus::CANSocket& get_can_socket() const { return can_socket_; }
     int get_socket_fd() const { return can_socket_.get_socket_fd(); }
 
+    // Frames that arrived for an id no device is registered for, counted per id.
+    //
+    // A correctly configured bus never produces one, which is what makes a
+    // non-zero count worth reading: a motor whose master id (RID 7) was left at
+    // its default of 0 replies on an id nothing listens for, and without this it
+    // is indistinguishable from a motor that never replied at all.
+    const std::map<canid_t, uint64_t>& get_unmatched_frames() const { return unmatched_frames_; }
+    void clear_unmatched_frames() { unmatched_frames_.clear(); }
+
 private:
     canbus::CANSocket& can_socket_;
     std::map<canid_t, std::shared_ptr<CANDevice>> devices_;
+    std::map<canid_t, uint64_t> unmatched_frames_;
 };
 }  // namespace openarm::canbus

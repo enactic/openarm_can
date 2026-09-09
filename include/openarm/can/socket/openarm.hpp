@@ -55,6 +55,12 @@ public:
     bool is_link_running() const { return can_socket_->is_link_running(); }
     void clear_bus_status() { can_socket_->clear_bus_status(); }
 
+    // Replies that arrived for ids no motor is registered for; see
+    // CANDeviceCollection::get_unmatched_frames.
+    const std::map<canid_t, uint64_t>& get_unmatched_frames() const {
+        return master_can_device_collection_->get_unmatched_frames();
+    }
+
     // Damiao Motor operations (works only on sub_dm_device_collections_)
     void enable_all();
     void disable_all();

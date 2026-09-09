@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <cmath>
-#include <iostream>
 #include <openarm/damiao_motor/dm_motor.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
 #include <openarm/damiao_motor/dm_motor_control.hpp>
@@ -36,7 +35,10 @@ std::vector<uint8_t> DMCANDevice::get_data_from_frame(const canfd_frame& frame) 
 }
 void DMCANDevice::callback(const can_frame& frame) {
     if (use_fd_) {
-        std::cerr << "WARNING: WRONG CALLBACK FUNCTION" << std::endl;
+        // A classic frame handed to an FD device, or the reverse: a caller bug
+        // rather than anything the bus did, but counted the same way so that
+        // nothing in the receive path writes to stderr.
+        link_stats_.malformed_frames++;
         return;
     }
 
@@ -53,6 +55,7 @@ void DMCANDevice::callback(const can_frame& frame) {
             if (frame.can_dlc >= 8) {
                 // Convert frame data to vector and let Motor handle parsing
                 StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
+                if (!result.valid) link_stats_.malformed_frames++;
                 if (frame.can_id == motor_.get_recv_can_id() && result.valid) {
                     motor_.set_error_code(result.error_code);
                     motor_.update_state(result.position, result.velocity, result.torque,
@@ -64,6 +67,8 @@ void DMCANDevice::callback(const can_frame& frame) {
             ParamResult result = CanPacketDecoder::parse_motor_param_data(data);
             if (result.valid) {
                 motor_.set_temp_param(result.rid, result.value);
+            } else {
+                link_stats_.malformed_frames++;
             }
             break;
         }
@@ -76,12 +81,12 @@ void DMCANDevice::callback(const can_frame& frame) {
 
 void DMCANDevice::callback(const canfd_frame& frame) {
     if (not use_fd_) {
-        std::cerr << "WARNING: CANFD MODE NOT ENABLED" << std::endl;
+        link_stats_.malformed_frames++;
         return;
     }
 
     if (frame.can_id != motor_.get_recv_can_id()) {
-        std::cerr << "WARNING: CANFD FRAME ID DOES NOT MATCH MOTOR ID" << std::endl;
+        link_stats_.malformed_frames++;
         return;
     }
 
@@ -91,6 +96,7 @@ void DMCANDevice::callback(const canfd_frame& frame) {
     std::vector<uint8_t> data = get_data_from_frame(frame);
     if (callback_mode_ == STATE) {
         StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
+        if (!result.valid) link_stats_.malformed_frames++;
         if (result.valid) {
             motor_.set_error_code(result.error_code);
             motor_.update_state(result.position, result.velocity, result.torque, result.t_mos,
@@ -100,6 +106,8 @@ void DMCANDevice::callback(const canfd_frame& frame) {
         ParamResult result = CanPacketDecoder::parse_motor_param_data(data);
         if (result.valid) {
             motor_.set_temp_param(result.rid, result.value);
+        } else {
+            link_stats_.malformed_frames++;
         }
     } else if (callback_mode_ == IGNORE) {
         return;

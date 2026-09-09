@@ -90,7 +90,10 @@ int main(int argc, char** argv) {
     static std::string cc_sample_point = "0.75";
     static std::string cc_dsample_point = "0.75";
     static std::string cc_dsjw = "2";
-    static int cc_restart_ms = 100;
+    // 0 keeps the controller stopped after a bus-off instead of silently
+    // restarting it. An auto-restart hides the fault: the link is back within
+    // milliseconds while control was interrupted the whole time.
+    static int cc_restart_ms = 0;
 
     can_configure->add_option("-b,--bitrate", cc_bitrate, "Set arbitration phase bitrate")
         ->default_val("1000000");
@@ -112,8 +115,18 @@ int main(int argc, char** argv) {
         ->default_val("0.75");
     can_configure->add_option("--dsjw", cc_dsjw, "Data Synchronization Jump Width")
         ->default_val("2");  // "3" → "2"
-    can_configure->add_option("--rm", cc_restart_ms, "Auto-restart time in milliseconds")
-        ->default_val("100");
+    can_configure
+        ->add_option("--rm", cc_restart_ms,
+                     "Auto-restart delay in milliseconds after bus-off "
+                     "(default: 0, stay down so the fault is visible)")
+        ->default_val("0");
+    static int cc_txqueuelen = 0;
+    can_configure
+        ->add_option("--txqueuelen", cc_txqueuelen,
+                     "Transmit queue depth in frames (default: 0, leave the kernel's). "
+                     "The CAN default of 10 is short on purpose; a deep queue delivers "
+                     "stale commands")
+        ->default_val("0");
     can_configure->add_flag("!--no-fd,--fd", cc_fd_mode, "Enable CAN FD mode");
 
     can_configure->callback([&]() {
@@ -126,7 +139,7 @@ int main(int argc, char** argv) {
         }
         int result = openarm::cli::run_can_configure(target_ifaces, cc_bitrate, cc_dbitrate,
                                                      cc_fd_mode, cc_sample_point, cc_dsample_point,
-                                                     cc_dsjw, cc_restart_ms);
+                                                     cc_dsjw, cc_restart_ms, cc_txqueuelen);
         if (result != 0) {
             throw CLI::RuntimeError("can_configure failed.", result);
         }
@@ -382,12 +395,15 @@ int main(int argc, char** argv) {
         ->default_val("10000");
     diagnose->add_option("-t,--tick", diag_interval, "Sampling interval in milliseconds")
         ->default_val("10");
+    static bool diag_explain = false;
+    diagnose->add_flag("--explain", diag_explain,
+                       "Interpret the counters: name the likely cause and how to confirm it");
 
     diagnose->callback([&]() {
         auto ids = expand_ids(diag_ids);
         if (!ids.empty()) diag_arm = false;  // --id overrides --arm
         int result = openarm::cli::run_diagnose(global_iface, diag_arm, ids, diag_duration,
-                                                diag_interval);
+                                                diag_interval, diag_explain);
         if (result != 0) {
             throw CLI::RuntimeError("diagnose failed.", result);
         }

@@ -72,6 +72,7 @@ void BusStatus::record_error_frame(canid_t can_id, const uint8_t* data, uint8_t 
 }
 
 void BusStatus::record_write_failure(int err) {
+    last_write_errno = err;
     switch (err) {
         case ENETDOWN:
         case ENODEV:

@@ -45,18 +45,24 @@ void CANDeviceCollection::dispatch_frame_callback(can_frame& frame) {
     auto it = devices_.find(frame.can_id);
     if (it != devices_.end()) {
         it->second->callback(frame);
+    } else {
+        // Counted rather than dropped: on a bus where every id is accounted for
+        // this stays at zero, so anything here is a misconfiguration worth
+        // seeing rather than background traffic.
+        unmatched_frames_[frame.can_id]++;
     }
-    // Note: Silently ignore frames for unknown devices (this is normal in CAN
-    // networks)
 }
 
 void CANDeviceCollection::dispatch_frame_callback(canfd_frame& frame) {
     auto it = devices_.find(frame.can_id);
     if (it != devices_.end()) {
         it->second->callback(frame);
+    } else {
+        // Counted rather than dropped: on a bus where every id is accounted for
+        // this stays at zero, so anything here is a misconfiguration worth
+        // seeing rather than background traffic.
+        unmatched_frames_[frame.can_id]++;
     }
-    // Note: Silently ignore frames for unknown devices (this is normal in CAN
-    // networks)
 }
 
 }  // namespace openarm::canbus
