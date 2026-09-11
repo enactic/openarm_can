@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include <nanobind/nanobind.h>
+// get_unmatched_frames() returns a std::map. Without this the binding still
+// compiles and is importable, and only fails when called.
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
