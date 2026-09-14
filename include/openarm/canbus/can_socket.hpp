@@ -56,14 +56,14 @@ struct ErrorCounter {
 // for the current state would miss it entirely.
 struct BusStatus {
     // Controller state, reported by the kernel as error frames.
-    ErrorCounter bus_off;         // CAN_ERR_BUSOFF
-    ErrorCounter error_passive;   // CAN_ERR_CRTL: RX/TX_PASSIVE
-    ErrorCounter error_warning;   // CAN_ERR_CRTL: RX/TX_WARNING
-    ErrorCounter tx_overflow;     // CAN_ERR_CRTL: TX_OVERFLOW
-    ErrorCounter rx_overflow;     // CAN_ERR_CRTL: RX_OVERFLOW
-    ErrorCounter ack_error;       // CAN_ERR_ACK: nobody acknowledged
-    ErrorCounter tx_timeout;      // CAN_ERR_TX_TIMEOUT
-    ErrorCounter restarted;       // CAN_ERR_RESTARTED: recovered from bus-off
+    ErrorCounter bus_off;        // CAN_ERR_BUSOFF
+    ErrorCounter error_passive;  // CAN_ERR_CRTL: RX/TX_PASSIVE
+    ErrorCounter error_warning;  // CAN_ERR_CRTL: RX/TX_WARNING
+    ErrorCounter tx_overflow;    // CAN_ERR_CRTL: TX_OVERFLOW
+    ErrorCounter rx_overflow;    // CAN_ERR_CRTL: RX_OVERFLOW
+    ErrorCounter ack_error;      // CAN_ERR_ACK: nobody acknowledged
+    ErrorCounter tx_timeout;     // CAN_ERR_TX_TIMEOUT
+    ErrorCounter restarted;      // CAN_ERR_RESTARTED: recovered from bus-off
 
     // Transmit error counter / receive error counter, when the driver reports
     // them. TEC high with REC at zero means this node's frames are going

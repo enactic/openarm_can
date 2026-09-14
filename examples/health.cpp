@@ -59,9 +59,10 @@ void print_bus(const canbus::BusStatus& bus, bool carrier) {
            carrier ? "carrier" : "NO CARRIER", bus.healthy() ? "yes" : "no", bus.writes_ok,
            bus.error_frames);
     if (!carrier)
-        printf("          no carrier: the interface is administratively down, gone bus-off, or\n"
-               "          unplugged. A bus-off keeps IFF_UP set and write() keeps succeeding,\n"
-               "          so the errno below is what separates the cases.\n");
+        printf(
+            "          no carrier: the interface is administratively down, gone bus-off, or\n"
+            "          unplugged. A bus-off keeps IFF_UP set and write() keeps succeeding,\n"
+            "          so the errno below is what separates the cases.\n");
 
     const auto now = std::chrono::steady_clock::now();
     auto line = [&](const char* name, const canbus::ErrorCounter& c) {
@@ -110,8 +111,9 @@ int main(int argc, char** argv) {
         openarm.set_callback_mode_all(damiao_motor::CallbackMode::STATE);
 
         if (toggle)
-            printf("!!! --toggle arms the motors once a second. The arm will fall on each"
-                   " disable.\n\n");
+            printf(
+                "!!! --toggle arms the motors once a second. The arm will fall on each"
+                " disable.\n\n");
 
         bool commanded_enabled = false;
         int cycles = 0, enable_ok = 0, disable_ok = 0;
@@ -122,8 +124,8 @@ int main(int argc, char** argv) {
         const auto start = std::chrono::steady_clock::now();
         while (g_running &&
                std::chrono::steady_clock::now() - start < std::chrono::seconds(seconds)) {
-            if (toggle && std::chrono::steady_clock::now() - last_toggle >=
-                              std::chrono::seconds(1)) {
+            if (toggle &&
+                std::chrono::steady_clock::now() - last_toggle >= std::chrono::seconds(1)) {
                 last_toggle = std::chrono::steady_clock::now();
                 commanded_enabled = !commanded_enabled;
                 if (commanded_enabled)
@@ -139,36 +141,36 @@ int main(int argc, char** argv) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             openarm.recv_all();
 
-            printf("=== %s  t=%.1fs%s ===\n", interface.c_str(),
-                   std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count(),
-                   toggle ? (commanded_enabled ? "  commanded: ENABLE" : "  commanded: DISABLE")
-                          : "");
-            printf("   ID   pos(rad)  vel(rad/s)   tau(Nm)  MOS  Rtr  status              "
-                   "recv/sent    miss   rej/mal   last\n");
+            printf(
+                "=== %s  t=%.1fs%s ===\n", interface.c_str(),
+                std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count(),
+                toggle ? (commanded_enabled ? "  commanded: ENABLE" : "  commanded: DISABLE") : "");
+            printf(
+                "   ID   pos(rad)  vel(rad/s)   tau(Nm)  MOS  Rtr  status              "
+                "recv/sent    miss   rej/mal   last\n");
 
             const auto& arm = openarm.get_arm();
             for (size_t i = 0; i < send_ids.size(); ++i) {
                 const auto motor = arm.get_motor(static_cast<int>(i));
                 const auto& link = arm.get_link_stats(static_cast<int>(i));
 
-                printf(" 0x%02X %9.4f %11.4f %9.4f %4d %4d  %-20s %6lu/%-6lu %5.1f%% ",
-                       send_ids[i], motor.get_position(), motor.get_velocity(),
-                       motor.get_torque(), motor.get_state_tmos(), motor.get_state_trotor(),
-                       damiao_motor::motor_error_to_string(motor.get_error_code()),
-                       link.responses, link.commands_sent, link.miss_rate() * 100.0);
+                printf(" 0x%02X %9.4f %11.4f %9.4f %4d %4d  %-20s %6lu/%-6lu %5.1f%% ", send_ids[i],
+                       motor.get_position(), motor.get_velocity(), motor.get_torque(),
+                       motor.get_state_tmos(), motor.get_state_trotor(),
+                       damiao_motor::motor_error_to_string(motor.get_error_code()), link.responses,
+                       link.commands_sent, link.miss_rate() * 100.0);
                 printf("%4u/%-5u ", link.rejected_commands, link.malformed_frames);
 
                 if (!link.ever_responded())
                     printf("never  SILENT");
                 else
-                    printf("%.2fs%s", std::chrono::duration<double>(link.since_last_response())
-                                          .count(),
+                    printf("%.2fs%s",
+                           std::chrono::duration<double>(link.since_last_response()).count(),
                            link.is_stale(std::chrono::milliseconds(100)) ? "  SILENT" : "");
                 if (motor.has_error()) printf("  FAULT");
                 // The motor reports its armed state in the same D[0] nibble, so
                 // a command that did not take shows up here and nowhere else.
-                if (toggle && link.ever_responded() &&
-                    motor.is_enabled() != commanded_enabled)
+                if (toggle && link.ever_responded() && motor.is_enabled() != commanded_enabled)
                     printf("  MISMATCH");
                 printf("\n");
             }
@@ -176,11 +178,11 @@ int main(int argc, char** argv) {
             if (toggle) {
                 bool all_match = true;
                 for (size_t i = 0; i < send_ids.size(); ++i)
-                    all_match &= arm.get_motor(static_cast<int>(i)).is_enabled() ==
-                                 commanded_enabled;
+                    all_match &=
+                        arm.get_motor(static_cast<int>(i)).is_enabled() == commanded_enabled;
                 if (all_match) (commanded_enabled ? enable_ok : disable_ok)++;
-                printf("  toggle: %d cycles  enable confirmed %d  disable confirmed %d\n",
-                       cycles, enable_ok, disable_ok);
+                printf("  toggle: %d cycles  enable confirmed %d  disable confirmed %d\n", cycles,
+                       enable_ok, disable_ok);
             }
 
             print_bus(openarm.get_bus_status(), openarm.is_link_running());
@@ -188,9 +190,10 @@ int main(int argc, char** argv) {
             // where every master id was configured, so anything here is a
             // motor answering under the wrong id rather than a silent one.
             for (const auto& [id, count] : openarm.get_unmatched_frames())
-                printf("  unmatched: id 0x%02X x%lu  (a motor replying on an id nothing"
-                       " listens for; check RID 7)\n",
-                       id, count);
+                printf(
+                    "  unmatched: id 0x%02X x%lu  (a motor replying on an id nothing"
+                    " listens for; check RID 7)\n",
+                    id, count);
             printf("\n");
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }

@@ -67,16 +67,26 @@ inline constexpr uint8_t MOTOR_ERROR_THRESHOLD = 0x8;
 // the defined codes are named here.
 inline const char* motor_error_to_string(uint8_t code) {
     switch (code) {
-        case 0x0: return "DISABLED";
-        case 0x1: return "ENABLED";
-        case 0x8: return "OVERVOLTAGE";
-        case 0x9: return "UNDERVOLTAGE";
-        case 0xA: return "OVERCURRENT";
-        case 0xB: return "MOS_OVERHEAT";
-        case 0xC: return "COIL_OVERHEAT";
-        case 0xD: return "COMMUNICATION_LOST";
-        case 0xE: return "OVERLOAD";
-        default: return "UNKNOWN";
+        case 0x0:
+            return "DISABLED";
+        case 0x1:
+            return "ENABLED";
+        case 0x8:
+            return "OVERVOLTAGE";
+        case 0x9:
+            return "UNDERVOLTAGE";
+        case 0xA:
+            return "OVERCURRENT";
+        case 0xB:
+            return "MOS_OVERHEAT";
+        case 0xC:
+            return "COIL_OVERHEAT";
+        case 0xD:
+            return "COMMUNICATION_LOST";
+        case 0xE:
+            return "OVERLOAD";
+        default:
+            return "UNKNOWN";
     }
 }
 

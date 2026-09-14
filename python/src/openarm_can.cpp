@@ -24,15 +24,14 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
+#include <chrono>
+#include <limits>
 #include <openarm/can/socket/arm_component.hpp>
 #include <openarm/can/socket/gripper_component.hpp>
 #include <openarm/can/socket/openarm.hpp>
 #include <openarm/canbus/can_device.hpp>
 #include <openarm/canbus/can_device_collection.hpp>
 #include <openarm/canbus/can_socket.hpp>
-
-#include <chrono>
-#include <limits>
 #include <openarm/damiao_motor/dm_motor.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
 #include <openarm/damiao_motor/dm_motor_control.hpp>
@@ -191,8 +190,7 @@ NB_MODULE(openarm_can, m) {
         .def(
             "is_stale",
             [](const MotorLinkStats& s, double timeout_s) {
-                return s.is_stale(std::chrono::microseconds(
-                    static_cast<int64_t>(timeout_s * 1e6)));
+                return s.is_stale(std::chrono::microseconds(static_cast<int64_t>(timeout_s * 1e6)));
             },
             nb::arg("timeout_s"),
             "Whether the axis has been silent longer than timeout_s. The "

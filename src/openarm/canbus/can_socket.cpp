@@ -42,8 +42,8 @@ namespace {
 // which on a degraded bus reaches tens of thousands per second. CAN_ERR_LOSTARB
 // is ordinary traffic on a multi-master bus. What is left are state transitions,
 // which arrive a handful of times per second at worst.
-constexpr can_err_mask_t DEFAULT_ERR_MASK = CAN_ERR_TX_TIMEOUT | CAN_ERR_CRTL | CAN_ERR_ACK |
-                                            CAN_ERR_BUSOFF | CAN_ERR_RESTARTED;
+constexpr can_err_mask_t DEFAULT_ERR_MASK =
+    CAN_ERR_TX_TIMEOUT | CAN_ERR_CRTL | CAN_ERR_ACK | CAN_ERR_BUSOFF | CAN_ERR_RESTARTED;
 }  // namespace
 
 void BusStatus::record_error_frame(canid_t can_id, const uint8_t* data, uint8_t len) {

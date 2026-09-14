@@ -108,8 +108,7 @@ std::string codes_str(const AxisReport& a) {
     std::ostringstream ss;
     for (size_t i = 0; i < seen.size(); ++i) {
         if (i) ss << ", ";
-        ss << openarm::damiao_motor::motor_error_to_string(seen[i].second) << " x"
-           << seen[i].first;
+        ss << openarm::damiao_motor::motor_error_to_string(seen[i].second) << " x" << seen[i].first;
     }
     return ss.str();
 }
@@ -122,9 +121,8 @@ std::string codes_str(const AxisReport& a) {
 //
 // The interpretation lives here rather than in the library because it is a
 // judgement about a particular robot, not a fact about a CAN socket.
-void explain(const std::string& interface, const openarm::canbus::BusStatus& bus,
-             bool link_running, const std::vector<AxisReport>& report,
-             openarm::can::socket::OpenArm& openarm) {
+void explain(const std::string& interface, const openarm::canbus::BusStatus& bus, bool link_running,
+             const std::vector<AxisReport>& report, openarm::can::socket::OpenArm& openarm) {
     std::cout << "\n--- Explanation ---------------------------------------\n";
 
     uint64_t total_sent = 0, total_recv = 0;
@@ -145,14 +143,15 @@ void explain(const std::string& interface, const openarm::canbus::BusStatus& bus
         if (bus.write_net_down) {
             std::cout << " The interface is administratively down.\n"
                          "   write() returned ENETDOWN, which only happens when IFF_UP is clear.\n"
-                         "   Fix: sudo ip link set " << interface << " up\n";
+                         "   Fix: sudo ip link set "
+                      << interface << " up\n";
         } else {
             std::cout << " The bus is off, or the adapter is unplugged.\n"
                          "   IFF_UP is set but there is no carrier, and no write was refused.\n"
                          "   With restart-ms 0 a bus-off stays until the link is cycled.\n"
                          "   Fix: check wiring and termination, then\n"
-                         "        sudo ip link set " << interface << " down && sudo ip link set "
-                      << interface << " up\n";
+                         "        sudo ip link set "
+                      << interface << " down && sudo ip link set " << interface << " up\n";
         }
         return;
     }
@@ -166,18 +165,20 @@ void explain(const std::string& interface, const openarm::canbus::BusStatus& bus
                      "   alive and answering on the wrong id rather than not answering at all.\n"
                      "   The master id (RID 7) defaults to 0, so a motor that was never given\n"
                      "   one replies on 0x00. This is a configuration fault, not a wiring one.\n"
-                     "   Check: openarm-can-cli -i " << interface
-                  << " show_param --arm   (RID 7 MST_ID, RID 8 ESC_ID)\n";
+                     "   Check: openarm-can-cli -i "
+                  << interface << " show_param --arm   (RID 7 MST_ID, RID 8 ESC_ID)\n";
         if (total_recv > 0) std::cout << "\n";
     }
 
     if (total_recv == 0 && total_sent > 0) {
         if (bus.bus_off || bus.ack_error || bus.error_passive) {
             std::cout << " The bus is unusable as configured: nothing acknowledges anything.\n"
-                         "   Not one frame came back out of " << total_sent << " sent.\n";
+                         "   Not one frame came back out of "
+                      << total_sent << " sent.\n";
             if (bus.restarted && bus.bus_off.count > 1)
                 std::cout << "   The controller went bus-off " << bus.bus_off.count
-                          << " times and was restarted " << bus.restarted.count << " times, so\n"
+                          << " times and was restarted " << bus.restarted.count
+                          << " times, so\n"
                              "   the fault is continuous rather than a one-off disturbance.\n";
             // Every candidate below produces exactly this: no ACK, TEC climbs,
             // bus-off. The counters cannot tell them apart, so do not pretend
@@ -193,15 +194,16 @@ void explain(const std::string& interface, const openarm::canbus::BusStatus& bus
                          "     - lower dbitrate and retry. Recovering at a lower rate means the\n"
                          "       wiring is marginal; recovering at exactly one rate means the\n"
                          "       bitrate was simply wrong\n"
-                         "     - ip -details link show " << interface << "\n";
+                         "     - ip -details link show "
+                      << interface << "\n";
         } else {
             std::cout << " Frames go out cleanly but nothing answers.\n"
                          "   No bus error at all, so the wiring and bitrate are fine and the\n"
                          "   motors simply are not replying to these ids. The master id (RID 7)\n"
                          "   defaults to 0, so a motor that was never configured answers on an\n"
                          "   id nothing is listening for.\n"
-                         "   Check: openarm-can-cli -i " << interface
-                      << " show_param --arm   (RID 7 MST_ID, RID 8 ESC_ID)\n";
+                         "   Check: openarm-can-cli -i "
+                      << interface << " show_param --arm   (RID 7 MST_ID, RID 8 ESC_ID)\n";
         }
         return;
     }
@@ -240,16 +242,20 @@ void explain(const std::string& interface, const openarm::canbus::BusStatus& bus
     size_t worst_i = 0;
     for (size_t i = 0; i < report.size(); ++i) {
         double m = openarm.get_arm().get_link_stats(static_cast<int>(i)).miss_rate();
-        if (m > worst) { worst = m; worst_i = i; }
+        if (m > worst) {
+            worst = m;
+            worst_i = i;
+        }
     }
     if (worst > 0.01) {
         std::cout << " Every axis answers, but " << hex_id(report[worst_i].send_id) << " dropped "
-                  << pct(worst) << " of its replies with no bus error.\n"
+                  << pct(worst)
+                  << " of its replies with no bus error.\n"
                      "   Losses on one axis and not the others point at that connector or its\n"
                      "   cable rather than the bus. This is what a link looks like before it\n"
                      "   fails outright.\n"
-                     "   Isolate it: openarm-can-cli -i " << interface << " diagnose --id "
-                  << report[worst_i].send_id << "\n";
+                     "   Isolate it: openarm-can-cli -i "
+                  << interface << " diagnose --id " << report[worst_i].send_id << "\n";
         return;
     }
 
@@ -370,8 +376,10 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
                   << std::setw(20) << "Rotor(C)" << "|Tau| max\n";
         for (const auto& a : report) {
             std::cout << " " << std::left << std::setfill(' ') << std::setw(9) << hex_id(a.send_id)
-                      << std::setw(20) << range_str(a.tmos_min, a.tmos_max, a.tmos_last, a.responded)
-                      << std::setw(20) << range_str(a.trot_min, a.trot_max, a.trot_last, a.responded);
+                      << std::setw(20)
+                      << range_str(a.tmos_min, a.tmos_max, a.tmos_last, a.responded)
+                      << std::setw(20)
+                      << range_str(a.trot_min, a.trot_max, a.trot_last, a.responded);
             if (a.responded)
                 std::cout << std::fixed << std::setprecision(3) << a.tau_abs_max;
             else
@@ -386,9 +394,8 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
         for (const auto& a : report) {
             std::cout << " " << std::left << std::setw(9) << hex_id(a.send_id) << std::setw(10)
                       << (!a.responded ? "-" : (a.enabled ? "yes" : "no")) << std::setw(22)
-                      << (!a.responded
-                              ? "-"
-                              : openarm::damiao_motor::motor_error_to_string(a.last_code))
+                      << (!a.responded ? "-"
+                                       : openarm::damiao_motor::motor_error_to_string(a.last_code))
                       << codes_str(a) << "\n";
             for (uint8_t c = openarm::damiao_motor::MOTOR_ERROR_THRESHOLD; c < 16; ++c)
                 if (a.code_counts[c] > 0) any_fault = true;
@@ -396,9 +403,9 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
 
         // ---------------- (2b) per-axis link ----------------
         std::cout << "\n--- (2b) Per-axis link -----------------------------------\n";
-        std::cout << std::left << std::setw(9) << " ID" << std::setw(9) << "sent"
-                  << std::setw(9) << "recv" << std::setw(9) << "miss" << std::setw(9) << "miss%"
-                  << std::setw(12) << "last seen" << std::setw(10) << "rejected" << "malformed\n";
+        std::cout << std::left << std::setw(9) << " ID" << std::setw(9) << "sent" << std::setw(9)
+                  << "recv" << std::setw(9) << "miss" << std::setw(9) << "miss%" << std::setw(12)
+                  << "last seen" << std::setw(10) << "rejected" << "malformed\n";
 
         int boundary = -1;  // first silent axis that follows a healthy one
         bool seen_healthy = false;
