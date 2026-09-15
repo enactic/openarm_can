@@ -1,4 +1,4 @@
-# Copyright 2025 Enactic, Inc.
+# Copyright 2025-2026 Enactic, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ Setup and configuration utility scripts.
 %{_bindir}/openarm-can-cli
 %{_bindir}/openarm-can-configure-socketcan-4-arms
 %{_bindir}/openarm-can-demo
+%{_bindir}/openarm-can-health
 %{_bindir}/openarm-can-motor-sampling-check
 %{_bindir}/openarm-can-zero-position-calibration
 %{_datadir}/bash-completion/completions/openarm-can-cli

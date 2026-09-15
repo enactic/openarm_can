@@ -18,7 +18,7 @@
 // so the arm cannot move while this runs. That makes it safe to leave running
 // and unplug a cable to watch what happens.
 //
-//     openarm-can-health can0 [seconds] [motor count] [--toggle]
+//     openarm-can-health [interface] [seconds] [motor count] [--toggle]
 //
 // With --toggle it enables and disables once a second and counts how often the
 // motors confirm the command, which is a way to reproduce an enable that does
@@ -37,6 +37,7 @@
 //   bus    -- faults that stop every axis at once and cannot be attributed to
 //             any single one.
 
+#include <CLI/CLI.hpp>
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -90,12 +91,22 @@ void print_bus(const canbus::BusStatus& bus, bool carrier) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    const std::string interface = argc > 1 ? argv[1] : "can0";
-    const int seconds = argc > 2 ? std::atoi(argv[2]) : 10;
-    const int motor_count = argc > 3 ? std::atoi(argv[3]) : 8;
-
+    CLI::App app{"Everything openarm_can can report about an arm, printed as it changes."};
+    std::string interface = "can0";
+    int seconds = 10;
+    int motor_count = 8;
     bool toggle = false;
-    for (int i = 1; i < argc; ++i) toggle |= std::string(argv[i]) == "--toggle";
+    app.add_option("interface", interface, "SocketCAN interface")->capture_default_str();
+    app.add_option("seconds", seconds, "How long to run")
+        ->check(CLI::PositiveNumber)
+        ->capture_default_str();
+    app.add_option("motors", motor_count, "Number of arm motors, send ids 1..N")
+        ->check(CLI::Range(1, 8))
+        ->capture_default_str();
+    app.add_flag("--toggle", toggle,
+                 "Enable and disable once a second and count how often the motors confirm."
+                 " ARMS THE MOTORS: the arm falls on each disable.");
+    CLI11_PARSE(app, argc, argv);
 
     try {
         can::socket::OpenArm openarm(interface, true);
@@ -199,9 +210,9 @@ int main(int argc, char** argv) {
         }
 
         // Leave the motors as they were found. Only --toggle ever arms them, so
-        // only --toggle disarms: sending a disable unconditionally would drop an
-        // arm that something else is holding up.
-        if (toggle) {
+        // only disarm if this process actually sent an enable: sending a disable
+        // unconditionally would drop an arm that something else is holding up.
+        if (commanded_enabled) {
             std::signal(SIGINT, SIG_DFL);
             printf(">>> disabling\n");
             openarm.disable_all();

@@ -1,4 +1,4 @@
-# Copyright 2025 Enactic, Inc.
+# Copyright 2025-2026 Enactic, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -123,9 +123,12 @@ add_executable(openarm-can-demo examples/demo.cpp)
 target_link_libraries(openarm-can-demo openarm_can)
 install(TARGETS openarm-can-demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+find_package(CLI11 REQUIRED)
+
 # Read-only health/diagnostics example
 add_executable(openarm-can-health examples/health.cpp)
-target_link_libraries(openarm-can-health openarm_can)
+target_link_libraries(openarm-can-health openarm_can CLI11::CLI11)
+install(TARGETS openarm-can-health DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # C++ counterparts of python/examples
 foreach(NAME mit posvel vel posforce gripper_posforce)
@@ -137,7 +140,6 @@ endforeach()
 # ==============================================================================
 # OpenArm Unified CLI Tool (openarm-can)
 # ==============================================================================
-find_package(CLI11 REQUIRED)
 add_executable(
   openarm-can-cli
   setup/cli/openarm_cli.cpp
