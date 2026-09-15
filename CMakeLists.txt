@@ -129,9 +129,10 @@ target_link_libraries(openarm-can-health openarm_can)
 install(TARGETS openarm-can-health DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # C++ counterparts of python/examples
-foreach(OCP_EXAMPLE mit posvel vel posforce gripper_posforce)
-  add_executable(openarm-can-example-${OCP_EXAMPLE} examples/${OCP_EXAMPLE}.cpp)
-  target_link_libraries(openarm-can-example-${OCP_EXAMPLE} openarm_can)
+foreach(NAME mit posvel vel posforce gripper_posforce)
+  string(REPLACE "_" "-" NAME_HYPHEN ${NAME})
+  add_executable(openarm-can-example-${NAME_HYPHEN} examples/${NAME}.cpp)
+  target_link_libraries(openarm-can-example-${NAME_HYPHEN} openarm_can)
 endforeach()
 
 # ==============================================================================
