@@ -76,58 +76,30 @@ int main(int argc, char** argv) {
         app.add_subcommand("can_configure", "Setup SocketCAN interface (default: 1Mbps/5Mbps FD)")
             ->group("[ Network & Hardware ]");
 
-    // static int cc_bitrate = 1000000;
-    // static int cc_dbitrate = 8000000;
-    // static bool cc_fd_mode = true;
-    // static std::string cc_sample_point = "0.75";
-    // static std::string cc_dsample_point = "0.6";
-    // static std::string cc_dsjw = "3";
-    // static int cc_restart_ms = 100;
+    static openarm::cli::CanConfigureOptions cc;
 
-    static int cc_bitrate = 1000000;
-    static int cc_dbitrate = 5000000;
-    static bool cc_fd_mode = true;
-    static std::string cc_sample_point = "0.75";
-    static std::string cc_dsample_point = "0.75";
-    static std::string cc_dsjw = "2";
-    // 0 keeps the controller stopped after a bus-off instead of silently
-    // restarting it. An auto-restart hides the fault: the link is back within
-    // milliseconds while control was interrupted the whole time.
-    static int cc_restart_ms = 0;
-
-    can_configure->add_option("-b,--bitrate", cc_bitrate, "Set arbitration phase bitrate")
-        ->default_val("1000000");
-
-    // can_configure->add_option("-d,--dbitrate", cc_dbitrate, "Set CAN FD data phase bitrate")
-    //     ->default_val(8000000);
-    // can_configure->add_option("--sp", cc_sample_point, "Sample point for arbitration phase")
-    //     ->default_val("0.75");
-    // can_configure->add_option("--dsp", cc_dsample_point, "Sample point for data phase")
-    //     ->default_val("0.6");
-    // can_configure->add_option("--dsjw", cc_dsjw, "Data Synchronization Jump Width")
-    //     ->default_val("3");
-
-    can_configure->add_option("-d,--dbitrate", cc_dbitrate, "Set CAN FD data phase bitrate")
-        ->default_val("5000000");  // 8000000 → 5000000
-    can_configure->add_option("--dsp", cc_dsample_point, "Sample point for data phase")
-        ->default_val("0.75");  // "0.6" → "0.75"
-    can_configure->add_option("--sp", cc_sample_point, "Sample point for arbitration phase")
-        ->default_val("0.75");
-    can_configure->add_option("--dsjw", cc_dsjw, "Data Synchronization Jump Width")
-        ->default_val("2");  // "3" → "2"
+    can_configure->add_option("-b,--bitrate", cc.bitrate, "Set arbitration phase bitrate")
+        ->capture_default_str();
+    can_configure->add_option("-d,--dbitrate", cc.dbitrate, "Set CAN FD data phase bitrate")
+        ->capture_default_str();
+    can_configure->add_option("--dsp", cc.dsample_point, "Sample point for data phase")
+        ->capture_default_str();
+    can_configure->add_option("--sp", cc.sample_point, "Sample point for arbitration phase")
+        ->capture_default_str();
+    can_configure->add_option("--dsjw", cc.dsjw, "Data Synchronization Jump Width")
+        ->capture_default_str();
     can_configure
-        ->add_option("--rm", cc_restart_ms,
+        ->add_option("--rm", cc.restart_ms,
                      "Auto-restart delay in milliseconds after bus-off "
-                     "(default: 0, stay down so the fault is visible)")
-        ->default_val("0");
-    static int cc_txqueuelen = 0;
+                     "(0: stay down so the fault is visible)")
+        ->capture_default_str();
     can_configure
-        ->add_option("--txqueuelen", cc_txqueuelen,
-                     "Transmit queue depth in frames (default: 0, leave the kernel's). "
+        ->add_option("--txqueuelen", cc.txqueuelen,
+                     "Transmit queue depth in frames (0: leave the kernel's). "
                      "The CAN default of 10 is short on purpose; a deep queue delivers "
                      "stale commands")
-        ->default_val("0");
-    can_configure->add_flag("!--no-fd,--fd", cc_fd_mode, "Enable CAN FD mode");
+        ->capture_default_str();
+    can_configure->add_flag("!--no-fd,--fd", cc.fd_mode, "Enable CAN FD mode");
 
     can_configure->callback([&]() {
         // Check if -i was explicitly provided by comparing to default value
@@ -137,9 +109,7 @@ int main(int argc, char** argv) {
         } else {
             target_ifaces = {"can0", "can1", "can2", "can3"};
         }
-        int result = openarm::cli::run_can_configure(target_ifaces, cc_bitrate, cc_dbitrate,
-                                                     cc_fd_mode, cc_sample_point, cc_dsample_point,
-                                                     cc_dsjw, cc_restart_ms, cc_txqueuelen);
+        int result = openarm::cli::run_can_configure(target_ifaces, cc);
         if (result != 0) {
             throw CLI::RuntimeError("can_configure failed.", result);
         }
