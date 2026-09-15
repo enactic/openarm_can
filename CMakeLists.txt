@@ -132,8 +132,6 @@ install(TARGETS openarm-can-health DESTINATION ${CMAKE_INSTALL_BINDIR})
 foreach(OCP_EXAMPLE mit posvel vel posforce gripper_posforce)
   add_executable(openarm-can-example-${OCP_EXAMPLE} examples/${OCP_EXAMPLE}.cpp)
   target_link_libraries(openarm-can-example-${OCP_EXAMPLE} openarm_can)
-  install(TARGETS openarm-can-example-${OCP_EXAMPLE}
-          DESTINATION ${CMAKE_INSTALL_BINDIR})
 endforeach()
 
 # ==============================================================================
