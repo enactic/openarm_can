@@ -32,6 +32,7 @@ override_dh_auto_install:
 	dh_auto_install
 	# The Python bindings depend on the C++ implementation.
 	OpenArmCAN_ROOT=$$(pwd)/debian/tmp/usr \
+	SKBUILD_CMAKE_DEFINE=CMAKE_DISABLE_FIND_PACKAGE_OpenArmCAN=OFF \
 		dh_auto_build \
 			--buildsystem=pybuild \
 			--sourcedirectory=python

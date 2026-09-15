@@ -82,6 +82,23 @@ endfunction()
 ocp_ensure_nanobind()
 
 function(ocp_ensure_openarm_can)
+  # Prefer the C++ tree this package sits inside, the same way nanobind
+  # prefers a vendored copy. Without this the bindings are compiled against
+  # an installed package or a released tag fetched from GitHub, so any change
+  # made here fails to build until it has been installed or tagged and pushed.
+  set(OPENARM_CAN_SOURCE_LOCAL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/..")
+  if(EXISTS
+     "${OPENARM_CAN_SOURCE_LOCAL_PATH}/include/openarm/can/socket/openarm.hpp")
+    set(OPENARM_CAN_HAVE_LOCAL_SOURCE TRUE)
+  else()
+    set(OPENARM_CAN_HAVE_LOCAL_SOURCE FALSE)
+  endif()
+  # Pass -DCMAKE_DISABLE_FIND_PACKAGE_OpenArmCAN=OFF to use an installed
+  # package from inside a checkout, e.g. when packaging.
+  option(CMAKE_DISABLE_FIND_PACKAGE_OpenArmCAN
+         "Do not look for an installed OpenArmCAN"
+         ${OPENARM_CAN_HAVE_LOCAL_SOURCE})
+
   # We can use FIND_PACKAGE_ARGS in fetchcontent_declare() instead of
   # explicit find_package() when we require CMake 3.24 or later.
   find_package(OpenArmCAN ${openarm_can_python_VERSION})
@@ -89,11 +106,17 @@ function(ocp_ensure_openarm_can)
     return()
   endif()
 
+  if(OPENARM_CAN_HAVE_LOCAL_SOURCE)
+    set(OPENARM_CAN_SOURCE_ARGS SOURCE_DIR "${OPENARM_CAN_SOURCE_LOCAL_PATH}")
+  else()
+    set(OPENARM_CAN_SOURCE_ARGS
+        GIT_REPOSITORY "https://github.com/enactic/openarm_can.git" GIT_TAG
+        "${openarm_can_python_VERSION}")
+  endif()
   fetchcontent_declare(
     openarm_can
     ${OCP_FETCH_CONTENT_COMMON_OPTIONS}
-    GIT_REPOSITORY "https://github.com/enactic/openarm_can.git"
-    GIT_TAG "${openarm_can_python_VERSION}"
+    ${OPENARM_CAN_SOURCE_ARGS}
     # We can use FIND_PACKAGE_ARGS when we require CMake 3.24 or later.
     #
     # FIND_PACKAGE_ARGS NAMES OpenArmCAN

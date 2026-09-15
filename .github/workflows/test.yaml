@@ -91,6 +91,7 @@ jobs:
       - name: "Python: Build"
         run: |
           python3 -m pip install \
+            -Ccmake.define.CMAKE_DISABLE_FIND_PACKAGE_OpenArmCAN=OFF \
             -Ccmake.define.CMAKE_PREFIX_PATH=$PWD/install \
             --verbose \
             ./python
