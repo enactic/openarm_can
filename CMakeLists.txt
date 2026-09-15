@@ -126,7 +126,6 @@ install(TARGETS openarm-can-demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 # Read-only health/diagnostics example
 add_executable(openarm-can-health examples/health.cpp)
 target_link_libraries(openarm-can-health openarm_can)
-install(TARGETS openarm-can-health DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # C++ counterparts of python/examples
 foreach(NAME mit posvel vel posforce gripper_posforce)
