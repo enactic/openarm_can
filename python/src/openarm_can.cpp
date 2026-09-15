@@ -419,7 +419,7 @@ NB_MODULE(openarm_can, m) {
              nb::arg("posforce_params"))
         .def("get_motors", &DMDeviceCollection::get_motors)
         .def("get_device_collection", &DMDeviceCollection::get_device_collection,
-             nb::rv_policy::reference);
+             nb::rv_policy::reference_internal);
 
     // ArmComponent class
     nb::class_<ArmComponent, DMDeviceCollection>(m, "ArmComponent")
@@ -460,10 +460,10 @@ NB_MODULE(openarm_can, m) {
         .def("init_gripper_motor", &OpenArm::init_gripper_motor, nb::arg("motor_type"),
              nb::arg("send_can_id"), nb::arg("recv_can_id"),
              nb::arg("control_mode") = ControlMode::MIT)
-        .def("get_arm", &OpenArm::get_arm, nb::rv_policy::reference)
-        .def("get_gripper", &OpenArm::get_gripper, nb::rv_policy::reference)
+        .def("get_arm", &OpenArm::get_arm, nb::rv_policy::reference_internal)
+        .def("get_gripper", &OpenArm::get_gripper, nb::rv_policy::reference_internal)
         .def("get_master_can_device_collection", &OpenArm::get_master_can_device_collection,
-             nb::rv_policy::reference)
+             nb::rv_policy::reference_internal)
         .def("enable_all", &OpenArm::enable_all)
         .def("disable_all", &OpenArm::disable_all)
         .def("set_zero_all", &OpenArm::set_zero_all)
