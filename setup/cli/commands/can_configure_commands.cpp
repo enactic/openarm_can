@@ -21,10 +21,8 @@
 
 namespace openarm::cli {
 
-int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, int dbitrate,
-                      bool fd_mode, const std::string& sample_point,
-                      const std::string& dsample_point, const std::string& dsjw, int restart_ms,
-                      int txqueuelen) {
+int run_can_configure(const std::vector<std::string>& interfaces,
+                      const CanConfigureOptions& options) {
     std::vector<std::string> target_interfaces = interfaces;
     if (target_interfaces.empty()) {
         target_interfaces = {"can0", "can1", "can2", "can3"};
@@ -37,15 +35,17 @@ int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, i
     std::cout << " Target    :";
     for (const auto& i : target_interfaces) std::cout << " " << i;
     std::cout << "\n";
-    std::cout << " Mode      : " << (fd_mode ? "CAN-FD" : "Classic CAN") << "\n";
-    std::cout << " Bitrate   : " << bitrate << " bps  (SP: " << sample_point << ")\n";
-    if (fd_mode) {
-        std::cout << " Data rate : " << dbitrate << " bps  (DSP: " << dsample_point
-                  << ", DSJW: " << dsjw << ")\n";
+    std::cout << " Mode      : " << (options.fd_mode ? "CAN-FD" : "Classic CAN") << "\n";
+    std::cout << " Bitrate   : " << options.bitrate << " bps  (SP: " << options.sample_point
+              << ")\n";
+    if (options.fd_mode) {
+        std::cout << " Data rate : " << options.dbitrate << " bps  (DSP: " << options.dsample_point
+                  << ", DSJW: " << options.dsjw << ")\n";
     }
-    std::cout << " Restart   : " << restart_ms << " ms\n";
+    std::cout << " Restart   : " << options.restart_ms << " ms\n";
     std::cout << " TX queue  : "
-              << (txqueuelen > 0 ? std::to_string(txqueuelen) + " frames" : "kernel default")
+              << (options.txqueuelen > 0 ? std::to_string(options.txqueuelen) + " frames"
+                                         : "kernel default")
               << "\n";
     std::cout << "=========================================================\n\n";
 
@@ -58,11 +58,12 @@ int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, i
         std::system(cmd_down.c_str());
 
         std::string cmd_set = "sudo ip link set " + iface + " type can bitrate " +
-                              std::to_string(bitrate) + " sample-point " + sample_point +
-                              " restart-ms " + std::to_string(restart_ms);
-        if (fd_mode) {
-            cmd_set += " dbitrate " + std::to_string(dbitrate) + " fd on dsample-point " +
-                       dsample_point + " dsjw " + dsjw;
+                              std::to_string(options.bitrate) + " sample-point " +
+                              options.sample_point + " restart-ms " +
+                              std::to_string(options.restart_ms);
+        if (options.fd_mode) {
+            cmd_set += " dbitrate " + std::to_string(options.dbitrate) + " fd on dsample-point " +
+                       options.dsample_point + " dsjw " + options.dsjw;
         }
 
         std::cout << "    " << cmd_set << std::endl;
@@ -77,9 +78,9 @@ int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, i
         // purpose: a deep queue delivers stale commands, and for a control loop
         // a dropped frame beats one that arrives late. Raising it by a cycle or
         // two absorbs jitter, raising it far does not.
-        if (txqueuelen > 0) {
+        if (options.txqueuelen > 0) {
             std::string cmd_q =
-                "sudo ip link set " + iface + " txqueuelen " + std::to_string(txqueuelen);
+                "sudo ip link set " + iface + " txqueuelen " + std::to_string(options.txqueuelen);
             std::cout << "    " << cmd_q << std::endl;
             if (std::system(cmd_q.c_str()) != 0)
                 std::cerr << "! [" << iface << "] Failed to set txqueuelen; continuing."

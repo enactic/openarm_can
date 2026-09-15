@@ -26,9 +26,27 @@ namespace openarm::cli {
 // [ Network & Hardware ]
 // ========================================================================
 
-int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, int dbitrate,
-                      bool fd_mode, const std::string& sp, const std::string& dsp,
-                      const std::string& dsjw, int restart_ms, int txqueuelen = 0);
+// Parameters applied by can_configure. The member initializers are the
+// defaults of the can_configure subcommand and are also what discover restores
+// the interface to after scanning, so the two cannot drift apart.
+struct CanConfigureOptions {
+    int bitrate = 1000000;
+    int dbitrate = 5000000;
+    bool fd_mode = true;
+    std::string sample_point = "0.75";
+    std::string dsample_point = "0.75";
+    std::string dsjw = "2";
+    // 0 keeps the controller stopped after a bus-off instead of silently
+    // restarting it. An auto-restart hides the fault: the link is back within
+    // milliseconds while control was interrupted the whole time.
+    int restart_ms = 0;
+    // 0 leaves the kernel's default. The CAN default of 10 frames is short on
+    // purpose: a deep queue delivers stale commands.
+    int txqueuelen = 0;
+};
+
+int run_can_configure(const std::vector<std::string>& interfaces,
+                      const CanConfigureOptions& options);
 
 int run_discover(const std::string& interface, int max_id, bool full_scan = false);
 
