@@ -1,4 +1,4 @@
-# Copyright 2025 Enactic, Inc.
+# Copyright 2025-2026 Enactic, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -123,10 +123,23 @@ add_executable(openarm-can-demo examples/demo.cpp)
 target_link_libraries(openarm-can-demo openarm_can)
 install(TARGETS openarm-can-demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+find_package(CLI11 REQUIRED)
+
+# Read-only health/diagnostics example
+add_executable(openarm-can-health examples/health.cpp)
+target_link_libraries(openarm-can-health openarm_can CLI11::CLI11)
+install(TARGETS openarm-can-health DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# C++ counterparts of python/examples
+foreach(NAME mit posvel vel posforce gripper_posforce)
+  string(REPLACE "_" "-" NAME_HYPHEN ${NAME})
+  add_executable(openarm-can-example-${NAME_HYPHEN} examples/${NAME}.cpp)
+  target_link_libraries(openarm-can-example-${NAME_HYPHEN} openarm_can)
+endforeach()
+
 # ==============================================================================
 # OpenArm Unified CLI Tool (openarm-can)
 # ==============================================================================
-find_package(CLI11 REQUIRED)
 add_executable(
   openarm-can-cli
   setup/cli/openarm_cli.cpp
@@ -139,7 +152,8 @@ add_executable(
   setup/cli/commands/discover_motor_commands.cpp
   setup/cli/commands/change_motor_id_commands.cpp
   setup/cli/commands/write_motor_param_commands.cpp
-  setup/cli/commands/clear_error_commands.cpp)
+  setup/cli/commands/clear_error_commands.cpp
+  setup/cli/commands/diagnose_commands.cpp)
 target_include_directories(
   openarm-can-cli PRIVATE setup/cli ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(openarm-can-cli PRIVATE openarm_can CLI11::CLI11)

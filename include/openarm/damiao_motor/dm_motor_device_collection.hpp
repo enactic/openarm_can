@@ -69,6 +69,9 @@ public:
     // Device collection access
     std::vector<Motor> get_motors() const;
     Motor get_motor(int i) const;
+    // Delivery counts for axis i. Reports only; the timeout that counts as
+    // "not responding" is the caller's to choose.
+    const MotorLinkStats& get_link_stats(int i) const;
     canbus::CANDeviceCollection& get_device_collection() { return *device_collection_; }
 
 protected:

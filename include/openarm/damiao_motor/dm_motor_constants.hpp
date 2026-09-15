@@ -38,6 +38,58 @@ enum class MotorType : uint8_t {
 
 enum class ControlMode : uint8_t { MIT = 1, POS_VEL = 2, VEL = 3, POS_FORCE = 4 };
 
+// Status/error code carried in the upper nibble of D[0] of every state feedback
+// frame: D[0] = ID | (ERR << 4). Codes 0x0 and 0x1 are normal operating states,
+// 0x8 and above are faults.
+//
+// See also:
+// https://damiao.enactic.ai/en/products/hardware/dm-j4340p-2ec-v1.0/
+//
+// The motor drives its indicator lamp from this same code, so a value read here
+// can be cross-checked against the hardware.
+enum class MotorError : uint8_t {
+    DISABLED = 0x0,
+    ENABLED = 0x1,
+    OVERVOLTAGE = 0x8,
+    UNDERVOLTAGE = 0x9,
+    OVERCURRENT = 0xA,
+    MOS_OVERHEAT = 0xB,
+    COIL_OVERHEAT = 0xC,
+    COMMUNICATION_LOST = 0xD,
+    OVERLOAD = 0xE
+};
+
+// Codes at or above this are faults; below it the motor is only reporting
+// whether it is enabled.
+inline constexpr uint8_t MOTOR_ERROR_THRESHOLD = 0x8;
+
+// 0x2-0x7 and 0xF are unassigned, so the raw nibble is what gets stored and only
+// the defined codes are named here.
+inline const char* motor_error_to_string(uint8_t code) {
+    switch (code) {
+        case 0x0:
+            return "DISABLED";
+        case 0x1:
+            return "ENABLED";
+        case 0x8:
+            return "OVERVOLTAGE";
+        case 0x9:
+            return "UNDERVOLTAGE";
+        case 0xA:
+            return "OVERCURRENT";
+        case 0xB:
+            return "MOS_OVERHEAT";
+        case 0xC:
+            return "COIL_OVERHEAT";
+        case 0xD:
+            return "COMMUNICATION_LOST";
+        case 0xE:
+            return "OVERLOAD";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 enum class RID : uint8_t {
     UV_Value = 0,
     KT_Value = 1,

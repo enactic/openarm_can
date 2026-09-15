@@ -15,7 +15,6 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
-#include <iostream>
 #include <openarm/damiao_motor/dm_motor_device_collection.hpp>
 
 namespace openarm::damiao_motor {
@@ -104,6 +103,7 @@ void DMDeviceCollection::set_control_mode_all(ControlMode mode) {
 
 void DMDeviceCollection::send_command_to_device(std::shared_ptr<DMCANDevice> dm_device,
                                                 const CANPacket& packet) {
+    dm_device->record_command_sent();
     if (can_socket_.is_canfd_enabled()) {
         canfd_frame frame = dm_device->create_canfd_frame(packet.send_can_id, packet.data);
         can_socket_.write_canfd_frame(frame);
@@ -116,7 +116,7 @@ void DMDeviceCollection::send_command_to_device(std::shared_ptr<DMCANDevice> dm_
 void DMDeviceCollection::mit_control_one(int i, const MITParam& mit_param) {
     auto dm_device = get_dm_devices()[i];
     if (dm_device->get_control_mode() != ControlMode::MIT) {
-        std::cerr << "WARNING: MIT control rejected; motor not in MIT mode." << std::endl;
+        dm_device->record_rejected_command();
         return;
     }
     CANPacket mit_cmd =
@@ -133,7 +133,7 @@ void DMDeviceCollection::mit_control_all(const std::vector<MITParam>& mit_params
 void DMDeviceCollection::posvel_control_one(int i, const PosVelParam& posvel_param) {
     auto dm_device = get_dm_devices()[i];
     if (dm_device->get_control_mode() != ControlMode::POS_VEL) {
-        std::cerr << "WARNING: posvel control rejected; motor not in POS_VEL mode." << std::endl;
+        dm_device->record_rejected_command();
         return;
     }
     CANPacket posvel_cmd =
@@ -150,7 +150,7 @@ void DMDeviceCollection::posvel_control_all(const std::vector<PosVelParam>& posv
 void DMDeviceCollection::vel_control_one(int i, const VelParam& vel_param) {
     auto dm_device = get_dm_devices()[i];
     if (dm_device->get_control_mode() != ControlMode::VEL) {
-        std::cerr << "WARNING: vel control rejected; motor not in VEL mode." << std::endl;
+        dm_device->record_rejected_command();
         return;
     }
     CANPacket vel_cmd =
@@ -167,8 +167,7 @@ void DMDeviceCollection::vel_control_all(const std::vector<VelParam>& vel_params
 void DMDeviceCollection::posforce_control_one(int i, const PosForceParam& posforce_param) {
     auto dm_device = get_dm_devices()[i];
     if (dm_device->get_control_mode() != ControlMode::POS_FORCE) {
-        std::cerr << "WARNING: posforce control rejected; motor not in POS_FORCE mode."
-                  << std::endl;
+        dm_device->record_rejected_command();
         return;
     }
     CANPacket posforce_cmd =
@@ -191,6 +190,10 @@ std::vector<Motor> DMDeviceCollection::get_motors() const {
 }
 
 Motor DMDeviceCollection::get_motor(int i) const { return get_dm_devices().at(i)->get_motor(); }
+
+const MotorLinkStats& DMDeviceCollection::get_link_stats(int i) const {
+    return get_dm_devices().at(i)->get_link_stats();
+}
 
 std::vector<std::shared_ptr<DMCANDevice>> DMDeviceCollection::get_dm_devices() const {
     std::vector<std::shared_ptr<DMCANDevice>> dm_devices;

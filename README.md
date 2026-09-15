@@ -88,6 +88,10 @@ openarm-can-cli -i can0 can_configure
 # Configure with 1Mbps data rate (Classic CAN)
 openarm-can-cli -i can0 can_configure -d 1000000 --no-fd
 
+# By default the interface stays down after a bus-off so the fault is visible
+# (restart-ms 0). Pass --rm to let the kernel restart it automatically instead
+openarm-can-cli -i can0 can_configure --rm 100
+
 # Discover motors on the bus
 openarm-can-cli -i can0 discover
 

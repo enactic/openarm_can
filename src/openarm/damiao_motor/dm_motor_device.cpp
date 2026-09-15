@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <cmath>
-#include <iostream>
 #include <openarm/damiao_motor/dm_motor.hpp>
 #include <openarm/damiao_motor/dm_motor_constants.hpp>
 #include <openarm/damiao_motor/dm_motor_control.hpp>
@@ -36,9 +35,18 @@ std::vector<uint8_t> DMCANDevice::get_data_from_frame(const canfd_frame& frame) 
 }
 void DMCANDevice::callback(const can_frame& frame) {
     if (use_fd_) {
-        std::cerr << "WARNING: WRONG CALLBACK FUNCTION" << std::endl;
+        // A classic frame handed to an FD device, or the reverse: a caller bug
+        // rather than anything the bus did, but counted the same way so that
+        // nothing in the receive path writes to stderr.
+        link_stats_.malformed_frames++;
         return;
     }
+
+    // The frame was routed here by can_id, so reaching this point is proof the
+    // motor answered. Recorded before any mode handling, because even a frame
+    // that is about to be discarded is evidence of life.
+    link_stats_.responses++;
+    link_stats_.last_response = std::chrono::steady_clock::now();
 
     std::vector<uint8_t> data = get_data_from_frame(frame);
 
@@ -47,7 +55,9 @@ void DMCANDevice::callback(const can_frame& frame) {
             if (frame.can_dlc >= 8) {
                 // Convert frame data to vector and let Motor handle parsing
                 StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
+                if (!result.valid) link_stats_.malformed_frames++;
                 if (frame.can_id == motor_.get_recv_can_id() && result.valid) {
+                    motor_.set_error_code(result.error_code);
                     motor_.update_state(result.position, result.velocity, result.torque,
                                         result.t_mos, result.t_rotor);
                 }
@@ -57,6 +67,8 @@ void DMCANDevice::callback(const can_frame& frame) {
             ParamResult result = CanPacketDecoder::parse_motor_param_data(data);
             if (result.valid) {
                 motor_.set_temp_param(result.rid, result.value);
+            } else {
+                link_stats_.malformed_frames++;
             }
             break;
         }
@@ -69,19 +81,24 @@ void DMCANDevice::callback(const can_frame& frame) {
 
 void DMCANDevice::callback(const canfd_frame& frame) {
     if (not use_fd_) {
-        std::cerr << "WARNING: CANFD MODE NOT ENABLED" << std::endl;
+        link_stats_.malformed_frames++;
         return;
     }
 
     if (frame.can_id != motor_.get_recv_can_id()) {
-        std::cerr << "WARNING: CANFD FRAME ID DOES NOT MATCH MOTOR ID" << std::endl;
+        link_stats_.malformed_frames++;
         return;
     }
+
+    link_stats_.responses++;
+    link_stats_.last_response = std::chrono::steady_clock::now();
 
     std::vector<uint8_t> data = get_data_from_frame(frame);
     if (callback_mode_ == STATE) {
         StateResult result = CanPacketDecoder::parse_motor_state_data(motor_, data);
+        if (!result.valid) link_stats_.malformed_frames++;
         if (result.valid) {
+            motor_.set_error_code(result.error_code);
             motor_.update_state(result.position, result.velocity, result.torque, result.t_mos,
                                 result.t_rotor);
         }
@@ -89,6 +106,8 @@ void DMCANDevice::callback(const canfd_frame& frame) {
         ParamResult result = CanPacketDecoder::parse_motor_param_data(data);
         if (result.valid) {
             motor_.set_temp_param(result.rid, result.value);
+        } else {
+            link_stats_.malformed_frames++;
         }
     } else if (callback_mode_ == IGNORE) {
         return;

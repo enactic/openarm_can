@@ -28,7 +28,7 @@ namespace openarm::cli {
 
 int run_can_configure(const std::vector<std::string>& interfaces, int bitrate, int dbitrate,
                       bool fd_mode, const std::string& sp, const std::string& dsp,
-                      const std::string& dsjw, int restart_ms);
+                      const std::string& dsjw, int restart_ms, int txqueuelen = 0);
 
 int run_discover(const std::string& interface, int max_id, bool full_scan = false);
 
@@ -57,6 +57,10 @@ int run_clear_error(const std::string& interface, bool use_arm_ids,
 
 int run_monitor(const std::string& interface, bool use_arm_ids,
                 const std::vector<std::string>& custom_ids_str, int interval_ms, int duration_ms);
+
+int run_diagnose(const std::string& interface, bool use_arm_ids,
+                 const std::vector<std::string>& custom_ids_str, int duration_ms, int interval_ms,
+                 bool want_explain = false);
 
 // ========================================================================
 // [ Shared Utilities ]

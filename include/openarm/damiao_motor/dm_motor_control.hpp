@@ -41,6 +41,8 @@ struct StateResult {
     int t_mos;
     int t_rotor;
     bool valid;
+    // Upper nibble of D[0]; see MotorError.
+    uint8_t error_code;
 };
 
 struct CANPacket {
