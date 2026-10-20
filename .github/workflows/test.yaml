@@ -96,5 +96,49 @@ jobs:
             --verbose \
             ./python
       - name: "Python: Test"
+        env:
+          # libopenarm_can.so is installed into a non-standard location.
+          LD_LIBRARY_PATH: ${{ github.workspace }}/install/lib
         run: |
           python3 -c "import openarm_can"
+
+  ros:
+    name: ROS ${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container: ros:${{ matrix.distro }}-ros-base
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - humble
+          - jazzy
+          - rolling
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: src/openarm_can
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          apt update
+          rosdep update --rosdistro ${{ matrix.distro }}
+          rosdep install \
+            --default-yes \
+            --from-paths src \
+            --ignore-src \
+            --rosdistro ${{ matrix.distro }}
+      - name: Build Debian package
+        working-directory: src/openarm_can
+        run: |
+          apt install -y -V \
+            debhelper \
+            dpkg-dev \
+            fakeroot \
+            python3-bloom
+          bloom-generate rosdebian --ros-distro ${{ matrix.distro }}
+          fakeroot debian/rules binary
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ros-${{ matrix.distro }}-debian-packages
+          path: src/*.deb

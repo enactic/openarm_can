@@ -16,10 +16,12 @@ limitations under the License. -->
   <name>openarm_can</name>
   <version>1.4.0</version>
   <description>Low-level SocketCAN library and tools for OpenArm manipulators.</description>
-  <maintainer email="openarm_dev@enactic.ai">Enactic, Inc.</maintainer>
+  <maintainer email="opensource@enactic.ai">Enactic, Inc.</maintainer>
   <license>Apache-2.0</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>cmake</buildtool_depend>
+
+  <build_depend>cli11</build_depend>
 
   <export>
     <build_type>cmake</build_type>

@@ -28,6 +28,8 @@ include(CTest)
 
 include(GNUInstallDirs)
 
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
 # Create the main library
 add_library(
   openarm_can
