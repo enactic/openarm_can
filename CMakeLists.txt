@@ -155,7 +155,8 @@ add_executable(
   setup/cli/commands/change_motor_id_commands.cpp
   setup/cli/commands/write_motor_param_commands.cpp
   setup/cli/commands/clear_error_commands.cpp
-  setup/cli/commands/diagnose_commands.cpp)
+  setup/cli/commands/diagnose_commands.cpp
+  setup/cli/commands/param_io.cpp)
 target_include_directories(
   openarm-can-cli PRIVATE setup/cli ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(openarm-can-cli PRIVATE openarm_can CLI11::CLI11)

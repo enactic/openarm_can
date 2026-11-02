@@ -64,6 +64,10 @@ int run_can_configure(const std::vector<std::string>& interfaces,
         if (options.fd_mode) {
             cmd_set += " dbitrate " + std::to_string(options.dbitrate) + " fd on dsample-point " +
                        options.dsample_point + " dsjw " + options.dsjw;
+        } else {
+            // The kernel keeps the previous fd setting unless told otherwise,
+            // so leaving this out does not switch an FD interface back.
+            cmd_set += " fd off";
         }
 
         std::cout << "    " << cmd_set << std::endl;

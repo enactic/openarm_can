@@ -166,17 +166,22 @@ int main(int argc, char** argv) {
                             ->group("[ Motor Setup ]");
 
     static int cb_baud = 0;
-    static int cb_id = 0;
+    static std::vector<std::string> cb_ids;
     static bool cb_flash = false;
 
     change_baud
         ->add_option("-b,--baudrate", cb_baud, "Target baudrate (e.g. 1000000, 8000000, 10000000)")
         ->required();
-    change_baud->add_option("-c,--canid", cb_id, "Target Motor ID (0-255)")->required();
+    change_baud
+        ->add_option("-c,--canid", cb_ids,
+                     "Target motor IDs (e.g. -c 1,2,3). All of them must answer on the current "
+                     "interface settings, which are then moved to the new baudrate")
+        ->required();
     change_baud->add_flag("--save", cb_flash, "Save parameters to motor flash memory");
 
     change_baud->callback([&]() {
-        int result = openarm::cli::run_change_baud(global_iface, cb_baud, cb_id, cb_flash);
+        int result =
+            openarm::cli::run_change_baud(global_iface, cb_baud, expand_ids(cb_ids), cb_flash);
         if (result != 0) {
             throw CLI::RuntimeError("change_baud failed.", result);
         }

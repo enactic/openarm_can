@@ -84,6 +84,9 @@ bool reconfigure_can_interface(const std::string& iface, int br, int dbr) {
 
     if (br != dbr) {
         cmd += " dbitrate " + std::to_string(dbr) + " fd on dsample-point 0.60 dsjw 1";
+    } else {
+        // Otherwise the interface stays in FD mode from the previous step.
+        cmd += " fd off";
     }
     cmd += " restart-ms 100 2>/dev/null";
 
