@@ -92,7 +92,7 @@ int run_change_baud(const std::string& interface, int baudrate,
         openarm::canbus::CANSocket socket(interface, true);
 
         // --- Step 1: Every motor must answer before anything is written ---
-        std::cout << "[1/4] Checking motors on " << interface << "..." << std::endl;
+        std::cout << "[1/5] Checking motors on " << interface << "..." << std::endl;
         std::vector<MotorResult> results;
         bool all_answer = true;
         for (uint16_t id : ids) {
@@ -127,7 +127,7 @@ int run_change_baud(const std::string& interface, int baudrate,
         // Only the acknowledgement can be checked here: it is the last frame
         // the motor sends at its old baudrate.
         if (!to_change.empty()) {
-            std::cout << "[2/4] Writing can_br=" << static_cast<int>(code) << "..." << std::endl;
+            std::cout << "[2/5] Writing can_br=" << static_cast<int>(code) << "..." << std::endl;
             for (uint16_t id : to_change) {
                 if (!motor_disable(socket, id) || !param_write_acked(socket, id, rid, code)) {
                     std::cerr << "✗ Motor " << format_hex_id(id)
@@ -147,7 +147,7 @@ int run_change_baud(const std::string& interface, int baudrate,
 
     // --- Step 3: Follow the motors to the new baudrate ---
     if (!to_change.empty()) {
-        std::cout << "[3/4] Moving " << interface << " to " << baudrate << " bps..." << std::endl;
+        std::cout << "[3/5] Moving " << interface << " to " << baudrate << " bps..." << std::endl;
         if (run_can_configure({interface}, target) != 0) {
             std::cerr << "✗ Failed to reconfigure " << interface << ". Flash was not written.\n"
                       << "  Power cycle the motors to return them to their saved baudrate."
@@ -160,7 +160,8 @@ int run_change_baud(const std::string& interface, int baudrate,
         // A new socket: the old one was bound across the interface going down.
         openarm::canbus::CANSocket socket(interface, true);
 
-        std::cout << "[3/4] Verifying at " << baudrate << " bps..." << std::endl;
+        // --- Step 4: Every motor must answer at the new baudrate ---
+        std::cout << "[4/5] Verifying at " << baudrate << " bps..." << std::endl;
         std::vector<MotorResult> results;
         bool all_ok = true;
         for (uint16_t id : ids) {
@@ -181,7 +182,7 @@ int run_change_baud(const std::string& interface, int baudrate,
             return 1;
         }
 
-        // --- Step 4: Flash Save Operation ---
+        // --- Step 5: Flash Save Operation ---
         if (flash) {
             std::cout << "---------------------------------------------------------" << std::endl;
             std::cout << "[!]  WARNING: FLASH WRITE OPERATION" << std::endl;
@@ -192,7 +193,7 @@ int run_change_baud(const std::string& interface, int baudrate,
                       << std::endl;
             std::cout << "---------------------------------------------------------" << std::endl;
 
-            std::cout << "[4/4] Executing Flash Save..." << std::endl;
+            std::cout << "[5/5] Executing Flash Save..." << std::endl;
             results.clear();
             for (uint16_t id : ids) {
                 auto value = param_save(socket, id) ? param_read(socket, id, rid) : std::nullopt;
