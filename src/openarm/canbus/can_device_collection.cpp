@@ -27,6 +27,12 @@ void CANDeviceCollection::add_device(const std::shared_ptr<CANDevice>& device) {
 
     // Add device to our collection
     canid_t device_id = device->get_recv_can_id();
+    // One filter reference per device held. The new device's is added before a
+    // replaced device's is dropped, so frames for the id never stop.
+    can_socket_.add_recv_filter(device_id, device->get_recv_can_mask());
+    auto it = devices_.find(device_id);
+    if (it != devices_.end())
+        can_socket_.remove_recv_filter(device_id, it->second->get_recv_can_mask());
     devices_[device_id] = device;
 }
 
@@ -37,6 +43,7 @@ void CANDeviceCollection::remove_device(const std::shared_ptr<CANDevice>& device
     auto it = devices_.find(device_id);
     if (it != devices_.end()) {
         // Remove from our collection
+        can_socket_.remove_recv_filter(device_id, it->second->get_recv_can_mask());
         devices_.erase(it);
     }
 }
