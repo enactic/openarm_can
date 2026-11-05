@@ -147,7 +147,8 @@ public:
     // Receive filters (CAN_RAW_FILTER). Until the first one is added the socket
     // receives every frame on the interface, the kernel default, so a tool that
     // registers no devices still sees the whole bus. After that it receives only
-    // frames that match one of them. Error frames are not affected: they are
+    // frames that match one of them, and adding the first one also drops the
+    // frames queued until then. Error frames are not affected: they are
     // selected separately, by CAN_RAW_ERR_FILTER.
     //
     // Filters are counted per (can_id, mask): the collections sharing this socket
@@ -163,6 +164,10 @@ protected:
     void cleanup();
     // Hands recv_filters_ to the kernel. Returns 0, or errno on failure.
     int apply_recv_filters();
+    // Empties the receive queue before the first filter goes in. What is queued
+    // then arrived while nothing was registered to receive it, and the next read
+    // would otherwise hand it out as if it had matched a filter.
+    void drop_queued_frames();
 
     int socket_fd_;
     std::string interface_;

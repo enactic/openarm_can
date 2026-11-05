@@ -256,8 +256,10 @@ void CANSocket::add_recv_filter(canid_t can_id, canid_t mask) {
     const auto key = std::make_pair(can_id, mask);
     // Only a filter's first add changes what the kernel delivers.
     if (recv_filters_[key]++ > 0) return;
+    if (recv_filters_.size() == 1) drop_queued_frames();
     if (int err = apply_recv_filters()) {
         recv_filters_.erase(key);
+        apply_recv_filters();  // put the previous set back, as far as possible
         throw CANSocketException("CAN_RAW_FILTER on " + interface_ + ": " + strerror(err));
     }
 }
@@ -284,6 +286,21 @@ int CANSocket::apply_recv_filters() {
                    filters.size() * sizeof(can_filter)) < 0)
         return errno;
     return 0;
+}
+
+void CANSocket::drop_queued_frames() {
+    // With no filter at all nothing new comes in, so the loop ends once the
+    // queue is empty. Error frames still arrive through CAN_RAW_ERR_FILTER, and
+    // go into the bus status as they would on a read. If the kernel refuses an
+    // empty set, leave the queue alone rather than chase a busy bus.
+    if (setsockopt(socket_fd_, SOL_CAN_RAW, CAN_RAW_FILTER, nullptr, 0) < 0) return;
+    canfd_frame frame;
+    while (true) {
+        const ssize_t n = recv(socket_fd_, &frame, sizeof(frame), MSG_DONTWAIT);
+        if (n != static_cast<ssize_t>(CAN_MTU) && n != static_cast<ssize_t>(CANFD_MTU)) return;
+        if (frame.can_id & CAN_ERR_FLAG)
+            bus_status_.record_error_frame(frame.can_id, frame.data, frame.len);
+    }
 }
 
 }  // namespace openarm::canbus
