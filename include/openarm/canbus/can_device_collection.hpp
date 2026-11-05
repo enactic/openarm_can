@@ -53,7 +53,7 @@ public:
 
 private:
     canbus::CANSocket& can_socket_;
-    std::map<canid_t, std::shared_ptr<CANDevice>> devices_;  // recv-id lookup
+    std::map<canid_t, std::shared_ptr<CANDevice>> devices_;    // recv-id lookup
     std::vector<std::shared_ptr<CANDevice>> ordered_devices_;  // insertion order
     std::map<canid_t, uint64_t> unmatched_frames_;
 };
