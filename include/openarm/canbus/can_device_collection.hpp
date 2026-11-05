@@ -33,6 +33,12 @@ public:
     void dispatch_frame_callback(can_frame& frame);
     void dispatch_frame_callback(canfd_frame& frame);
     const std::map<canid_t, std::shared_ptr<CANDevice>>& get_devices() const { return devices_; }
+    // The same devices in the order they were added. DMDeviceCollection's
+    // index i is the i-th device here, so for an arm it is the i-th motor
+    // passed to init_arm_motors(), whatever order the ids are in.
+    const std::vector<std::shared_ptr<CANDevice>>& get_devices_in_order() const {
+        return ordered_devices_;
+    }
     canbus::CANSocket& get_can_socket() const { return can_socket_; }
     int get_socket_fd() const { return can_socket_.get_socket_fd(); }
 
@@ -47,7 +53,8 @@ public:
 
 private:
     canbus::CANSocket& can_socket_;
-    std::map<canid_t, std::shared_ptr<CANDevice>> devices_;
+    std::map<canid_t, std::shared_ptr<CANDevice>> devices_;    // recv-id lookup
+    std::vector<std::shared_ptr<CANDevice>> ordered_devices_;  // insertion order
     std::map<canid_t, uint64_t> unmatched_frames_;
 };
 }  // namespace openarm::canbus

@@ -196,8 +196,10 @@ const MotorLinkStats& DMDeviceCollection::get_link_stats(int i) const {
 }
 
 std::vector<std::shared_ptr<DMCANDevice>> DMDeviceCollection::get_dm_devices() const {
+    // Insertion order, not recv-id order: index i is the i-th motor the caller
+    // passed in, so control modes and *_all() vectors line up with that list.
     std::vector<std::shared_ptr<DMCANDevice>> dm_devices;
-    for (const auto& [id, device] : device_collection_->get_devices()) {
+    for (const auto& device : device_collection_->get_devices_in_order()) {
         auto dm_device = std::dynamic_pointer_cast<DMCANDevice>(device);
         if (dm_device) {
             dm_devices.push_back(dm_device);
