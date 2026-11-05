@@ -20,8 +20,10 @@
 
 #include <chrono>
 #include <cstdint>
+#include <map>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace openarm::canbus {
 
@@ -142,14 +144,32 @@ public:
     // check if data is available for reading (non-blocking)
     bool is_data_available(int timeout_us = 100);
 
+    // Receive filters (CAN_RAW_FILTER). Until the first one is added the socket
+    // receives every frame on the interface, the kernel default, so a tool that
+    // registers no devices still sees the whole bus. After that it receives only
+    // frames that match one of them. Error frames are not affected: they are
+    // selected separately, by CAN_RAW_ERR_FILTER.
+    //
+    // Filters are counted per (can_id, mask): the collections sharing this socket
+    // each add one for every device they hold, and a filter stays until all of
+    // them have removed it. Removing the last one goes back to receiving
+    // everything. Throws CANSocketException if the kernel refuses the new set of
+    // filters, which then stays as it was.
+    void add_recv_filter(canid_t can_id, canid_t mask);
+    void remove_recv_filter(canid_t can_id, canid_t mask);
+
 protected:
     bool initialize_socket(const std::string& interface);
     void cleanup();
+    // Hands recv_filters_ to the kernel. Returns 0, or errno on failure.
+    int apply_recv_filters();
 
     int socket_fd_;
     std::string interface_;
     bool fd_enabled_;
     BusStatus bus_status_;
+    // Receive filters in use, and how many adds of each are outstanding.
+    std::map<std::pair<canid_t, canid_t>, size_t> recv_filters_;
 };
 
 }  // namespace openarm::canbus

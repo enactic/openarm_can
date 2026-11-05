@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <openarm/canbus/can_socket.hpp>
+#include <vector>
 
 namespace openarm::canbus {
 
@@ -249,6 +250,40 @@ bool CANSocket::is_data_available(int timeout_us) {
     int result = select(socket_fd_ + 1, &read_fds, nullptr, nullptr, &timeout);
 
     return (result > 0 && FD_ISSET(socket_fd_, &read_fds));
+}
+
+void CANSocket::add_recv_filter(canid_t can_id, canid_t mask) {
+    const auto key = std::make_pair(can_id, mask);
+    // Only a filter's first add changes what the kernel delivers.
+    if (recv_filters_[key]++ > 0) return;
+    if (int err = apply_recv_filters()) {
+        recv_filters_.erase(key);
+        throw CANSocketException("CAN_RAW_FILTER on " + interface_ + ": " + strerror(err));
+    }
+}
+
+void CANSocket::remove_recv_filter(canid_t can_id, canid_t mask) {
+    const auto key = std::make_pair(can_id, mask);
+    auto it = recv_filters_.find(key);
+    if (it == recv_filters_.end() || --it->second > 0) return;
+    recv_filters_.erase(it);
+    if (int err = apply_recv_filters()) {
+        recv_filters_[key] = 1;
+        throw CANSocketException("CAN_RAW_FILTER on " + interface_ + ": " + strerror(err));
+    }
+}
+
+int CANSocket::apply_recv_filters() {
+    std::vector<can_filter> filters;
+    for (const auto& [filter, count] : recv_filters_)
+        filters.push_back({filter.first, filter.second});
+    // None left: back to the kernel default, a single filter that matches every
+    // frame.
+    if (filters.empty()) filters.push_back({0, 0});
+    if (setsockopt(socket_fd_, SOL_CAN_RAW, CAN_RAW_FILTER, filters.data(),
+                   filters.size() * sizeof(can_filter)) < 0)
+        return errno;
+    return 0;
 }
 
 }  // namespace openarm::canbus
