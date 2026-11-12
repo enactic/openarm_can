@@ -31,3 +31,4 @@
 /packages/yum/tmp/
 /python/dist/
 /python/vendor/
+__pycache__/

@@ -64,7 +64,8 @@ jobs:
           sudo apt install -y -V \
             cmake \
             libcli11-dev \
-            ninja-build
+            ninja-build \
+            python3-pytest
       - name: "C++: CMake"
         run: |
           cmake \
@@ -76,6 +77,21 @@ jobs:
       - name: "C++: Build"
         run: |
           ninja -C ../build
+      - name: "C++: Prepare virtual CAN interface"
+        run: |
+          # vcan.ko is in linux-modules-extra-* on some kernels such as
+          # 6.8 but in linux-modules-* on others such as 7.0.
+          if ! sudo modprobe vcan; then
+            sudo apt install -y -V linux-modules-extra-$(uname -r)
+            sudo modprobe vcan
+          fi
+          sudo ip link add dev vcan0 type vcan
+          sudo ip link set dev vcan0 up
+      - name: "C++: Test"
+        env:
+          OPENARM_CAN_TEST_INTERFACE: vcan0
+        run: |
+          ctest --test-dir ../build --output-on-failure
       - name: Install
         run: |
           ninja -C ../build install
