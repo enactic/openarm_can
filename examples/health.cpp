@@ -119,6 +119,10 @@ int main(int argc, char** argv) {
             types.push_back(damiao_motor::MotorType::DM4310);
         }
         openarm.init_arm_motors(types, send_ids, recv_ids);
+        // Only the registered ids get through the socket's filters. A motor whose
+        // master id (RID 7) was never set replies on 0x00, so listen there too.
+        auto& can_socket = openarm.get_master_can_device_collection().get_can_socket();
+        can_socket.add_recv_filter(0x00, CAN_SFF_MASK);
         openarm.set_callback_mode_all(damiao_motor::CallbackMode::STATE);
 
         if (toggle)
