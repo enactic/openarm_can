@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <iostream>
 #include <openarm/canbus/can_device_collection.hpp>
 #include <openarm/canbus/can_socket.hpp>
@@ -25,9 +26,17 @@ CANDeviceCollection::~CANDeviceCollection() {}
 void CANDeviceCollection::add_device(const std::shared_ptr<CANDevice>& device) {
     if (!device) return;
 
-    // Add device to our collection
     canid_t device_id = device->get_recv_can_id();
+    auto it = devices_.find(device_id);
+    if (it != devices_.end()) {
+        // Same recv id again: the new device takes the old one's place, so the
+        // order of the others does not shift.
+        std::replace(ordered_devices_.begin(), ordered_devices_.end(), it->second, device);
+        it->second = device;
+        return;
+    }
     devices_[device_id] = device;
+    ordered_devices_.push_back(device);
 }
 
 void CANDeviceCollection::remove_device(const std::shared_ptr<CANDevice>& device) {
@@ -36,7 +45,9 @@ void CANDeviceCollection::remove_device(const std::shared_ptr<CANDevice>& device
     canid_t device_id = device->get_recv_can_id();
     auto it = devices_.find(device_id);
     if (it != devices_.end()) {
-        // Remove from our collection
+        ordered_devices_.erase(
+            std::remove(ordered_devices_.begin(), ordered_devices_.end(), it->second),
+            ordered_devices_.end());
         devices_.erase(it);
     }
 }

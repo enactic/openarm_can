@@ -24,6 +24,10 @@
 
 namespace openarm::damiao_motor {
 
+// The motor index i taken by the *_one(i, ...) methods, get_motor(i) and
+// get_link_stats(i), and the position in the *_all(...) vectors, is the order
+// the motors were added: for an arm, the order of the ids passed to
+// init_arm_motors(), whether or not they are ascending.
 class DMDeviceCollection {
 public:
     DMDeviceCollection(canbus::CANSocket& can_socket);
