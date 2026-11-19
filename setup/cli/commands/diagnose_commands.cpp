@@ -280,6 +280,11 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
         std::cerr << "✗ Error: No target IDs specified. Use --arm or --id.\n";
         return 1;
     }
+    // Ascending and without repeats, whatever order the ids were given in:
+    // section (2b) and explain() read the report in this order as the
+    // daisy-chain order.
+    std::sort(send_ids.begin(), send_ids.end());
+    send_ids.erase(std::unique(send_ids.begin(), send_ids.end()), send_ids.end());
 
     std::cout << "=========================================================\n";
     std::cout << " OPENARM DIAGNOSE\n";
@@ -306,8 +311,12 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         openarm.recv_all();
 
-        std::vector<AxisReport> report(send_ids.size());
-        for (size_t i = 0; i < send_ids.size(); ++i) report[i].send_id = send_ids[i];
+        // Label each row from what the library registered, so a row's id and
+        // its statistics (get_link_stats(i)) always come from the same place.
+        const auto registered = openarm.get_arm().get_motors();
+        std::vector<AxisReport> report(registered.size());
+        for (size_t i = 0; i < registered.size(); ++i)
+            report[i].send_id = registered[i].get_send_can_id();
         uint32_t samples = 0;
 
         g_diagnose_running = true;
