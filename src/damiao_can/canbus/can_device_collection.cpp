@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <damiao_can/canbus/can_device_collection.hpp>
 #include <damiao_can/canbus/can_socket.hpp>
-#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 #include <string>
