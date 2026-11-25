@@ -14,6 +14,7 @@
 
 #include <damiao_can/canbus/can_device_collection.hpp>
 #include <damiao_can/canbus/can_socket.hpp>
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -35,6 +36,7 @@ void CANDeviceCollection::add_device(const std::shared_ptr<CANDevice>& device) {
                                     std::to_string(static_cast<uint32_t>(device_id)));
     }
     devices_.emplace(device_id, device);
+    ordered_devices_.push_back(device);
 }
 
 void CANDeviceCollection::remove_device(const std::shared_ptr<CANDevice>& device) {
@@ -45,8 +47,12 @@ void CANDeviceCollection::remove_device(const std::shared_ptr<CANDevice>& device
     canid_t device_id = device->get_recv_can_id();
     auto it = devices_.find(device_id);
     if (it != devices_.end()) {
+        const auto removed = it->second;
         // Remove from our collection
         devices_.erase(it);
+        ordered_devices_.erase(
+            std::remove(ordered_devices_.begin(), ordered_devices_.end(), removed),
+            ordered_devices_.end());
     }
 }
 

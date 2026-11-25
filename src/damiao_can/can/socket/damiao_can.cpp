@@ -165,7 +165,7 @@ void DamiaoCAN::set_motor_limits_one(int i, const damiao_motor::LimitParam& limi
 }
 
 void DamiaoCAN::register_motor_collection() {
-    for (const auto& [id, device] : motor_collection_->get_device_collection().get_devices()) {
+    for (const auto& device : motor_collection_->get_device_collection().get_ordered_devices()) {
         master_can_device_collection_->add_device(device);
     }
 }

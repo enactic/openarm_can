@@ -33,11 +33,16 @@ public:
     void dispatch_frame_callback(can_frame& frame);
     void dispatch_frame_callback(canfd_frame& frame);
     const std::map<canid_t, std::shared_ptr<CANDevice>>& get_devices() const { return devices_; }
+    // Devices in the order they were added; motor indices follow this order.
+    const std::vector<std::shared_ptr<CANDevice>>& get_ordered_devices() const {
+        return ordered_devices_;
+    }
     canbus::CANSocket& get_can_socket() const { return can_socket_; }
     int get_socket_fd() const { return can_socket_.get_socket_fd(); }
 
 private:
     canbus::CANSocket& can_socket_;
     std::map<canid_t, std::shared_ptr<CANDevice>> devices_;
+    std::vector<std::shared_ptr<CANDevice>> ordered_devices_;
 };
 }  // namespace damiao_can::canbus
