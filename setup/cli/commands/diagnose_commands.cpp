@@ -299,6 +299,11 @@ int run_diagnose(const std::string& interface, bool use_arm_ids,
         std::vector<uint32_t> recv_ids;
         for (auto id : send_ids) recv_ids.push_back(id + 0x10);
         openarm.init_arm_motors(types, send_ids, recv_ids);
+        // Only the registered ids get through the socket's filters. A motor whose
+        // master id (RID 7) was never set replies on 0x00, so listen there too:
+        // explain() reports what arrives there as unmatched frames.
+        auto& can_socket = openarm.get_master_can_device_collection().get_can_socket();
+        can_socket.add_recv_filter(0x00, CAN_SFF_MASK);
 
         std::cout << ">>> Enabling motors..." << std::endl;
         openarm.set_callback_mode_all(openarm::damiao_motor::CallbackMode::STATE);
